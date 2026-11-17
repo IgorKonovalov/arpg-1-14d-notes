@@ -1,0 +1,73 @@
+{
+ "schematic_only": "schematic-only/1",
+ "steps": [
+  {
+   "text": "A toy player attacks a toy monster once; the attacker's seed is {12648430:666} and the defender's {12345:666} (illustrative).",
+   "calc": [
+    "Attacker stats (illustrative): level 30, strength 80, dexterity 40, stat 19 150, damage 5 to 11, stat 25 40, stat 135 92, stat 136 60, stat 141 20.",
+    "Defender stats (illustrative): level 20, stat 31 180, stat 2 80, block stat 20 20, life 300; stats 338, 340 and 348 are 0, so no avoidance draw."
+   ]
+  },
+  {
+   "text": "The chance to hit is 74 percent: attack rating 335 against defence 200, levels 30 and 20.",
+   "calc": [
+    "to-hit.md A1, B1: DEF = stat 31 + stat 2 / 4 = 180 + 80 / 4 = 200 (no percent terms).",
+    "to-hit.md A2: AR = (stat 2 - 7) * 5 + stat 19 + the class's ToHitFactor = (40 - 7) * 5 + 150 + 20 = 335; pct = 0, so A3 keeps AR = 335.",
+    "to-hit.md A5: c = 100 * AR / (AR + DEF) = 62; c = c * alvl * 2 / (alvl + dlvl) = 74; clamped to 5..95: 74."
+   ]
+  },
+  {
+   "text": "The to-hit draw is 68, below 74: a hit.",
+   "calc": [
+    "to-hit.md A6: r = Range(att.seed, 100) = 68 (draw 1 on the attacker's seed); seed = {2727269568:5275563}.",
+    "to-hit.md A6: r < c = 74: hit."
+   ]
+  },
+  {
+   "text": "Block: the draw is 87 against a chance of 20, so the hit is not blocked.",
+   "calc": [
+    "to-hit.md C2: b = BlockChance(monster) = min(stat 20, 75) = 20 (the toy monster has NoShldBlock set); b >= 1, so r = Range(def.seed, 100) = 87 on the defender's seed (draw 1 on it); seed = {22752887:5149}.",
+    "to-hit.md C2: r >= b: not blocked.",
+    "to-hit.md C3: stats 340, 348 and 338 are 0 for the toy, so no evade, weapon block or dodge draw."
+   ]
+  },
+  {
+   "text": "The physical roll: 3319 units, 12.96 points, from a draw of 503 over a span of 3379.",
+   "calc": [
+    "damage.md B1: one-handed: min = stat 21 << 8 = 1280, max = stat 22 << 8 = 2816.",
+    "damage.md B1: ed = stat 25 + StrBonus * stat 0 / 100 + DexBonus * stat 2 / 100 + mastery = 40 + 80 + 0 + 0 = 120.",
+    "damage.md B1: lo = 2816, hi = 6195; v = lo + RangeB(att.seed, hi - lo) = 2816 + 503 = 3319."
+   ]
+  },
+  {
+   "text": "Deadly strike draw 40 against 20 percent: no doubling; the build then draws RangeB(1) once.",
+   "calc": [
+    "damage.md A step 3: the chain is the weapon mastery's crit (none for the toy), stat 337 (0, no draw), stat 141 = 20: r = Range(att.seed, 100) = 40: r >= chance, no doubling.",
+    "damage.md A steps 4 and 6: the four elements and poison have no range (stats 48 to 55, 57, 58 are 0): no draw.",
+    "damage.md A step 7: b = RangeB(att.seed, 1) = 0, always one step of the seed."
+   ]
+  },
+  {
+   "text": "Delivery: open wounds draw 90 (applied), crushing blow draw 50 (applied).",
+   "calc": [
+    "delivery.md B3: the handlers of event 5 run newest first, so the order is the unit's own registration order; the toy has open wounds run before crushing blow, as the logged characters did. Each reads the life before this hit's damage.",
+    "delivery.md E2: r = Range(att.seed, 100) = 90 against stat 135 = 92: applied; L = max(stat 12, 1) = 30, dmg = Band(L) + 40 = 396 + 40 = 436, state 62 for 200 frames, stat 74 = -436.",
+    "delivery.md E1: r = Range(att.seed, 100) = 50 against stat 136 = 60: applied; k = 4 for a normal monster with one player, cb = life / k = 76800 / 4 = 19200, life 57600."
+   ]
+  },
+  {
+   "text": "The monster's life goes from 300.00 to 212.03 points.",
+   "calc": [
+    "delivery.md B3, B4: the stat events saw the life before this hit's damage; then hp = 57600 - total = 57600 - 3319 = 54281.",
+    "total = physical 3319 (the toy has no other damage and no reduction), life = 54281 units, 212.03 points."
+   ]
+  },
+  {
+   "text": "The attacker's seed drew 6 times and the defender's 1 time; the attacker's seed ends at {1925095350:583019175}.",
+   "calc": [
+    "order: 1 to-hit (attacker), 2 block (defender), 3 physical (attacker), 4 deadly strike (attacker), 5 always drawn (attacker), 6 open wounds (attacker), 7 crushing blow (attacker).",
+    "attacker seed after = {1925095350:583019175}; defender seed after = {22752887:5149}."
+   ]
+  }
+ ]
+}

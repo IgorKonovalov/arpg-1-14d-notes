@@ -1,0 +1,24 @@
+{
+ "marker": "schematic-only/1",
+ "args": [
+  "--mode",
+  "walk",
+  "--limit",
+  "12",
+  "--seed",
+  "12648430"
+ ],
+ "files": {
+  "frame-000.png": "f4c22ad3359b7330fb3e254532fe634ce92311890217bd2376abc4540744a2ae",
+  "frame-001.png": "cf63332bd7e5dc5fe2e0b92f90d5df4eb33ff2f7e23af64ca70c9ee328b2ec43",
+  "frame-002.png": "852130a03c2242181c38c88087fda7341ad27556b5d3ca363a759547a166e5b5",
+  "frame-003.png": "1ab112740bd45d19c63676c1eaf018d4c7fb11a9636f2060d4f2fbccfa73a0dd",
+  "frame-004.png": "a9b96fa775115a875bb48afc916d426fb8bdf64e1a386d72136bd9cb2f45fa1b",
+  "frame-005.png": "a24abd0919952646ae2ff390912a413bca4932d411216f6786ee6d153374c0c2",
+  "frame-006.png": "bcfa56f50a3788f8126feb22092af938084a9f4d072e06fb9fce1ad4d850e9cc",
+  "frame-007.png": "a571d66534d132a020a90a71c3e9876cd9fb98fad00c5b25c3d51b3e26ca2f6f",
+  "index.html": "af9b64d7f996e5c679c8d2987597e4215861b2985c8038a93ee521df2fe1678b",
+  "path.gif": "45cfe0b6f5ae5e51456603f3ffeca48d876e2bb57889c884f02b6104b393bd1b",
+  "steps.json": "d5da06dbb153c502ca8256a5cd1a9c3bfac8076ab4d83518a257154abd63e31f"
+ }
+}

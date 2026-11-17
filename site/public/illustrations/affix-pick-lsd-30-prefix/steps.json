@@ -1,0 +1,65 @@
+{
+ "schematic_only": "schematic-only/1",
+ "steps": [
+  {
+   "text": "One prefix pick for a magic item, base lsd, item level 30, on the item seed {12345:666} (illustrative).",
+   "calc": [
+    "affixes.md C: PickMagicAffix(item, needSpawnable = 1, mustRoll = 0, applyProps = 0, isPrefix = 1, forcedId = 0, autoGroup = 0).",
+    "base lsd: qlvl = 20, magic lvl = 0; item version 101 (expansion), quality 4, no affix on the item."
+   ]
+  },
+  {
+   "text": "The affix level of base lsd at item level 30 is 20.",
+   "calc": [
+    "B1: i = max(ilvl, qlvl) = max(30, 20) = 30.",
+    "B3: magic lvl 0, h = qlvl / 2 = 10; i = 30 < 99 - h = 89, so alvl = i - h = 20.",
+    "B4: clamped to 1..99, alvl = 20."
+   ]
+  },
+  {
+   "text": "Draw 1: the low word is 22752887, bit 0 is 1, so the pick rolls.",
+   "calc": [
+    "C2: Step(item.seed); low = 22752887; seed = {22752887:5149}.",
+    "C2: (low & 1) = 1."
+   ]
+  },
+  {
+   "text": "The filter leaves 32 of 669 rows as candidates, with total weight 150.",
+   "calc": [
+    "C4: the prefix block has 669 rows; alvl = 20.",
+    "C4A: spawnable flag is 0: 82 refused, 587 left.",
+    "C4B: row needs version 100 and item is below it: 0 refused, 587 left.",
+    "C4C: row level above alvl or maxlevel below it: 358 refused, 229 left.",
+    "C4D: rare flag 0 on a rare item: 0 refused, 229 left.",
+    "C4E: item type test fails: 182 refused, 47 left.",
+    "C4F: automagic pick only: another group: 0 refused, 47 left.",
+    "C4G: frequency is 0: 15 refused, 32 left.",
+    "C4H: class-specific row of another class: 0 refused, 32 left.",
+    "C4I: group already on the item: 0 refused, 32 left.",
+    "C4: n = 32 candidates, W = 150 (the weight is the row's frequency; frequency * level on a base with a magic lvl)."
+   ]
+  },
+  {
+   "text": "32 candidates, total weight 150.",
+   "calc": [
+    "C4: the weight is the row's frequency.",
+    "the first 5 candidates (merged affix id: weight): 933: 9, 934: 9, 935: 8, 936: 8, 937: 7.",
+    "C4: n = 32, W = 150, the sum of the 32 weights."
+   ]
+  },
+  {
+   "text": "Draw 2 is 93; the walk stops at candidate 12 of 32, affix id 1005.",
+   "calc": [
+    "C7: x = Range(item.seed, W + 1) = Range(151) = 93; seed = {2337785264:9490055}.",
+    "C7: the running subtraction first goes below 0 at candidate 12 (weights before it: 86, its own: 9).",
+    "C7: the id returned is 1005."
+   ]
+  },
+  {
+   "text": "The pick returns affix id 1005 after two draws on the item seed.",
+   "calc": [
+    "C8: return id + 1 = 1005; item seed after = {2337785264:9490055}."
+   ]
+  }
+ ]
+}

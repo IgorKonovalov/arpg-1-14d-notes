@@ -1,0 +1,35 @@
+<!doctype html><!-- schematic-only/1: schematic-only page, our own graphics -->
+<title>unit movement animation</title>
+<style>body{background:#111;color:#ddd;font:14px sans-serif;margin:0;padding:12px;text-align:center}
+img{max-width:100%;height:auto;image-rendering:pixelated;background:#000}button{font-size:16px;margin:4px;padding:4px 12px}
+#cap{max-width:900px;margin:8px auto;min-height:2em;font-weight:bold}#s{width:60%}
+#calc{max-width:900px;margin:0 auto;text-align:left;font:13px/1.5 monospace;background:#1b1b22;padding:8px 14px;
+border-radius:6px}#calc li{margin:2px 0}#help{max-width:900px;margin:8px auto;text-align:left;font-size:13px;color:#aaa}
+#help summary{cursor:pointer;color:#ddd}</style>
+<img id=f width=960 height=500 alt="frame"><div>
+<button id=p>prev</button><button id=pl>play</button><button id=n>next</button>
+<input id=s type=range min=0 value=0></div><div id=cap></div>
+<div id=calc><b>Calculations for this step</b><ol id=cl></ol></div>
+<details id=help><summary>How to read this</summary><ul>
+<li>The strip is a row of subtiles; the unit starts at the centre of the first one and has one point, at the centre of a later one.</li>
+<li>Each game frame the unit moves by a step computed from its path speed; the step is the same on every frame until the last one.</li>
+<li>On the last frame the point is nearer than a whole step, so the step becomes exactly the distance left and the unit lands on the point.</li>
+<li>Positions are in 1/65536 of a subtile. Every value is computed by our model for the toy numbers given, not observed in the game.</li></ul></details>
+<script>
+var caps=[{"text": "A toy unit: path speed 1536, a point 3 subtiles away.", "calc": ["movement B1: s = (p.speed * k) >> 6 = (1536 * 1024) >> 6 = 24576 with k = 0x400.", "movement B1: stepX = (dirX * s) >> 12 = (4096 * 24576) >> 12 = 24576.", "movement B3: a point d subtiles away takes ceil(65536 d / step) = ceil(196608 / 24576) = 8 frames."]}, {"text": "Game frame 1: moves 24576, position 57344.", "calc": ["movement B1: step = 24576; position = 32768 + 24576 = 57344.", "movement B3: the distance left 196608 exceeds m = 24576, so the step stays."]}, {"text": "Game frame 2: moves 24576, position 81920.", "calc": ["movement B1: step = 24576; position = 57344 + 24576 = 81920.", "movement B3: the distance left 172032 exceeds m = 24576, so the step stays."]}, {"text": "Game frame 3: moves 24576, position 106496.", "calc": ["movement B1: step = 24576; position = 81920 + 24576 = 106496.", "movement B3: the distance left 147456 exceeds m = 24576, so the step stays."]}, {"text": "Game frame 4: moves 24576, position 131072.", "calc": ["movement B1: step = 24576; position = 106496 + 24576 = 131072.", "movement B3: the distance left 122880 exceeds m = 24576, so the step stays."]}, {"text": "Game frame 5: moves 24576, position 155648.", "calc": ["movement B1: step = 24576; position = 131072 + 24576 = 155648.", "movement B3: the distance left 98304 exceeds m = 24576, so the step stays."]}, {"text": "Game frame 6: moves 24576, position 180224.", "calc": ["movement B1: step = 24576; position = 155648 + 24576 = 180224.", "movement B3: the distance left 73728 exceeds m = 24576, so the step stays."]}, {"text": "Game frame 7: moves 24576, position 204800.", "calc": ["movement B1: step = 24576; position = 180224 + 24576 = 204800.", "movement B3: the distance left 49152 exceeds m = 24576, so the step stays."]}, {"text": "Game frame 8: moves 24576, position 229376, snapped onto the point.", "calc": ["movement B1: step = 24576; position = 204800 + 24576 = 229376.", "movement B3: both axis distances left (24576, 0) are at most m = max(|stepX|, |stepY|) = 24576: the step becomes the remaining delta 24576 and the point is reached."]}, {"text": "The unit has reached the point after 8 frames.", "calc": ["movement B3: ceil(65536 * 3 / 24576) = 8 frames.", "movement B1, B5: with no point left the same call runs PathStop, which snaps to the subtile centre; the step returns 2."]}],i=0,t=null,f=document.getElementById('f'),s=document.getElementById('s');
+s.max=caps.length-1;
+function show(k){i=Math.max(0,Math.min(caps.length-1,k));f.setAttribute('src','frame-'+('000'+i).slice(-3)+'.png');
+s.value=i;document.getElementById('cap').textContent=(i+1)+'/'+caps.length+'  '+caps[i].text;
+var cl=document.getElementById('cl');cl.innerHTML='';caps[i].calc.forEach(function(c){var li=document.createElement('li');
+li.textContent=c;cl.appendChild(li);});}
+function stop(){if(t){clearInterval(t);t=null;document.getElementById('pl').textContent='play';}}
+document.getElementById('p').onclick=function(){stop();show(i-1)};
+document.getElementById('n').onclick=function(){stop();show(i+1)};
+document.getElementById('pl').onclick=function(){if(t){stop();return;}
+ if(i>=caps.length-1)show(0);document.getElementById('pl').textContent='pause';
+ t=setInterval(function(){if(i>=caps.length-1)stop();else show(i+1)},900)};
+s.oninput=function(){stop();show(+s.value)};
+document.onkeydown=function(e){if(e.key=='ArrowRight'){stop();show(i+1)}else if(e.key=='ArrowLeft'){stop();show(i-1)}
+ else if(e.key==' '){e.preventDefault();document.getElementById('pl').click()}};
+show(0);
+</script>

@@ -1,0 +1,162 @@
+{
+ "schematic_only": "schematic-only/1",
+ "steps": [
+  {
+   "text": "Stony Field: at its table position, accepted.",
+   "calc": [
+    "Entry 1: level 4, a table position, not an anchor; pick: anchor pick: no draw, the position is the Levels OffsetX, OffsetY.",
+    "No draw: this pick never draws.",
+    "No side (the position is the table's); rectangle (x, y, w, h) = (1000, 1000, 80, 80).",
+    "Check: accepts."
+   ]
+  },
+  {
+   "text": "Cold Plains: 4 sides, one draw, side 3, accepted.",
+   "calc": [
+    "Entry 2: level 3, anchored to Stony Field; pick: cycle 4: first call d = Step(copy) & 3, then d = (d + 1) mod 4 until back at the first.",
+    "Draws on the copy of the act seed (low words): 2087073643.",
+    "Side 3; rectangle (x, y, w, h) = (1080, 1016, 80, 80).",
+    "Check: accepts."
+   ]
+  },
+  {
+   "text": "Blood Moor: side and flip, 2 draws, side 0, accepted.",
+   "calc": [
+    "Entry 3: level 2, anchored to Cold Plains; pick: as the Rogue Encampment's pick; the size is 96 * 56 for odd d, 56 * 96 for even d.",
+    "Draws on the copy of the act seed (low words): 2825129940, 398605950.",
+    "Side 0, flip 0; rectangle (x, y, w, h) = (1120, 1096, 56, 96).",
+    "Check: accepts."
+   ]
+  },
+  {
+   "text": "Rogue Encampment: side and flip, 2 draws, side 2, rejected, it overlaps level 3 (Cold Plains).",
+   "calc": [
+    "Entry 4: level 1, anchored to Blood Moor; pick: first call d = Step & 3 then f = Step & 1; next (d, f) = ((d + f) mod 4, (f + 1) mod 2).",
+    "Draws on the copy of the act seed (low words): 1397817890, 1925095350.",
+    "Side 2, flip 0; rectangle (x, y, w, h) = (1120, 1056, 56, 40).",
+    "Check: rejects, it overlaps level 3 (Cold Plains); the next call tries the next side."
+   ]
+  },
+  {
+   "text": "Rogue Encampment: side and flip, 2 draws, side 2, rejected, it overlaps level 3 (Cold Plains).",
+   "calc": [
+    "Entry 4: level 1, anchored to Blood Moor; pick: first call d = Step & 3 then f = Step & 1; next (d, f) = ((d + f) mod 4, (f + 1) mod 2).",
+    "No draw on this call: the next choice follows from the current one, and the stored first choice only ends the cycle.",
+    "Side 2, flip 1; rectangle (x, y, w, h) = (1120, 1056, 56, 40).",
+    "Check: rejects, it overlaps level 3 (Cold Plains); the next call tries the next side."
+   ]
+  },
+  {
+   "text": "Rogue Encampment: side and flip, 2 draws, side 3, rejected, its side is not in the table of allowed sides.",
+   "calc": [
+    "Entry 4: level 1, anchored to Blood Moor; pick: first call d = Step & 3 then f = Step & 1; next (d, f) = ((d + f) mod 4, (f + 1) mod 2).",
+    "No draw on this call: the next choice follows from the current one, and the stored first choice only ends the cycle.",
+    "Side 3, flip 0; rectangle (x, y, w, h) = (1176, 1104, 56, 40).",
+    "Check: rejects, its side is not in the table of allowed sides; the next call tries the next side."
+   ]
+  },
+  {
+   "text": "Rogue Encampment: side and flip, 2 draws, side 3, rejected, its side is not in the table of allowed sides.",
+   "calc": [
+    "Entry 4: level 1, anchored to Blood Moor; pick: first call d = Step & 3 then f = Step & 1; next (d, f) = ((d + f) mod 4, (f + 1) mod 2).",
+    "No draw on this call: the next choice follows from the current one, and the stored first choice only ends the cycle.",
+    "Side 3, flip 1; rectangle (x, y, w, h) = (1176, 1144, 56, 40).",
+    "Check: rejects, its side is not in the table of allowed sides; the next call tries the next side."
+   ]
+  },
+  {
+   "text": "Rogue Encampment: side and flip, 2 draws, side 0, accepted.",
+   "calc": [
+    "Entry 4: level 1, anchored to Blood Moor; pick: first call d = Step & 3 then f = Step & 1; next (d, f) = ((d + f) mod 4, (f + 1) mod 2).",
+    "No draw on this call: the next choice follows from the current one, and the stored first choice only ends the cycle.",
+    "Side 0, flip 0; rectangle (x, y, w, h) = (1120, 1192, 56, 40).",
+    "Check: accepts."
+   ]
+  },
+  {
+   "text": "Burial Grounds: 4 sides, one draw, side 1, rejected, it overlaps level 4 (Stony Field).",
+   "calc": [
+    "Entry 5: level 17, anchored to Cold Plains; pick: cycle 4: first call d = Step(copy) & 3, then d = (d + 1) mod 4 until back at the first.",
+    "Draws on the copy of the act seed (low words): 2349560245.",
+    "Side 1; rectangle (x, y, w, h) = (1040, 1000, 40, 48).",
+    "Check: rejects, it overlaps level 4 (Stony Field); the next call tries the next side."
+   ]
+  },
+  {
+   "text": "Burial Grounds: 4 sides, one draw, side 2, accepted.",
+   "calc": [
+    "Entry 5: level 17, anchored to Cold Plains; pick: cycle 4: first call d = Step(copy) & 3, then d = (d + 1) mod 4 until back at the first.",
+    "No draw on this call: the next choice follows from the current one, and the stored first choice only ends the cycle.",
+    "Side 2; rectangle (x, y, w, h) = (1136, 968, 40, 48).",
+    "Check: accepts."
+   ]
+  },
+  {
+   "text": "The table is done: each level has its rectangle, and each level with an anchor a seam both ways to it.",
+   "calc": [
+    "Rectangles: 4: (1000, 1000, 80, 80); 3: (1080, 1016, 80, 80); 2: (1120, 1096, 56, 96); 1: (1120, 1192, 56, 40); 17: (1136, 968, 40, 48).",
+    "The copy of the act seed ends at {8c0b71b5:2fdbee74} and is discarded; the layout did not step the act seed, still {a28ed4c0:00507fab}."
+   ]
+  },
+  {
+   "text": "Moo Moo Farm: at its table position, accepted.",
+   "calc": [
+    "Entry 1: level 39, a table position, not an anchor; pick: anchor pick: no draw, the position is the Levels OffsetX, OffsetY.",
+    "No draw: this pick never draws.",
+    "No side (the position is the table's); rectangle (x, y, w, h) = (5000, 1148, 80, 80).",
+    "Check: accepts."
+   ]
+  },
+  {
+   "text": "Monastery Gate: at its table position, accepted.",
+   "calc": [
+    "Entry 2: level 26, a table position, not an anchor; pick: anchor pick: no draw, the position is the Levels OffsetX, OffsetY.",
+    "No draw: this pick never draws.",
+    "No side (the position is the table's); rectangle (x, y, w, h) = (3000, 1000, 64, 18).",
+    "Check: accepts."
+   ]
+  },
+  {
+   "text": "Tamoe Highland: one fixed side, accepted.",
+   "calc": [
+    "Entry 3: level 7, anchored to Monastery Gate; pick: fixed pick: d = 0, no draw.",
+    "No draw: this pick never draws.",
+    "Side 0; rectangle (x, y, w, h) = (3000, 1018, 80, 80).",
+    "Check: accepts."
+   ]
+  },
+  {
+   "text": "Black Marsh: 4 sides, one draw, side 3, accepted.",
+   "calc": [
+    "Entry 4: level 6, anchored to Tamoe Highland; pick: cycle 4: first call d = Step(copy) & 3, then d = (d + 1) mod 4 until back at the first.",
+    "Draws on the copy of the act seed (low words): 2087073643.",
+    "Side 3; rectangle (x, y, w, h) = (3080, 1034, 80, 80).",
+    "Check: accepts."
+   ]
+  },
+  {
+   "text": "Dark Wood: 4 sides, one draw, side 0, accepted.",
+   "calc": [
+    "Entry 5: level 5, anchored to Black Marsh; pick: cycle 4: first call d = Step(copy) & 3, then d = (d + 1) mod 4 until back at the first.",
+    "Draws on the copy of the act seed (low words): 2825129940.",
+    "Side 0; rectangle (x, y, w, h) = (3064, 1114, 80, 80).",
+    "Check: accepts."
+   ]
+  },
+  {
+   "text": "The table is done: each level has its rectangle, and each level with an anchor a seam both ways to it.",
+   "calc": [
+    "Rectangles: 39: (5000, 1148, 80, 80); 26: (3000, 1000, 64, 18); 7: (3000, 1018, 80, 80); 6: (3080, 1034, 80, 80); 5: (3064, 1114, 80, 80).",
+    "The copy of the act seed ends at {a8640fd4:33e2d05a} and is discarded; the layout did not step the act seed, still {a28ed4c0:00507fab}."
+   ]
+  },
+  {
+   "text": "Level 27's file index 0, from the one draw the builder makes on the act seed.",
+   "calc": [
+    "Level 6 is on side 3: one step of the act seed (the builder's only draw on it).",
+    "Draw (low word) = 2087073643, so level 27's index = (not r) & 1 = 0.",
+    "The act seed after: {7c66376b:43cd3a7d}."
+   ]
+  }
+ ]
+}

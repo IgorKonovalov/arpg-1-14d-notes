@@ -1,0 +1,67 @@
+{
+ "schematic_only": "schematic-only/1",
+ "steps": [
+  {
+   "text": "Random walk: the first direction is right and the walk takes 6 steps from the start.",
+   "calc": [
+    "search I: n = limit >> 1 = 6; d = the first direction of PathDirRow toward the target, once = 0.",
+    "search I: seed = {00c0ffee:0000029a} (low:high), the toy's illustrative input."
+   ]
+  },
+  {
+   "text": "Step 1: add -1, direction up right, point 0 is (2, 4).",
+   "calc": [
+    "search I: draw 1 on the seed gives low word 2727269568 (seed {a28ed4c0:00507fab}).",
+    "search I: add[0] = -1; dir = (0 + -1) & 7 = 7.",
+    "search I: points[0] = (2, 4); cur = cur + 2 * step[7] = (4, 2)."
+   ]
+  },
+  {
+   "text": "Step 2: add 1, direction down right, point 1 is (4, 2).",
+   "calc": [
+    "search I: draw 2 on the seed gives low word 2087073643 (seed {7c66376b:43cd3a7d}).",
+    "search I: add[11] = 1; dir = (0 + 1) & 7 = 1.",
+    "search I: points[1] = (4, 2); cur = cur + 2 * step[1] = (6, 4)."
+   ]
+  },
+  {
+   "text": "Step 3: add 1, direction down right, point 2 is (6, 4).",
+   "calc": [
+    "search I: draw 3 on the seed gives low word 2825129940 (seed {a8640fd4:33e2d05a}).",
+    "search I: add[20] = 1; dir = (0 + 1) & 7 = 1.",
+    "search I: points[2] = (6, 4); cur = cur + 2 * step[1] = (8, 6)."
+   ]
+  },
+  {
+   "text": "Step 4: add -1, direction up right, point 3 is (8, 6).",
+   "calc": [
+    "search I: draw 4 on the seed gives low word 398605950 (seed {17c23e7e:463c0b2c}).",
+    "search I: add[30] = -1; dir = (0 + -1) & 7 = 7.",
+    "search I: points[3] = (8, 6); cur = cur + 2 * step[7] = (10, 4)."
+   ]
+  },
+  {
+   "text": "Step 5: add 1, direction down right, point 4 is (10, 4).",
+   "calc": [
+    "search I: draw 5 on the seed gives low word 1397817890 (seed {53510222:09e8db8c}).",
+    "search I: add[2] = 1; dir = (0 + 1) & 7 = 1.",
+    "search I: points[4] = (10, 4); cur = cur + 2 * step[1] = (12, 6)."
+   ]
+  },
+  {
+   "text": "Step 6: add 0, direction right, point 5 is (12, 6).",
+   "calc": [
+    "search I: draw 6 on the seed gives low word 1925095350 (seed {72be9fb6:22c02aa7}).",
+    "search I: add[22] = 0; dir = (0 + 0) & 7 = 0.",
+    "search I: points[5] = (12, 6); cur = cur + 2 * step[0] = (14, 6)."
+   ]
+  },
+  {
+   "text": "The walk ends with 7 points and returns 7.",
+   "calc": [
+    "search I: points[n] = cur; +0x28 = n + 1 = 7; return n + 1.",
+    "search I: the first point is the position itself; no grid and no room are read."
+   ]
+  }
+ ]
+}

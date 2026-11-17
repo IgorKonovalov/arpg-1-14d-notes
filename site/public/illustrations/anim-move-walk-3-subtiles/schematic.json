@@ -1,0 +1,24 @@
+{
+ "marker": "schematic-only/1",
+ "args": [
+  "--speed",
+  "walk",
+  "--dist",
+  "3"
+ ],
+ "files": {
+  "frame-000.png": "defeb5ffaebbb894905e3132f47a311c8fe0afebec3db74c299d511a8e8dcb94",
+  "frame-001.png": "793fa065090c0b50bd5ebfea1ddb6e919876ed208fab7f20707b68b4ff86be86",
+  "frame-002.png": "35d14899c9efe7cb5517774853db187e0d0e4cf33e7213d9fd099c86baca6ee9",
+  "frame-003.png": "73870af934967e32639752362286de50091b85b86f8f7016987dffbd9100012e",
+  "frame-004.png": "e468f99741eb5c39ce02dac9d7a5f8734c174754e385078955b154ba907bf499",
+  "frame-005.png": "cb372235ef43d4b451a91945aa4080dca6bb7bcb644d0fc6d9bd9534314e2aec",
+  "frame-006.png": "ee770e47c877c41345f85a675809036f8b1b8570c5222e4446eee98985a02c6a",
+  "frame-007.png": "18240afe88e69cb016a78051fce72fdd20c3093022981dd511131cf3bd1ea47e",
+  "frame-008.png": "f4a5472187349391f58faf7356cf6f95413a995023ac5f7caae55464d2feedc1",
+  "frame-009.png": "fcdba303ea528eceb3f72d59744ed56d4579591e7c936ffe7dbfbd9e8bf373ed",
+  "index.html": "a5e6a2a09d654aecc26082563ae18f2bad254d9f91fdd46162fb38938aa9b7e0",
+  "move.gif": "f00b28aa74a6f78071ab24f59ceb7805fe9e4bdeaa6751c3e14cadcee78df74e",
+  "steps.json": "18e864d3d4fbf35cce7db942e7286c4fce51446f7f11507448a0aafc3f868633"
+ }
+}

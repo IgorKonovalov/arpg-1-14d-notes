@@ -1,0 +1,48 @@
+{
+ "schematic_only": "schematic-only/1",
+ "steps": [
+  {
+   "text": "The spiral: the radius and the angle grow by a fixed amount each iteration.",
+   "calc": [
+    "search J step 3: r = r + 0x2580, a = a + 16.",
+    "search J steps 5 and 6: X = trunc(SIN[(a + 0x80) & 0x1FF] * R), Y = trunc(SIN[a & 0x1FF] * R).",
+    "The sine table is within 1.8e-07 of sin(2 pi k / 512) (search inputs)."
+   ]
+  },
+  {
+   "text": "Iteration 1: the offset (9415, 1872) reaches cell (8, 4), not kept.",
+   "calc": [
+    "search J: R = 9600, a = 16, X = trunc(sine at 144 of 512 * 9600) = 9415, Y = trunc(sine at 16 of 512 * 9600) = 1872.",
+    "search J step 8: x >> 16 or y >> 16 equals the last kept cell."
+   ]
+  },
+  {
+   "text": "Iteration 5: the offset (26667, 39910) reaches cell (8, 5), which is kept.",
+   "calc": [
+    "search J: R = 48000, a = 80, X = trunc(sine at 208 of 512 * 48000) = 26667, Y = trunc(sine at 80 of 512 * 48000) = 39910.",
+    "search J step 8: x >> 16 or y >> 16 differs from the last kept cell."
+   ]
+  },
+  {
+   "text": "After iteration 32: 15 points kept.",
+   "calc": [
+    "search J step 9: the loop ends when k >= 77; here that is iteration 94.",
+    "search J: no grid, no draw and neither +0x90 nor +0x91 are used."
+   ]
+  },
+  {
+   "text": "After iteration 64: 47 points kept.",
+   "calc": [
+    "search J step 9: the loop ends when k >= 77; here that is iteration 94.",
+    "search J: no grid, no draw and neither +0x90 nor +0x91 are used."
+   ]
+  },
+  {
+   "text": "After iteration 94: 77 points kept.",
+   "calc": [
+    "search J step 9: the loop ends when k >= 77; here that is iteration 94.",
+    "search J: no grid, no draw and neither +0x90 nor +0x91 are used."
+   ]
+  }
+ ]
+}

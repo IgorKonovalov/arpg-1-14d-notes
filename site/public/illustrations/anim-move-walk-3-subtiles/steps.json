@@ -1,0 +1,76 @@
+{
+ "schematic_only": "schematic-only/1",
+ "steps": [
+  {
+   "text": "A toy unit: path speed 1536, a point 3 subtiles away.",
+   "calc": [
+    "movement B1: s = (p.speed * k) >> 6 = (1536 * 1024) >> 6 = 24576 with k = 0x400.",
+    "movement B1: stepX = (dirX * s) >> 12 = (4096 * 24576) >> 12 = 24576.",
+    "movement B3: a point d subtiles away takes ceil(65536 d / step) = ceil(196608 / 24576) = 8 frames."
+   ]
+  },
+  {
+   "text": "Game frame 1: moves 24576, position 57344.",
+   "calc": [
+    "movement B1: step = 24576; position = 32768 + 24576 = 57344.",
+    "movement B3: the distance left 196608 exceeds m = 24576, so the step stays."
+   ]
+  },
+  {
+   "text": "Game frame 2: moves 24576, position 81920.",
+   "calc": [
+    "movement B1: step = 24576; position = 57344 + 24576 = 81920.",
+    "movement B3: the distance left 172032 exceeds m = 24576, so the step stays."
+   ]
+  },
+  {
+   "text": "Game frame 3: moves 24576, position 106496.",
+   "calc": [
+    "movement B1: step = 24576; position = 81920 + 24576 = 106496.",
+    "movement B3: the distance left 147456 exceeds m = 24576, so the step stays."
+   ]
+  },
+  {
+   "text": "Game frame 4: moves 24576, position 131072.",
+   "calc": [
+    "movement B1: step = 24576; position = 106496 + 24576 = 131072.",
+    "movement B3: the distance left 122880 exceeds m = 24576, so the step stays."
+   ]
+  },
+  {
+   "text": "Game frame 5: moves 24576, position 155648.",
+   "calc": [
+    "movement B1: step = 24576; position = 131072 + 24576 = 155648.",
+    "movement B3: the distance left 98304 exceeds m = 24576, so the step stays."
+   ]
+  },
+  {
+   "text": "Game frame 6: moves 24576, position 180224.",
+   "calc": [
+    "movement B1: step = 24576; position = 155648 + 24576 = 180224.",
+    "movement B3: the distance left 73728 exceeds m = 24576, so the step stays."
+   ]
+  },
+  {
+   "text": "Game frame 7: moves 24576, position 204800.",
+   "calc": [
+    "movement B1: step = 24576; position = 180224 + 24576 = 204800.",
+    "movement B3: the distance left 49152 exceeds m = 24576, so the step stays."
+   ]
+  },
+  {
+   "text": "Game frame 8: moves 24576, position 229376, snapped onto the point.",
+   "calc": [
+    "movement B1: step = 24576; position = 204800 + 24576 = 229376.",
+    "movement B3: both axis distances left (24576, 0) are at most m = max(|stepX|, |stepY|) = 24576: the step becomes the remaining delta 24576 and the point is reached."
+   ]
+  },
+  {
+   "text": "The unit has reached the point after 8 frames.",
+   "calc": [
+    "movement B3: ceil(65536 * 3 / 24576) = 8 frames.",
+    "movement B1, B5: with no point left the same call runs PathStop, which snaps to the subtile centre; the step returns 2."
+   ]
+  }
+ ]
+}

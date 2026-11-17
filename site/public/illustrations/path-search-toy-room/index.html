@@ -1,0 +1,35 @@
+<!doctype html><!-- schematic-only/1: schematic-only page, our own graphics -->
+<title>path planners animation</title>
+<style>body{background:#111;color:#ddd;font:14px sans-serif;margin:0;padding:12px;text-align:center}
+img{max-width:100%;height:auto;image-rendering:pixelated;background:#000}button{font-size:16px;margin:4px;padding:4px 12px}
+#cap{max-width:900px;margin:8px auto;min-height:2em;font-weight:bold}#s{width:60%}
+#calc{max-width:900px;margin:0 auto;text-align:left;font:13px/1.5 monospace;background:#1b1b22;padding:8px 14px;
+border-radius:6px}#calc li{margin:2px 0}#help{max-width:900px;margin:8px auto;text-align:left;font-size:13px;color:#aaa}
+#help summary{cursor:pointer;color:#ddd}</style>
+<img id=f width=960 height=500 alt="frame"><div>
+<button id=p>prev</button><button id=pl>play</button><button id=n>next</button>
+<input id=s type=range min=0 value=0></div><div id=cap></div>
+<div id=calc><b>Calculations for this step</b><ol id=cl></ol></div>
+<details id=help><summary>How to read this</summary><ul>
+<li>The grid is a toy room of 16 by 9 subtiles drawn for this page. Dark cells are walls; the cells outside the room count as walls too.</li>
+<li>Search: the walk runs depth first under a bound on the cost; if it finds no route the bound grows by 5 and it runs again over the same cell store.</li>
+<li>Random walk and spiral: both ignore the grid. The walk keeps its first direction plus or minus one or straight; the spiral grows around the start.</li>
+<li>Every value is computed by our model for the toy numbers given, not observed in the game.</li></ul></details>
+<script>
+var caps=[{"text": "The toy room: start, target, the octile length 22 and the bounds the passes will use.", "calc": ["search A3: PathOctile = 2 max(dx, dy) + min(dx, dy) = 2 * 11 + 0 = 22.", "search L2: first = h0 = 22, last = max(first, b1C) = 33; each pass adds 5 to the bound."]}, {"text": "Pass 1: the walk runs straight toward the target until the wall.", "calc": ["search L3: step 6 takes n = point + step[dir]; step 8 marks a blocked unseen cell 1 and tries the next direction.", "search L3: the first try keeps the parent's direction in rows 0, 1, 2, 6 and 7."]}, {"text": "Pass 1 at bound 22: no route.", "calc": ["search L3: tries = 28 (a refused try and a passing one both count), nodes = 5.", "search L2: first = first + 5 = 27 for the next pass."]}, {"text": "Pass 2 at bound 27: no route.", "calc": ["search L3: tries = 308 (a refused try and a passing one both count), nodes = 6.", "search L2: first = first + 5 = 32 for the next pass."]}, {"text": "Pass 3 at bound 32: the target is reached.", "calc": ["search L3: node.pt = target ends the walk; tries = 113, nodes = 14."]}, {"text": "The route reduced to its corners.", "calc": ["search L2 Reduce: points = (3, 4), (7, 0), (11, 0), (13, 2), (13, 4).", "search L2: fewer than 2 points returns 0; more than 77 returns 0."]}],i=0,t=null,f=document.getElementById('f'),s=document.getElementById('s');
+s.max=caps.length-1;
+function show(k){i=Math.max(0,Math.min(caps.length-1,k));f.setAttribute('src','frame-'+('000'+i).slice(-3)+'.png');
+s.value=i;document.getElementById('cap').textContent=(i+1)+'/'+caps.length+'  '+caps[i].text;
+var cl=document.getElementById('cl');cl.innerHTML='';caps[i].calc.forEach(function(c){var li=document.createElement('li');
+li.textContent=c;cl.appendChild(li);});}
+function stop(){if(t){clearInterval(t);t=null;document.getElementById('pl').textContent='play';}}
+document.getElementById('p').onclick=function(){stop();show(i-1)};
+document.getElementById('n').onclick=function(){stop();show(i+1)};
+document.getElementById('pl').onclick=function(){if(t){stop();return;}
+ if(i>=caps.length-1)show(0);document.getElementById('pl').textContent='pause';
+ t=setInterval(function(){if(i>=caps.length-1)stop();else show(i+1)},900)};
+s.oninput=function(){stop();show(+s.value)};
+document.onkeydown=function(e){if(e.key=='ArrowRight'){stop();show(i+1)}else if(e.key=='ArrowLeft'){stop();show(i-1)}
+ else if(e.key==' '){e.preventDefault();document.getElementById('pl').click()}};
+show(0);
+</script>

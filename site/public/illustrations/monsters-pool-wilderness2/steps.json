@@ -1,0 +1,68 @@
+{
+ "schematic_only": "schematic-only/1",
+ "steps": [
+  {
+   "text": "The monster pool of Act 1 - Wilderness 2 in normal for an illustrative game seed.",
+   "calc": [
+    "pool.md A: the game seed starts as Init(12648430) = {00c0ffee:0000029a} (illustrative); the pool is a function of that seed and the difficulty only.",
+    "pool.md B, C: level 3 (Act 1 - Wilderness 2), difficulty normal, candidates from the mon slots."
+   ]
+  },
+  {
+   "text": "The game seed steps once and the region seed is made from its low word.",
+   "calc": [
+    "A2: Step(game.seed): {00c0ffee:0000029a} -> {a28ed4c0:00507fab} (the first draw after the seeds are initialised).",
+    "A3: R = Init(game.seed.low) = {a28ed4c0:0000029a}.",
+    "A: R is a local of the region init; nothing else draws from it."
+   ]
+  },
+  {
+   "text": "Levels 1 to 2 are built first on the same region seed.",
+   "calc": [
+    "B3: for id in 1 ..< levelCount: the pool of the level, then its appearance sets, all from R.",
+    "level 1: 0 draws, seed after {a28ed4c0:0000029a}.",
+    "level 2: 30 draws, seed after {59291ff3:1788ab0e}."
+   ]
+  },
+  {
+   "text": "Act 1 - Wilderness 2: 4 candidates and 3 picks.",
+   "calc": [
+    "C1: count = the number of leading filled mon slots = 4; candidates = 28 brute1, 43 corruptrogue1, 58 fallenshaman1, 165 cr_lancer1.",
+    "C2: bound = min(NumMon, 13, count) = min(3, 13, 4) = 3.",
+    "C6: rangedspawn = 0."
+   ]
+  },
+  {
+   "text": "Pick 1 takes corruptrogue1 from 4 candidates.",
+   "calc": [
+    "C5: i = Range(R, 4) = 1 (the draw's low word 706277645 mod 4).",
+    "C5: c = cand[1] = 43 corruptrogue1; C7: slot 1 removed, count = 3.",
+    "C8: isSpawn set: entry appended, rarity 2; R after = {2a18f10d:25302f75}."
+   ]
+  },
+  {
+   "text": "Pick 2 takes fallenshaman1 from 3 candidates.",
+   "calc": [
+    "C5: i = Range(R, 3) = 1 (the draw's low word 1678179958 mod 3).",
+    "C5: c = cand[1] = 58 fallenshaman1; C7: slot 1 removed, count = 2.",
+    "C8: isSpawn set: entry appended, rarity 2; R after = {6406fe76:118efae8}."
+   ]
+  },
+  {
+   "text": "Pick 3 takes brute1 from 2 candidates.",
+   "calc": [
+    "C5: i = Range(R, 2) = 0 (the draw's low word 2773953462 mod 2).",
+    "C5: c = cand[0] = 28 brute1; C7: slot 0 removed, count = 1.",
+    "C8: isSpawn set: entry appended, rarity 1; R after = {a5572bb6:29b87b56}."
+   ]
+  },
+  {
+   "text": "The pool of Act 1 - Wilderness 2: corruptrogue1, fallenshaman1, brute1.",
+   "calc": [
+    "C8: entries 43 corruptrogue1 (rarity 2), 58 fallenshaman1 (rarity 2), 28 brute1 (rarity 1); raritySum = 5 (u8).",
+    "level 3: 21 draws in all, 3 for the picks and 18 for the appearance sets (pool D, not shown).",
+    "seed after level 3 = {90cb8bb6:3f7bd5fb}; the next level's first draw continues from it."
+   ]
+  }
+ ]
+}

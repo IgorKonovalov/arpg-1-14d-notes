@@ -1,0 +1,18 @@
+{
+ "marker": "schematic-only/1",
+ "args": [
+  "--mode",
+  "spiral"
+ ],
+ "files": {
+  "frame-000.png": "31e94fc12b1555e2c8d780551882d1cb0ec80d3629394d1c1da8e14fb94ba560",
+  "frame-001.png": "2ccff40e9c4ff432eea2159bdef3b56dccb29a5317163cebf9a8061b1191053b",
+  "frame-002.png": "9e518c679806e9471f92a695b17f97757940eceb119bfd69b3462add141b239b",
+  "frame-003.png": "b22b00136643bd9ea94f41c2fd74f388f6f653d9198857def4289e2d31dfbf7b",
+  "frame-004.png": "90190381b90c49c9e04f851a493f0da0967aa1ea12af364a1e33dbcb2ebbd945",
+  "frame-005.png": "4c050b7416bb4d700ea91df9e4466becfe7237f2a5b11c50aa0c35dc3c9163d7",
+  "index.html": "dbbd39914ac7cd7cbdd278fd6aab3b851ab4fa342a1652e9566054c00b1b5365",
+  "path.gif": "a1e01f2465906a17e4ced319c91f77be604bedeef6e6d9e3fe22ddf0e6e19fab",
+  "steps.json": "9f1954f39d347c3a0ad06bcc774d846cd6e0f18f2bdb8341af432e27dd46a496"
+ }
+}

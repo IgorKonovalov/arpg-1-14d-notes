@@ -419,6 +419,15 @@ sequenceDiagram
   M->>M: chill
 ```
 
+On a hit, open wounds and crushing blow run newest registered first, so which of the two runs first depends on the
+order in which the attacker's handlers were registered; for the logged characters open wounds ran first.
+
+![Animation: combat-melee-hit-toy](/illustrations/combat-melee-hit-toy/combat.gif)
+
+[Step through combat-melee-hit-toy](../../illustrations/combat-melee-hit-toy/index.html)
+
+One melee swing of an invented player at an invented monster, every number a toy input, with its draws in order on the two seeds. The attacker's seed draws the to-hit first, a value below 100 against a chance worked out from attack rating, defence and the two levels (to-hit § A); on a hit the monster's seed draws its block, and an avoidance chance of 0 draws nothing (§ C). The damage is built whatever the to-hit gave: the physical roll, the deadly strike test (drawn because its chance is above 0) and a draw over a range of 1 that is made every time (damage § A, B). A hit that is not blocked is delivered: the stat events run newest registered first, here open wounds then crushing blow, each drawing only when its chance is above 0 (§ E), and the life falls by the packet's total after the crushing blow's share (delivery § B). Not shown: elemental damage, leech, stun, cold, the reductions and the boundary draws. Seed: illustrative, an input of our own. Every value shown is computed by our model, not observed in the game.
+
 For a monster's attack on the player, the monster's seed draws its elemental groups when the attack mode starts, then
 at the hit frame the to-hit and, on a hit only, the build with `Crit` last; the player's seed draws its defence rolls
 and the chill. Each draw happens only under the condition its section gives.

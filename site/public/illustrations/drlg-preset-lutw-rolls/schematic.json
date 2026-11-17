@@ -1,0 +1,17 @@
+{
+ "marker": "schematic-only/1",
+ "args": [
+  "12648430",
+  "--preset",
+  "lutw"
+ ],
+ "files": {
+  "frame-000.png": "2d8f45238cfcab5b24c717de947879b9d7f8ca84c845efbd0e549644636523ca",
+  "frame-001.png": "0b1cad8f48dd5332c63a3c4d2b72368ef1e60830acd1d8fbd556c3e8ae0a807d",
+  "frame-002.png": "9700b37b308066ec8160f831d0d5a59d0a6cdd563b09ff21cd8faa39e502c4ca",
+  "frame-003.png": "54673e5fa6178af4ceedd90b30d9337db0a2c0e2271c54475ea7d9fc02c05d4d",
+  "index.html": "13eada259571a62dba98d1c29a5a10ac0a208dc7d0586ecb8ad3137d29f21256",
+  "preset.gif": "86e9224323575e8b95e40a3db278a9d12b5993d0222f29f340185a30bc4bea28",
+  "steps.json": "e56a840077aa2fa9b8d273dfb13d50c38211d3036975151ef40a999adc0e84c7"
+ }
+}

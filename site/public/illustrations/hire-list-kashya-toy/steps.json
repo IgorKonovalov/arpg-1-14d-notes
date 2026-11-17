@@ -1,0 +1,187 @@
+{
+ "schematic_only": "schematic-only/1",
+ "steps": [
+  {
+   "text": "The hire list of Kashya in normal for player level 30, from the store seed {12345:666} (illustrative).",
+   "calc": [
+    "D3: the seller's Normal row gives the name range 3411..3451, n = 41 names.",
+    "D4, D5: one build is n + 10 = 51 draws on the store seed S (n seeds, then 10 picks).",
+    "E2: the entries roll on the act's rows (act 1) and the game's difficulty (normal)."
+   ]
+  },
+  {
+   "text": "Every one of the 41 names takes one step of the store seed and keeps the low word as its own seed.",
+   "calc": [
+    "D4: for i in 0..40: Step(S); t[i].seed = S.low (draw i + 1 on S).",
+    "name 3411 gets seed 22752887, name 3412 gets 2337785264, name 3413 gets 1617882871; the last, name 3451, gets 3083776827."
+   ]
+  },
+  {
+   "text": "Pick 1: draw 42 gives 24, listed.",
+   "calc": [
+    "D5: u = Range(S, 41) = 24 (draw 42 on S); S = {380621515:1286219783}.",
+    "D5: t[24] is not listed or hired: listed = 1.."
+   ]
+  },
+  {
+   "text": "Pick 2: draw 43 gives 29, listed.",
+   "calc": [
+    "D5: u = Range(S, 41) = 29 (draw 43 on S); S = {3213594174:158754329}.",
+    "D5: t[29] is not listed or hired: listed = 1.."
+   ]
+  },
+  {
+   "text": "Pick 3: draw 44 gives 19, listed.",
+   "calc": [
+    "D5: u = Range(S, 41) = 19 (draw 44 on S); S = {2681322447:1340365607}.",
+    "D5: t[19] is not listed or hired: listed = 1.."
+   ]
+  },
+  {
+   "text": "Pick 4: draw 45 gives 10, listed.",
+   "calc": [
+    "D5: u = Range(S, 41) = 10 (draw 45 on S); S = {1040732530:1118359132}.",
+    "D5: t[10] is not listed or hired: listed = 1.."
+   ]
+  },
+  {
+   "text": "Pick 5: draw 46 gives 8, listed.",
+   "calc": [
+    "D5: u = Range(S, 41) = 8 (draw 46 on S); S = {3742079766:434081596}.",
+    "D5: t[8] is not listed or hired: listed = 1.."
+   ]
+  },
+  {
+   "text": "Pick 6: draw 47 gives 11, listed.",
+   "calc": [
+    "D5: u = Range(S, 41) = 11 (draw 47 on S); S = {1410221866:1560792915}.",
+    "D5: t[11] is not listed or hired: listed = 1.."
+   ]
+  },
+  {
+   "text": "Pick 7: draw 48 gives 27, listed.",
+   "calc": [
+    "D5: u = Range(S, 41) = 27 (draw 48 on S); S = {2189963941:588192779}.",
+    "D5: t[27] is not listed or hired: listed = 1.."
+   ]
+  },
+  {
+   "text": "Pick 8: draw 49 gives 5, listed.",
+   "calc": [
+    "D5: u = Range(S, 41) = 5 (draw 49 on S); S = {2952324356:913417248}.",
+    "D5: t[5] is not listed or hired: listed = 1.."
+   ]
+  },
+  {
+   "text": "Pick 9: draw 50 gives 22, listed.",
+   "calc": [
+    "D5: u = Range(S, 41) = 22 (draw 50 on S); S = {1793335348:1231391960}.",
+    "D5: t[22] is not listed or hired: listed = 1.."
+   ]
+  },
+  {
+   "text": "Pick 10: draw 51 gives 28, listed.",
+   "calc": [
+    "D5: u = Range(S, 41) = 28 (draw 51 on S); S = {1296536796:747986489}.",
+    "D5: t[28] is not listed or hired: listed = 1.."
+   ]
+  },
+  {
+   "text": "Entry 1, name 3416: hireling id 0, level 28, price 475 gold.",
+   "calc": [
+    "E1: s = Init(2400624880) = {2400624880:666}; E2: 2 rows share the act and difficulty.",
+    "E3: draw 1 = Range(s, 2) = 0, the row's id is 0.",
+    "E4: draw 2, low word 3585915648, mod 5 = 3; L = 30 - 5 + 3 = 28.",
+    "E5: level 28, price 475 gold."
+   ]
+  },
+  {
+   "text": "Entry 2, name 3419: hireling id 0, level 25, price 430 gold.",
+   "calc": [
+    "E1: s = Init(2190598022) = {2190598022:666}; E2: 2 rows share the act and difficulty.",
+    "E3: draw 1 = Range(s, 2) = 0, the row's id is 0.",
+    "E4: draw 2, low word 970632910, mod 5 = 0; L = 30 - 5 + 0 = 25.",
+    "E5: level 25, price 430 gold."
+   ]
+  },
+  {
+   "text": "Entry 3, name 3421: hireling id 0, level 27, price 460 gold.",
+   "calc": [
+    "E1: s = Init(1341155594) = {1341155594:666}; E2: 2 rows share the act and difficulty.",
+    "E3: draw 1 = Range(s, 2) = 0, the row's id is 0.",
+    "E4: draw 2, low word 2200967712, mod 5 = 2; L = 30 - 5 + 2 = 27.",
+    "E5: level 27, price 460 gold."
+   ]
+  },
+  {
+   "text": "Entry 4, name 3422: hireling id 1, level 27, price 690 gold.",
+   "calc": [
+    "E1: s = Init(1019784681) = {1019784681:666}; E2: 2 rows share the act and difficulty.",
+    "E3: draw 1 = Range(s, 2) = 1, the row's id is 1.",
+    "E4: draw 2, low word 3345341787, mod 5 = 2; L = 30 - 5 + 2 = 27.",
+    "E5: level 27, price 690 gold."
+   ]
+  },
+  {
+   "text": "Entry 5, name 3430: hireling id 0, level 27, price 460 gold.",
+   "calc": [
+    "E1: s = Init(1918693794) = {1918693794:666}; E2: 2 rows share the act and difficulty.",
+    "E3: draw 1 = Range(s, 2) = 0, the row's id is 0.",
+    "E4: draw 2, low word 825362672, mod 5 = 2; L = 30 - 5 + 2 = 27.",
+    "E5: level 27, price 460 gold."
+   ]
+  },
+  {
+   "text": "Entry 6, name 3433: hireling id 1, level 28, price 712 gold.",
+   "calc": [
+    "E1: s = Init(2925900847) = {2925900847:666}; E2: 2 rows share the act and difficulty.",
+    "E3: draw 1 = Range(s, 2) = 1, the row's id is 1.",
+    "E4: draw 2, low word 1142344573, mod 5 = 3; L = 30 - 5 + 3 = 28.",
+    "E5: level 28, price 712 gold."
+   ]
+  },
+  {
+   "text": "Entry 7, name 3435: hireling id 1, level 28, price 712 gold.",
+   "calc": [
+    "E1: s = Init(945430739) = {945430739:666}; E2: 2 rows share the act and difficulty.",
+    "E3: draw 1 = Range(s, 2) = 1, the row's id is 1.",
+    "E4: draw 2, low word 3152976583, mod 5 = 3; L = 30 - 5 + 3 = 28.",
+    "E5: level 28, price 712 gold."
+   ]
+  },
+  {
+   "text": "Entry 8, name 3438: hireling id 1, level 29, price 735 gold.",
+   "calc": [
+    "E1: s = Init(2941688313) = {2941688313:666}; E2: 2 rows share the act and difficulty.",
+    "E3: draw 1 = Range(s, 2) = 1, the row's id is 1.",
+    "E4: draw 2, low word 1297547574, mod 5 = 4; L = 30 - 5 + 4 = 29.",
+    "E5: level 29, price 735 gold."
+   ]
+  },
+  {
+   "text": "Entry 9, name 3439: hireling id 1, level 27, price 690 gold.",
+   "calc": [
+    "E1: s = Init(591384981) = {591384981:666}; E2: 2 rows share the act and difficulty.",
+    "E3: draw 1 = Range(s, 2) = 1, the row's id is 1.",
+    "E4: draw 2, low word 269855137, mod 5 = 2; L = 30 - 5 + 2 = 27.",
+    "E5: level 27, price 690 gold."
+   ]
+  },
+  {
+   "text": "Entry 10, name 3440: hireling id 1, level 29, price 735 gold.",
+   "calc": [
+    "E1: s = Init(442495885) = {442495885:666}; E2: 2 rows share the act and difficulty.",
+    "E3: draw 1 = Range(s, 2) = 1, the row's id is 1.",
+    "E4: draw 2, low word 3843205824, mod 5 = 4; L = 30 - 5 + 4 = 29.",
+    "E5: level 29, price 735 gold."
+   ]
+  },
+  {
+   "text": "The finished list of 10 names took 51 draws on the store seed; the store seed ends at {1296536796:747986489}.",
+   "calc": [
+    "D4: n + 10 = 51 draws; S = {1296536796:747986489}.",
+    "E: entries (name, id, level, price): 3416, 0, 28, 475; 3419, 0, 25, 430; 3421, 0, 27, 460; 3422, 1, 27, 690; 3430, 0, 27, 460; 3433, 1, 28, 712; 3435, 1, 28, 712; 3438, 1, 29, 735; 3439, 1, 27, 690; 3440, 1, 29, 735."
+   ]
+  }
+ ]
+}

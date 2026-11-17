@@ -325,6 +325,12 @@ shorter on each axis. When the step would reach or pass the next path point it i
 that subtile (the snap), so a point `d` subtiles away takes the ceiling of `65536 d / step` frames: 8 frames for 3
 subtiles walking, 6 running, 3 knocked back.
 
+![Animation: anim-move-walk-3-subtiles](/illustrations/anim-move-walk-3-subtiles/move.gif)
+
+[Step through anim-move-walk-3-subtiles](../../illustrations/anim-move-walk-3-subtiles/index.html)
+
+A unit with path speed 1536, a player's walk in the worked example, and one path point three subtiles away along an axis. Each game frame the step is (D × S) >> 12 with S = (speed × 1024) >> 6 and D = 4096 on the axis row, here 24576 in 1/65536 of a subtile. The unit starts at the centre of subtile 0, position 32768. On the eighth frame the distance left is not more than the step, so the step becomes the distance left and the unit lands on the point; the frames taken are the ceiling of 65536 × 3 ÷ 24576, which is 8 (movement § B1, B3). With no point left, the path stops in that same frame (§ B5). Not shown: the collision walk, the diagonal rows and replans. The run and knockback speeds, 2304 and 4096, give 6 and 3 frames the same way. The picture takes no seed. Every value shown is computed by our model, not observed in the game.
+
 When the step enters a new subtile the collision walk tests each subtile it crosses (the test itself is the collision
 grid's: [levels](../../world/levels/)); a blocked subtile stops the unit at the centre of the last free one, and a monster with a
 re-plan flag plans again. After ten crossings in one step the rest is taken unchecked. The step and the snap were

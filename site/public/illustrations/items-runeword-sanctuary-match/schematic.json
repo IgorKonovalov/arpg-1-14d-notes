@@ -1,0 +1,22 @@
+{
+ "marker": "schematic-only/1",
+ "args": [
+  "--base",
+  "lrg",
+  "--runes",
+  "ko,ko,mal"
+ ],
+ "files": {
+  "frame-000.png": "330529d49424b4ebca5de4caf17c00b58ebaf1a2f9f8b1e910230b55509b50ea",
+  "frame-001.png": "c615cf3bc5b773c329c1daf4e6e39621ef7fb23d2d8c39f0339e3fc13c1b4aa5",
+  "frame-002.png": "838ecd98c6d0a2b6a87c83135493979d5796cf95ed95e973f2956a7ccd2dcb01",
+  "frame-003.png": "7e68e09a28e217321865cbbde5de9ded0fc83a94017e868a91d729ddcdd8e474",
+  "frame-004.png": "2c944950080b1b6188374d7febbb3dfb59b93feeb3d3481162dcac74d6d5fbc5",
+  "frame-005.png": "34a90b3d0c5fdf3b407184ce7d626a7fd7f036ceb01ae00dd87d6fc7027cc523",
+  "frame-006.png": "2d47c74cb8cc8f826ab2d8a4652166a201cb3ee5e099703282e0876ec25e4e2a",
+  "frame-007.png": "c0bcb04fe2f21ca397ce1276e52fa1deaaf7d104c79c72d746633a68942aad01",
+  "index.html": "cb9d2f3919d7f90f4ee5ea073866d59b4eeaf1ff5f661fede5c8e4ad362bd2c4",
+  "runeword.gif": "896919fb4cf2a592f753b8706d89644dd7b5b137fd5d48a312c3c76faf9f0614",
+  "steps.json": "172394bd282fdadce3eca9d2d06f8812b64bfbc943d92a3cb15030d3227f8ca3"
+ }
+}

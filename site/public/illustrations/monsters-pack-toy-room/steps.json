@@ -1,0 +1,115 @@
+{
+ "schematic_only": "schematic-only/1",
+ "steps": [
+  {
+   "text": "A normal group of class swarm1 on a toy room: the leader's point, then each member's cell.",
+   "calc": [
+    "spawn.md F2: SpawnGroup(room, box, class, min = 4, max = 8): SpawnPosPick, the leader, the size draw, then k members.",
+    "class swarm1 (MonStats row 87): MinGrp 4, MaxGrp 8, footprint size 2, spawn collision 0, mask 0x3C01.",
+    "illustrative: room seed and leader seed each Init(12648430); WarpDist 100; the room, its walls and the warp point are the toy's."
+   ]
+  },
+  {
+   "text": "Try 1 is point (112, 60); it is too close to the warp point.",
+   "calc": [
+    "H1: x = 106 + Range(room.seed, 29) = 112, y = 56 + Range(room.seed, 9) = 60 (2 room draws).",
+    "H1: NearWarpTest: squared distance 52 < WarpDist 100, so the try continues with no probe."
+   ]
+  },
+  {
+   "text": "Try 2 is point (129, 56); the probe refuses it.",
+   "calc": [
+    "H1: x = 106 + Range(room.seed, 29) = 129, y = 56 + Range(room.seed, 9) = 56 (2 room draws).",
+    "H1: NearWarpTest: squared distance 269 >= WarpDist 100, so the probe runs: MonSpawnTry radius -1, flags 0x01 (3 room draws).",
+    "H2: the centre (129, 56) is tested once: collision value 0x0001, non-zero, refused."
+   ]
+  },
+  {
+   "text": "Try 3 is point (126, 58); the probe refuses it.",
+   "calc": [
+    "H1: x = 106 + Range(room.seed, 29) = 126, y = 56 + Range(room.seed, 9) = 58 (2 room draws).",
+    "H1: NearWarpTest: squared distance 164 >= WarpDist 100, so the probe runs: MonSpawnTry radius -1, flags 0x01 (3 room draws).",
+    "H2: the centre (126, 58) is tested once: collision value 0x0001, non-zero, refused."
+   ]
+  },
+  {
+   "text": "Try 4 is point (106, 63); the probe finds it free.",
+   "calc": [
+    "H1: x = 106 + Range(room.seed, 29) = 106, y = 56 + Range(room.seed, 9) = 63 (2 room draws).",
+    "H1: NearWarpTest: squared distance 109 >= WarpDist 100, so the probe runs: MonSpawnTry radius -1, flags 0x01 (3 room draws).",
+    "H2: the centre (106, 63) is tested once: collision value 0x0000, 0, taken."
+   ]
+  },
+  {
+   "text": "The leader is placed at (106, 63) and marks its centre.",
+   "calc": [
+    "H1: MonSpawnTry radius -1, flags 0: 3 room draws, the centre tested once: free; the unit is created.",
+    "H4: a created monster blocks through its 0x1000 cells, its centre for size 2.",
+    "room seed after the leader = {86400c8b:0bf50343}."
+   ]
+  },
+  {
+   "text": "The leader's seed draws the group size: 6 members after the leader.",
+   "calc": [
+    "F2: k = (min - 1) + Range(leader.seed, max - min + 1) = 3 + 3 = 6.",
+    "F2: the draw is on the leader's unit seed, after any MonStats minions (this class has none).",
+    "leader seed after = {a28ed4c0:00507fab}."
+   ]
+  },
+  {
+   "text": "Member 1: 1 cell walked, 0 outside the box, 0 blocked; taken at (107, 60).",
+   "calc": [
+    "F2, H2: MonSpawnTry near the leader (106, 63), with the group's box, radius 3 (rings s = 3, 6, 9): each ring has 3 room draws, then a walk from a random cell that moves before it tests.",
+    "H2: a cell outside the box rectangle is skipped with no test; the toy has one region, so the region-id test passes; a cell whose plus footprint gives a non-zero value under mask 0x3C01 is refused.",
+    "4 room draws; room seed {86400c8b:0bf50343} before, {c4623cf3:65b1bdcb} after."
+   ]
+  },
+  {
+   "text": "Member 2: 17 cells walked, 16 outside the box, 0 blocked; taken at (105, 60).",
+   "calc": [
+    "F2, H2: MonSpawnTry near the leader (106, 63), with the group's box, radius 3 (rings s = 3, 6, 9): each ring has 3 room draws, then a walk from a random cell that moves before it tests.",
+    "H2: a cell outside the box rectangle is skipped with no test; the toy has one region, so the region-id test passes; a cell whose plus footprint gives a non-zero value under mask 0x3C01 is refused.",
+    "4 room draws; room seed {c4623cf3:65b1bdcb} before, {35e2d3be:59d49c3e} after."
+   ]
+  },
+  {
+   "text": "Member 3: 2 cells walked, 0 outside the box, 1 blocked; taken at (109, 60).",
+   "calc": [
+    "F2, H2: MonSpawnTry near the leader (106, 63), with the group's box, radius 3 (rings s = 3, 6, 9): each ring has 3 room draws, then a walk from a random cell that moves before it tests.",
+    "H2: a cell outside the box rectangle is skipped with no test; the toy has one region, so the region-id test passes; a cell whose plus footprint gives a non-zero value under mask 0x3C01 is refused.",
+    "4 room draws; room seed {35e2d3be:59d49c3e} before, {f3b1deb1:6796294c} after."
+   ]
+  },
+  {
+   "text": "Member 4: 16 cells walked, 9 outside the box, 6 blocked; taken at (109, 62).",
+   "calc": [
+    "F2, H2: MonSpawnTry near the leader (106, 63), with the group's box, radius 3 (rings s = 3, 6, 9): each ring has 3 room draws, then a walk from a random cell that moves before it tests.",
+    "H2: a cell outside the box rectangle is skipped with no test; the toy has one region, so the region-id test passes; a cell whose plus footprint gives a non-zero value under mask 0x3C01 is refused.",
+    "4 room draws; room seed {f3b1deb1:6796294c} before, {f3e40908:5f9f3428} after."
+   ]
+  },
+  {
+   "text": "Member 5: 49 cells walked, 40 outside the box, 8 blocked; taken at (105, 57).",
+   "calc": [
+    "F2, H2: MonSpawnTry near the leader (106, 63), with the group's box, radius 3 (rings s = 3, 6, 9): each ring has 3 room draws, then a walk from a random cell that moves before it tests.",
+    "H2: a cell outside the box rectangle is skipped with no test; the toy has one region, so the region-id test passes; a cell whose plus footprint gives a non-zero value under mask 0x3C01 is refused.",
+    "8 room draws; room seed {f3e40908:5f9f3428} before, {047110bf:378ca8fe} after."
+   ]
+  },
+  {
+   "text": "Member 6: 2 cells walked, 0 outside the box, 1 blocked; taken at (109, 64).",
+   "calc": [
+    "F2, H2: MonSpawnTry near the leader (106, 63), with the group's box, radius 3 (rings s = 3, 6, 9): each ring has 3 room draws, then a walk from a random cell that moves before it tests.",
+    "H2: a cell outside the box rectangle is skipped with no test; the toy has one region, so the region-id test passes; a cell whose plus footprint gives a non-zero value under mask 0x3C01 is refused.",
+    "4 room draws; room seed {047110bf:378ca8fe} before, {4450eebd:69383ab0} after."
+   ]
+  },
+  {
+   "text": "The group: the leader and 6 members, after 48 room draws.",
+   "calc": [
+    "room draws: 48 in all; room seed after = {4450eebd:69383ab0}.",
+    "leader (106, 63); member 1 (107, 60); member 2 (105, 60); member 3 (109, 60); member 4 (109, 62); member 5 (105, 57); member 6 (109, 64)."
+   ]
+  }
+ ]
+}

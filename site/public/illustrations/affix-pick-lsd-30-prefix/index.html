@@ -1,0 +1,36 @@
+<!doctype html><!-- schematic-only/1: schematic-only page, our own graphics -->
+<title>affix pick animation</title>
+<style>body{background:#111;color:#ddd;font:14px sans-serif;margin:0;padding:12px;text-align:center}
+img{max-width:100%;height:auto;image-rendering:pixelated;background:#000}button{font-size:16px;margin:4px;padding:4px 12px}
+#cap{max-width:900px;margin:8px auto;min-height:2em;font-weight:bold}#s{width:60%}
+#calc{max-width:900px;margin:0 auto;text-align:left;font:13px/1.5 monospace;background:#1b1b22;padding:8px 14px;
+border-radius:6px}#calc li{margin:2px 0}#help{max-width:900px;margin:8px auto;text-align:left;font-size:13px;color:#aaa}
+#help summary{cursor:pointer;color:#ddd}</style>
+<img id=f width=960 height=500 alt="frame"><div>
+<button id=p>prev</button><button id=pl>play</button><button id=n>next</button>
+<input id=s type=range min=0 value=0></div><div id=cap></div>
+<div id=calc><b>Calculations for this step</b><ol id=cl></ol></div>
+<details id=help><summary>How to read this</summary><ul>
+<li>The top row names the steps of one pick: the affix level (alvl), draw 1, the filter, the weights and draw 2.</li>
+<li>Draw 1: the low bit of the first step of the item seed decides whether the pick rolls at all.</li>
+<li>Filter: counts only, one line per test in the game's order, with the rows each test refused and the rows left. No row of the table is listed.</li>
+<li>Weights and draw 2: the strip runs over the total weight in table order; the listed candidates and the winner are bars as wide as their weights, and each run of the other candidates is one hatched block. Draw 2 picks a point along it, and the candidate under the point wins. At most five candidates are listed, by affix id and weight.</li>
+<li>Every value is computed by our model of the pick for the illustrative inputs given, not observed in the game.</li></ul></details>
+<script>
+var caps=[{"text": "One prefix pick for a magic item, base lsd, item level 30, on the item seed {12345:666} (illustrative).", "calc": ["affixes.md C: PickMagicAffix(item, needSpawnable = 1, mustRoll = 0, applyProps = 0, isPrefix = 1, forcedId = 0, autoGroup = 0).", "base lsd: qlvl = 20, magic lvl = 0; item version 101 (expansion), quality 4, no affix on the item."]}, {"text": "The affix level of base lsd at item level 30 is 20.", "calc": ["B1: i = max(ilvl, qlvl) = max(30, 20) = 30.", "B3: magic lvl 0, h = qlvl / 2 = 10; i = 30 < 99 - h = 89, so alvl = i - h = 20.", "B4: clamped to 1..99, alvl = 20."]}, {"text": "Draw 1: the low word is 22752887, bit 0 is 1, so the pick rolls.", "calc": ["C2: Step(item.seed); low = 22752887; seed = {22752887:5149}.", "C2: (low & 1) = 1."]}, {"text": "The filter leaves 32 of 669 rows as candidates, with total weight 150.", "calc": ["C4: the prefix block has 669 rows; alvl = 20.", "C4A: spawnable flag is 0: 82 refused, 587 left.", "C4B: row needs version 100 and item is below it: 0 refused, 587 left.", "C4C: row level above alvl or maxlevel below it: 358 refused, 229 left.", "C4D: rare flag 0 on a rare item: 0 refused, 229 left.", "C4E: item type test fails: 182 refused, 47 left.", "C4F: automagic pick only: another group: 0 refused, 47 left.", "C4G: frequency is 0: 15 refused, 32 left.", "C4H: class-specific row of another class: 0 refused, 32 left.", "C4I: group already on the item: 0 refused, 32 left.", "C4: n = 32 candidates, W = 150 (the weight is the row's frequency; frequency * level on a base with a magic lvl)."]}, {"text": "32 candidates, total weight 150.", "calc": ["C4: the weight is the row's frequency.", "the first 5 candidates (merged affix id: weight): 933: 9, 934: 9, 935: 8, 936: 8, 937: 7.", "C4: n = 32, W = 150, the sum of the 32 weights."]}, {"text": "Draw 2 is 93; the walk stops at candidate 12 of 32, affix id 1005.", "calc": ["C7: x = Range(item.seed, W + 1) = Range(151) = 93; seed = {2337785264:9490055}.", "C7: the running subtraction first goes below 0 at candidate 12 (weights before it: 86, its own: 9).", "C7: the id returned is 1005."]}, {"text": "The pick returns affix id 1005 after two draws on the item seed.", "calc": ["C8: return id + 1 = 1005; item seed after = {2337785264:9490055}."]}],i=0,t=null,f=document.getElementById('f'),s=document.getElementById('s');
+s.max=caps.length-1;
+function show(k){i=Math.max(0,Math.min(caps.length-1,k));f.setAttribute('src','frame-'+('000'+i).slice(-3)+'.png');
+s.value=i;document.getElementById('cap').textContent=(i+1)+'/'+caps.length+'  '+caps[i].text;
+var cl=document.getElementById('cl');cl.innerHTML='';caps[i].calc.forEach(function(c){var li=document.createElement('li');
+li.textContent=c;cl.appendChild(li);});}
+function stop(){if(t){clearInterval(t);t=null;document.getElementById('pl').textContent='play';}}
+document.getElementById('p').onclick=function(){stop();show(i-1)};
+document.getElementById('n').onclick=function(){stop();show(i+1)};
+document.getElementById('pl').onclick=function(){if(t){stop();return;}
+ if(i>=caps.length-1)show(0);document.getElementById('pl').textContent='pause';
+ t=setInterval(function(){if(i>=caps.length-1)stop();else show(i+1)},900)};
+s.oninput=function(){stop();show(+s.value)};
+document.onkeydown=function(e){if(e.key=='ArrowRight'){stop();show(i+1)}else if(e.key=='ArrowLeft'){stop();show(i-1)}
+ else if(e.key==' '){e.preventDefault();document.getElementById('pl').click()}};
+show(0);
+</script>

@@ -1,0 +1,56 @@
+{
+ "schematic_only": "schematic-only/1",
+ "steps": [
+  {
+   "text": "An item with 3 sockets and the runes to insert in order.",
+   "calc": [
+    "sockets D1: kids[] = the children's class ids in socket order; s = stat 194 & 0xFF = the item's sockets = 3."
+   ]
+  },
+  {
+   "text": "Insert 1: 1 of 3 sockets filled, no match.",
+   "calc": [
+    "sockets D1: s = 3, n = 1; s != n, return none."
+   ]
+  },
+  {
+   "text": "Insert 2: 2 of 3 sockets filled, no match.",
+   "calc": [
+    "sockets D1: s = 3, n = 2; s != n, return none."
+   ]
+  },
+  {
+   "text": "The full item passes the quality, quest and count tests.",
+   "calc": [
+    "sockets D1: quality 2 is outside 4..9 (u32 (quality - 4) < 6 returns none).",
+    "sockets D1: ItemRecord quest = 0; n = 3 = s."
+   ]
+  },
+  {
+   "text": "The scan skips 41 complete rows.",
+   "calc": [
+    "sockets D2: for r in 0 ..< RunesCount: skip rows with complete = 0; while k < 6 and R.rune[k] >= 1, goto next on n < k or kids[k] != R.rune[k].",
+    "skipped before the hit, by the first differing rune: rune 1: 40, rune 2: 1."
+   ]
+  },
+  {
+   "text": "Record 41, Sanctuary: its runes equal the children in socket order.",
+   "calc": [
+    "sockets D2: R.rune = ['KO', 'KO', 'MAL']; kids = ['KO', 'KO', 'MAL']; k reaches 3 >= s = 3."
+   ]
+  },
+  {
+   "text": "The item type fits the row.",
+   "calc": [
+    "sockets D3: no excluded type of the row is the item's type.",
+    "sockets D4: ITEMS_UnitIsType(parent, itype) is true through SHIE -> SHLD, so the row is returned."
+   ]
+  },
+  {
+   "text": "The match returns Sanctuary.",
+   "calc": [
+    "sockets D2: return R (record 41, Sanctuary)."
+   ]
+  }
+ ]
+}

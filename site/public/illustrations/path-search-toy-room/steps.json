@@ -1,0 +1,46 @@
+{
+ "schematic_only": "schematic-only/1",
+ "steps": [
+  {
+   "text": "The toy room: start, target, the octile length 22 and the bounds the passes will use.",
+   "calc": [
+    "search A3: PathOctile = 2 max(dx, dy) + min(dx, dy) = 2 * 11 + 0 = 22.",
+    "search L2: first = h0 = 22, last = max(first, b1C) = 33; each pass adds 5 to the bound."
+   ]
+  },
+  {
+   "text": "Pass 1: the walk runs straight toward the target until the wall.",
+   "calc": [
+    "search L3: step 6 takes n = point + step[dir]; step 8 marks a blocked unseen cell 1 and tries the next direction.",
+    "search L3: the first try keeps the parent's direction in rows 0, 1, 2, 6 and 7."
+   ]
+  },
+  {
+   "text": "Pass 1 at bound 22: no route.",
+   "calc": [
+    "search L3: tries = 28 (a refused try and a passing one both count), nodes = 5.",
+    "search L2: first = first + 5 = 27 for the next pass."
+   ]
+  },
+  {
+   "text": "Pass 2 at bound 27: no route.",
+   "calc": [
+    "search L3: tries = 308 (a refused try and a passing one both count), nodes = 6.",
+    "search L2: first = first + 5 = 32 for the next pass."
+   ]
+  },
+  {
+   "text": "Pass 3 at bound 32: the target is reached.",
+   "calc": [
+    "search L3: node.pt = target ends the walk; tries = 113, nodes = 14."
+   ]
+  },
+  {
+   "text": "The route reduced to its corners.",
+   "calc": [
+    "search L2 Reduce: points = (3, 4), (7, 0), (11, 0), (13, 2), (13, 4).",
+    "search L2: fewer than 2 points returns 0; more than 77 returns 0."
+   ]
+  }
+ ]
+}
