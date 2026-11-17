@@ -8,9 +8,9 @@ Every map you walk in Diablo II comes out of the [DRLG](../../reference/glossary
 follows it from the top: an [act](../../reference/glossary/) is laid out, each level is built from a [seed](../../reference/glossary/) by one of three
 generators (preset, maze or outdoor), the level is cut into rooms, and each room gets its floor and wall tiles, its
 preset monsters and objects, its warps and finally a [collision grid](../../reference/glossary/) that monster spawning and object placement read.
-It restates the reviewed DRLG specs: the [overview](../../spec-drlg/overview/), room tiles,
+It restates the reviewed DRLG specs: the [overview](../../spec-drlg/overview/), [room tiles](../../spec-drlg/room-tiles/),
 [preset units](../../spec-drlg/preset/), the [maze](../../spec-drlg/maze/) and [outdoor](../../spec-drlg/outdoor/)
-generators, [warps](../../spec-drlg/warps/) and the collision grid. Where you want the
+generators, [warps](../../spec-drlg/warps/) and the [collision grid](../../spec-drlg/collision/). Where you want the
 exact order of every random [draw](../../reference/glossary/), follow the links.
 
 ## The big picture
@@ -319,7 +319,7 @@ active-room seed, which monster and object placement later draw on.
 k was predicted exactly for all 520 room activations of the first run (k from 0 to 388), and for 12 974 more
 activations in later runs. What the wall-cell unit rule makes at activation is a [preset unit](../../reference/glossary/) of the
 room, not a unit: the units it names are created later, with the room's other preset units, in the window before its
-objects and monsters (room tiles § Algorithm, step 11; see
+objects and monsters ([room tiles § Algorithm](../../spec-drlg/room-tiles/#algorithm), step 11; see
 [seed to world](../../running/seed-to-world/#c-a-room-activates)). That reading is inferred: the code that adds the preset
 unit has not been read.
 
@@ -725,7 +725,7 @@ section.
   shortest route that crosses a town (each town meets its neighbour at one gate, some camp layouts at one more opening a cell or two wide), and the two monster AIs read that
   choose a teleport point both refuse one in town; neither covers every case, so the question stays open. Also open:
     whether the lighter form of a restored minion's mods shows in a game, the wanderer spawn (the roll before it fired once in a later
-  run, spawn § K), a quest item that never expires,
+  run, [spawn § K](../../spec-monsters/spawn/#k-wanderers-the-tick)), a quest item that never expires,
   the dropped-record case for one alignment, which call sets one monster flag before the record is written, several
   save tests and restore paths, and multiplayer games, none of which a run met.
 - **Collision**: runs have now reached the
@@ -740,10 +740,10 @@ section.
 
 ## Where to read more
 
-- The specs: [overview](../../spec-drlg/overview/#algorithm), room tiles,
+- The specs: [overview](../../spec-drlg/overview/#algorithm), [room tiles](../../spec-drlg/room-tiles/#algorithm),
   [preset units](../../spec-drlg/preset/#algorithm), [maze](../../spec-drlg/maze/#algorithm),
   [outdoor](../../spec-drlg/outdoor/#algorithm), [warps](../../spec-drlg/warps/#algorithm) and
-  collision, and the [room lifecycle](../../spec-drlg/lifecycle/#algorithm). Each has a *Reimplementation notes* section listing the traps.
+  [collision](../../spec-drlg/collision/#algorithm), and the [room lifecycle](../../spec-drlg/lifecycle/#algorithm). Each has a *Reimplementation notes* section listing the traps.
 - The [glossary](../../reference/glossary/) for every term linked above.
 - Related wiki pages: [randomness](../../foundations/randomness/) (the seed tree behind the level and room seeds),
   [monsters](../monsters/) (the population pass that uses the logic boxes and the collision grid),

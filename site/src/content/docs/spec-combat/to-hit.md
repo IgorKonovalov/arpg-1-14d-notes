@@ -11,7 +11,7 @@ hit with one draw on the **attacker's** seed, then the defender's block and avoi
 seed. The result is the packet's result word, which decides whether the damage build of a monster runs and whether
 any damage is applied. Missiles reuse the chance to hit
 and the defence roll with their own flags. The event that contains this test, its seeds and its chaining are in
-[combat/overview](../overview/). Primitives (`Step`, `Range`) are those of rng; `RangeB` in our
+[combat/overview](../overview/). Primitives (`Step`, `Range`) are those of [rng](../../spec-rng/overview/); `RangeB` in our
 symbol names is the second compile of `Range` and behaves the same.
 
 ```mermaid
@@ -60,7 +60,7 @@ flowchart TD
 | State | Type | Source |
 |---|---|---|
 | attacker and defender units | `Unit`, type 0 player, 1 monster, 3 missile | the attack event |
-| attacker seed, defender seed | `Seed` at `Unit+0x20` | rng/seeds |
+| attacker seed, defender seed | `Seed` at `Unit+0x20` | [rng/seeds](../../spec-rng/seeds/) |
 | `arPct` | i32, the caller's attack-rating percent | 0 for a monster's melee test, the missile's stat 19 for its line missile [I]; stat 325 for the player's normal attack, `SKILLS_GetToHit` for a skill |
 | unit stats | i32 values of the unit's stat lists | value inputs; see the stat ids below |
 | unit mode | the unit's animation mode | 2 walk, 3 run, 6 (player); 2, 15 (monster) |
@@ -405,6 +405,6 @@ case shows the running defender: no to-hit draw, and a third of the capped block
   prevent-heal's no draw, the walking block, the shield test, `--no-shield-log`).
 - Tables: CharStats, MonStats,
   ItemStatCost, Skills.
-- Upstream: rng, [player/creation](../../spec-player/creation/) (the class's base attributes),
+- Upstream: [rng](../../spec-rng/overview/), [player/creation](../../spec-player/creation/) (the class's base attributes),
   [monsters/stats § H](../../spec-monsters/stats/#h-to-hit-and-damage-at-attack-time-reference-only) (a monster's stat 19 at
   attack time), [data/calc § G](../../spec-data/calc/#g-variables) (`SKILLS_GetToHit`).

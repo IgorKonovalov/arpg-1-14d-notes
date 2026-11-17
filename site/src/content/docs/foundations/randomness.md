@@ -8,14 +8,14 @@ Diablo II has no single global dice roller. Every random decision is a [draw](..
 that belongs to one particular thing: the game, an [act, a level, a room](../../reference/glossary/), a monster, an item. This
 page explains that [seed](../../reference/glossary/) state and how one step of it works, then follows the chain of seeds from the game's starting number down
 to the rooms and units, and shows why the same starting number always gives every level the same starting seed. It restates
-two specs: the RNG core and the seed tree.
+two specs: [the RNG core](../../spec-rng/overview/) and [the seed tree](../../spec-rng/seeds/).
 
 ## The big picture
 
 A game has two roots. The [map seed](../../reference/glossary/) feeds everything about the map: acts, levels and rooms.
 The [game seed](../../reference/glossary/) is a separate object that feeds every unit the server creates, monsters
 included. The diagram is a
-simplified copy of the seed tree algorithm; the text below is what counts.
+simplified copy of the [seed tree algorithm](../../spec-rng/seeds/#algorithm); the text below is what counts.
 
 ```mermaid
 flowchart TD
@@ -73,7 +73,7 @@ The generator on the seed 12345 with a range of 100, eight draws in a row. Init 
 ## Two roots: the map seed and the game seed
 
 When a game is created, the game picks its two roots
-(seed tree, algorithm, step 1):
+([seed tree, algorithm](../../spec-rng/seeds/#algorithm), step 1):
 
 - **With an override** (`-seed N` on the command line, or the same option in `D2.ini`): the map seed is N, and the
   game seed is `Init(N)`. No draw happens.
@@ -91,7 +91,7 @@ values is an open question.
 
 Every [act](../../reference/glossary/) starts from the same number: `Init(map seed)`. Its first draw becomes the
 [level seed base](../../reference/glossary/), the value every level of that act is built from
-(seed tree, algorithm, step 3). Because all acts share the map seed, all acts
+([seed tree, algorithm](../../spec-rng/seeds/#algorithm), step 3). Because all acts share the map seed, all acts
 share the same level seed base.
 
 Some acts then draw more from their own act seed. These draws come after the level seed base is taken, so they
@@ -116,7 +116,7 @@ A [level](../../reference/glossary/)'s seed is `Init(level seed base + level id)
 It is **not** a draw from the act seed.
 The game then hands the level to one of three generators, chosen by the level's
 [DrlgType](../../reference/glossary/) in the Levels table: 1 maze, 2 preset, 3 outdoors. The rooms come later, after the
-level is re-seeded with the same value (seed tree, step 4; see the
+level is re-seeded with the same value ([seed tree, step 4](../../spec-rng/seeds/#algorithm); see the
 [levels page](../../world/levels/)).
 
 This is why a player who walks into the levels of an act in a different order still gets the same level seeds: a
@@ -137,7 +137,7 @@ Later the room is activated, and this is where the
 1. The room's seed is restarted from its stored starting value. Anything drawn on it in between is forgotten.
 2. The room picks its tiles. This takes [k](../../reference/glossary/) draws; one set of runs saw k between 50 and 376 (157
    activations), and a larger run between 0 and 388 (520 activations). Exactly how k is counted belongs to the
-   room-tiles spec.
+   [room-tiles spec](../../spec-drlg/room-tiles/#k).
 3. If the room got at least one wall or floor tile, it draws once more and the result seeds the new active room.
    A room with no tiles draws nothing and gets no active room. That the test counts the room's wall and floor
    tiles is confirmed by a run (the counts matched the model in 2066 activations, and exceeded it by animation
@@ -223,12 +223,12 @@ numbers (the player's draw 5 equals the Act II act seed after its five draws). T
 | server unit (not players) | the game seed | one; items one more |
 | client unit | the active room of the client act copy | one, unless at (0, 0) |
 
-Sources: seed tree, outputs and step notes.
+Sources: [seed tree, outputs](../../spec-rng/seeds/#outputs) and [step notes](../../spec-rng/seeds/#algorithm).
 Each subsystem page names the further seeds it uses.
 
 ## A worked example
 
-**The generator.** Copied from the RNG core worked example, which matches
+**The generator.** Copied from the [RNG core worked example](../../spec-rng/overview/#worked-example), which matches
 the game's own functions bit for bit. Hex unless noted.
 
 | # | Operation | Result | `low` after | `high` after |
@@ -249,7 +249,7 @@ The generator to try by hand. The reader types a seed (an unsigned 32-bit number
 [Try it: change the inputs (needs JavaScript)](/widgets/rng-stepper/widget.js)
 
 **The seed tree for `-seed 12345`.** Copied from the
-seed tree worked example, logged in a recorded game and reproduced from N
+[seed tree worked example](../../spec-rng/seeds/#worked-example), logged in a recorded game and reproduced from N
 alone. Seeds are `low:high`, hex.
 
 | Step | What happens | Value |
@@ -271,8 +271,8 @@ wrapped around.
 
 ## What is not known yet
 
-From the RNG core open questions and the
-seed tree open questions:
+From the [RNG core open questions](../../spec-rng/overview/) and the
+[seed tree open questions](../../spec-rng/seeds/):
 
 - Which inlined draw sites use the guarded form and which do not is answered subsystem by subsystem, as each spec
   reads its own call sites.
@@ -299,8 +299,8 @@ seed tree open questions:
 
 ## Where to read more
 
-- RNG core spec and seed tree spec.
-- How k is counted: room tiles § k.
+- [RNG core spec](../../spec-rng/overview/#algorithm) and [seed tree spec](../../spec-rng/seeds/#algorithm).
+- How k is counted: [room tiles § k](../../spec-drlg/room-tiles/#k).
 - The [glossary](../../reference/glossary/) for seed, draw, map seed, game seed and the room terms.
 - Related wiki pages: [levels](../../world/levels/), [monsters](../../world/monsters/), [objects](../../world/objects/), [items](../../items/items/),
   [skills and missiles](../../characters/skills/) for the seeds a skill and a missile draw on, and

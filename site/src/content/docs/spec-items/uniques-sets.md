@@ -14,7 +14,7 @@ tested against the game's made-uniques set. A failed build raises durability and
 magic → superior → normal (unique) or magic → superior → normal (set), and each fallback step first restores the
 item seed. The spec ends where the property code (`items/properties`) and the affix builders (`items/affixes`)
 take over. It starts where [items/quality](../quality/) and [items/tc § H](../tc/#h-item-pick-and-hand-off) end.
-Primitives are those of rng.
+Primitives are those of [rng](../../spec-rng/overview/).
 
 ```mermaid
 flowchart LR
@@ -126,7 +126,7 @@ Every confirmed statement of this spec holds under them. [C]
 | the superior builder `ITEMS_BuildSuperior` | specified in [items/affixes](../affixes/); entered as a fallback at `{S, 666}` after a failed rare and a failed magic step and chained (nine `throw` creations); never reached from a failed unique or set | as above | `items/affixes` | [C] fallback entry; [I] from a failed unique or set |
 | the normal builder `ITEMS_BuildNormal` | specified in [items/affixes](../affixes/); as a fallback never reached | as above | `items/affixes` | [I] |
 | stats 72 and 73 before the durability step | value input | the values `ItemInitStats` set on the unit seed | [items/properties § A](../properties/#a-base-stats-on-the-unit-seed) | [C] |
-| `ItemData+0x10` (`start`) | value input | one game-seed draw in `ItemSeedInit` | rng/seeds | [C] |
+| `ItemData+0x10` (`start`) | value input | one game-seed draw in `ItemSeedInit` | [rng/seeds](../../spec-rng/seeds/#algorithm) | [C] |
 | quality and `rec+0x40` | value input | the quality roll's code, or 7/5 and row + 1 from a TC entry | [items/quality](../quality/), [items/tc § H](../tc/#h-item-pick-and-hand-off) | [C] |
 
 ## Algorithm
@@ -652,6 +652,6 @@ The one case where a failed builder had drawn. Classic Nightmare, item 320 `brs`
   Sets, ItemRatio (not read on this path),
   ItemTypes, Weapons, Armor,
   Misc, TreasureClassEx.
-- Specs: rng (`Step`, `Range`, `Init`), rng/seeds (step 7a),
+- Specs: [rng](../../spec-rng/overview/) (`Step`, `Range`, `Init`), [rng/seeds](../../spec-rng/seeds/) (step 7a),
   [items/tc](../tc/) (hand-off), [items/quality](../quality/) (the code and § F). Downstream:
   [stats/aggregate § J](../../spec-stats/aggregate/#j-set-bonuses) (a set item's bonuses once worn).

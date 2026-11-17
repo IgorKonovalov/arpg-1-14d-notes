@@ -108,6 +108,26 @@ flowchart TD
   u -->|other| rm["−1"]
 ```
 
+```
+A1. InvRowForUnit(unit, page: i32, expansion: i32) → i32:            [C] (family rowfor)
+      player: page 1 → 6;  2 → 7;  3 → 9;  4 → 12 if expansion ≠ 0 else 8;  any other page → the class row (0..4, 14, 15)
+      type 1 (a monster, so a hireling too): 5
+      type 2, class 0x152: 10;  class 0x153: 11
+      otherwise: −1
+
+A2. InvRecordGrid(row, set, out):                                    [C] (family invrec)
+      copies 24 bytes, gridX to gridBoxHeight, from base + (16 × set + row) × 0xF0 + 0x10
+      an index above the count reaches the error routine;  the count itself (32) is accepted and past the table
+A3. BeltsRecord(row, set, out):                                      [C] (family beltrec)
+      copies 264 bytes from base + (7 × set + row) × 0x108, no upper bound on the row
+A4. InvPageGet(inv, page, row):                                      [C] a later request with another size, and the returns with no row (family `pageget`, 1 000 cases); [I] the first use
+      the page index is compared signed, shifted by 4 with wrap: 0x80000000 names page 0
+      a page is made on first use from the row given then           ; the allocator, left to a live run
+      a later request with another size returns 0, so nothing is placed
+      with no row: the page if made, else 0
+      an index at or above the count, with a row: the reallocation
+```
+
 - A1. [C] **The stash is 6 × 8 in an expansion game and 6 × 4 in a classic one**, by that row (control `stashsmall` fails 20 of 400).
 - A1. [C] Each server caller of the page's row that was read passes `game+0x70` as `expansion` where the page can be 4: the third push is loaded from `[reg + 0x70]`, `reg` the function's first argument (the game), at the three sites; `InvRowForUnit`'s other 36 call sites were not followed.
 - A1. [C] Rows 13 and 29 (Hireling) are never returned: family `rowfor`, 5 952 cases over every page byte, player classes 0..7 and two others with both expansion words, and types 1..6 and two others over 13 classes, returns −1, 0..12, 14 and 15 only; the class table is named by three loads and no store. [I] Types `0x152`, `0x153` are object classes, and no code path that creates either was read (the class sources of the non-literal type-2 `SUnitCreate` callers, the `OBJPOP_*` lists past the window below). [C] As Objects rows 338 (`Guild Vault`) and 339 (`Trophy Case`) they are placed by no stock DS1 preset (0 units in all 2 274 DS1 files) and no `ObjGroup` row, and neither id is an s32 in the 8 KB of data from the `OBJPOP_*` lists' start, a window the check chose.
@@ -187,6 +207,21 @@ B5. InvGridPut(col, row, index, invrow):                             [C] to InvI
 
 ### C. Placing on a page
 
+```
+C1. InvPlaceItem(…, x, y, 0, 1, 0):                                  [C] ItemSkillQtyAdd calls ItemSkillQtyAdjust(1) for a player only, another unit type returning at once (family `qty`); [I] the rest: the put, the page-4 skip and the charm follow InvItemRemove's owner recompute reaches the allocator (→ … →), left to a live run
+      place at the cell by InvGridPut, or by the search
+      a failed put returns 0, the handler 3
+      page ≠ 4: ItemSkillQtyAdd, for a player ItemSkillQtyAdjust(1)       ; a scroll's or tome's skill quantity
+      an active charm then attaches                                  ; ITEMS_IsActiveCharm
+C2. ItemSkillQtyAdjust(add):                            [C] to the message builder (family `qty`, 2 500 cases); [I] the send, the left and right resets, the grant and the 1
+      skill ← Books[+8] for type 22 (a type-22 item that is also type 18 too), Books[+0xC] for type 18, else −1, which returns 0
+      a tome with stat 70 = 0 returns 0 before the skill is looked up
+      q ← stat 70 when non-zero, as it is (a negative value too);  1 for a non-tome with stat 70 = 0
+      add ≠ 0: the skill's quantity + q;  a missing skill: UnitAddStat(unit, 5, q, 0), then the grant, PLAYER_SpendSkillPoint
+      add = 0: less, floored at 0;  a missing skill reaches the error routine (line 0x230);  an empty left or right skill choice is reset
+      sends the quantity to the client
+```
+
 - C1. [C] holds no test of a page or a stash: it gives the same outcome on page 4 as on any page (`page4_nothing` separates 341), so it is not a stash-open test. [I] So a scroll or tome placed in the stash adds nothing to the skill: `InvPlaceItem`'s page-4 skip comes after the put's `InvItemRemove`. When a charm counts is [stats/aggregate § H](../../spec-stats/aggregate/#h-items-equip-requirements-the-refresh-broken-per-level-values).
 
 ### D. The requests
@@ -253,6 +288,37 @@ flowchart TD
   auto -->|yes| low["the first free box of 0..3"]
   low -->|found| ok
   low -->|none| z
+```
+
+```
+F1. BeltFreeSlot(player, item) → box or 0:                           [C] (family belt)
+      only a beltable 1 × 1 item
+      numboxes: u32 ← BeltsRecord(the worn belt's Items[+0x130], or 2 with no belt worn; set 0)[+0x004]
+      for b in 0 ..< 4, when box b holds an item of the same class or the same list (hp1..5, mp1..5, rvl/rvs):
+        for box in b, b + 4, b + 8, … while box < numboxes:
+          if box is free: return box
+      if the item's row has autobelt:
+        the first free box of 0..3
+      return 0
+F2. BeltPlace(item):                                                 [C] to InvGridPut (family beltplace)
+      BeltFreeSlot; no box returns 0;  ends at InvGridPut(box, 0, 1, 0)
+F3. ItemAutoBeltTest(item) → 1:                                      [C] for an item the test accepts (families `autobelt`, `holds`)
+      an autobelt row returns 1;  any other compares BeltHoldsSameGroup (0 or 1) with −1
+      a null item, a non-item or a row past the Items table ends at the error routine
+    BeltHoldsSameGroup: 0 for isc/tsc, a bad signature, a non-item, or a belt page made at another size than 16 × 1;
+      else 1 when one of boxes 0..3 holds the same class or potion list
+F4. ItemToBelt(guid, box, 0) (packet 0x23):                          [C] BeltPutItem to InvItemRemove (family `beltput`, 1 500 cases)
+      BeltPutItem: an item, 1 × 1, beltable, box < 16 unsigned (−1 refuses), a belt page made at 16 × 1;  InvGridPut refuses an occupied box
+      numboxes is not tested
+F5. Packet 0x24: BeltToCursor;  the box's column shifts down (BeltColumnShift)   [I]
+    Packet 0x25: BeltSwapCursor, in place, no shift                  [I]
+    Packet 0x63: page 0 and an empty cursor;  returns 0 with no room [I]
+F6. BeltOverflow(new belt or null):                                  [I]
+      numboxes ← BeltsRecord(the new belt's +0x130, or row 2)        ; set 0
+      for box in 0 ..< 16:
+        each item at or above numboxes: removed, page 0, placed by the search
+        if that fails: dropped by the ground search (§ J)
+      ; its 4 direct calls: the body moves' belt-type branches (3), and a corpse's move of a worn belt (1, null)
 ```
 
 - F6. [I] **At a corpse's making:** `PLAYER_CorpseCreate`'s loop over the slots and `CorpseOverflowDrop` both move a slot's item through the function, which calls `BeltOverflow(null)` when the item's base type is 19 (`belt`), so row 2's `numboxes` 4 applies: boxes 4 and up go to page 0 by the search, then to the ground. Unrun.
@@ -421,7 +487,7 @@ The distance table (row `|dy|`, column `|dx|`), 64 `i32`, indexed `× 4`, as fam
 ```
 
 - I2. [C] 1 500 cases, 145 distinct outcomes: `plainmanh` fails 1 419, `sizeless` 682. Player to item, `d < 5` reaches 22 of the 64 `|dx|, |dy|` pairs under 8: `|dx|` 0 to 2 with `|dy|` 0 to 4, `|dx|` 3 with `|dy|` 0 to 3, `|dx|` 4 with `|dy|` 0 to 2; among them `(4, 2)`, and not `(3, 4)` or `(5, 0)`. Sizes: `UNIT_GetSizeX` is 2 for a player, 1 for an item, the record's `+0xD0` for an object; a monster and a missile were not run.
-- I3. [C] `swapsizes` fails 129, `noshorten` 262 of 600. `COLL_LineTest`'s own result is drlg/collision's `[I]`, not this run's. Pickup's mask `0x804` does not overlap an item's `0x200`; a player's mask at `path+0x4C` was declared, not read from a game.
+- I3. [C] `swapsizes` fails 129, `noshorten` 262 of 600. `COLL_LineTest`'s own result is [drlg/collision](../../spec-drlg/collision/)'s `[I]`, not this run's. Pickup's mask `0x804` does not overlap an item's `0x200`; a player's mask at `path+0x4C` was declared, not read from a game.
 - I1. [I] **The one item request that leaves the drain**: `d ≥ 5`, or `d < 5` and a blocked line, with `d ≤ 50`, starts the walk. A later request in the same drain sees the item still on the ground.
 - I4. [C] **`nopickup` is not read in the two pickups**: `g_NoPickup` has 4 abs32 references, all client (`ClientMonCreate`, `ChatInputParse`), none in the two pickups or their 36 direct callees. [I] **Ownership (who dropped it) is not among any test read there.** Scope: these two functions and their direct callees' first level, not the gate's whole body, which [items/quest-drops](../quest-drops/) holds.
 - I4. [I] Gold and the party share are [items/economy G](../economy/#g-gold-payment-caps-piles-and-the-death-loss).
@@ -449,7 +515,7 @@ flowchart TD
   f -->|0| nl["null; out keeps the start"]
 ```
 
-It is not a live run, and not how often a game's rooms make a statement matter; the rows the evidence table's *Live raise* column marks raised are live as well, in the scope it gives. [C]
+**What this section's `[C]` is.** Every `drop` `[C]` below is a `[C]` by emulated reproduction **given that the allocation returned a writable block**, at size 1 and step 1: the code's map on declared rooms and one declared pool page. It is not a live run, and not how often a game's rooms make a statement matter; the rows the evidence table's *Live raise* column marks raised are live as well, in the scope it gives. [C]
 
 ```
 J1. GroundDropCell(room, pos, out, size: i32 = 1, fallback: i32) → room:    [C] (family drop, 4 000 cases, to the return, given the block; all of J1–J2 but the cell mask's bits 0x1 and 0x800; COLL_FindFreeNear)
@@ -510,7 +576,7 @@ Step notes:
 
 - J1. [I] **The cell mask's bits `0x1` and `0x800` are not decided.** Removing either fails 0, since the cell test is followed at once by the walk, whose first test is the same cell in the same room with those two bits, so no output separates them at this caller. No output changes here, since either test refuses the cell; a reimplementation must not carry the cell test's two bits to a caller with another walk mask. The value `0x3E01` is the immediate.
 - J1. [C] The cell mask's bits `0x200`, `0x400`, `0x1000`, `0x2000` and its ten absent bits are each decided, and all 16 of the walk mask: one bit changed, 99 to 647 cases fail. So a cell holding another ground item (bit `0x200`) is refused and does not stop a walk over it.
-- J1. [I] The bits' names are drlg/collision's: `0x3E01` has bits 0, 9, 10, 11, 12, 13; `0x801` bits 0 and 11.
+- J1. [I] The bits' names are [drlg/collision](../../spec-drlg/collision/)'s: `0x3E01` has bits 0, 9, 10, 11, 12, 13; `0x801` bits 0 and 11.
 - J2. [C] **Rings**: ring 50 is never looked at. The pair form pushes radius 50 and step 1, and after ring `r` the loop goes on only while `r + 1 < 50`.
 - J2. [C] **The base room moves.** The lookup that finds a candidate's room starts from the last non-null room a lookup returned, not from `room`, and the first lookup's result is kept even when null. A cell is reachable only through that room's near list, and the walk is tested from the candidate's room. The result's lookup uses the moved base too, so with no free cell and `fallback` 1 the return can be null though the start cell lies in the first room, and a found cell's return can be null too when the last room tried does not list it. **By emulation only: no live search has separated it** (`fixedbase` fails 95 of 4 000 cases on declared rooms, 0 of 81 live).
 - J2. [C] **No free cell:** `fallback` 1 takes the start cell, blocked or not, in the room the last lookup gives; `fallback` 0 returns null and `out` keeps the start.

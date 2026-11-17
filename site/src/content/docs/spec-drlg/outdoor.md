@@ -15,7 +15,7 @@ shrine marks, the border stamps (`LvlSub` `tag_type` 2), and the generator of ea
 layout, which runs at act creation on the act seed and gives Act III its level rectangles and links, and the fill of an
 out room's grids at its room prepare (§ M), where Act I's roads become road tiles. Every draw is listed
 with its seed, in order. The level seed is the one [drlg/overview](../overview/) step 2 re-seeds; the act seed is that of
-rng/seeds step 3. Primitives (`Step`, `Range`, `RangeB`) are those of rng. The act
+[rng/seeds](../../spec-rng/seeds/) step 3. Primitives (`Step`, `Range`, `RangeB`) are those of [rng](../../spec-rng/overview/). The act
 link builder that places the other acts' outdoor levels, and the warp points built from the rooms' flags, are in
 [warps.md](../warps/).
 
@@ -76,8 +76,8 @@ the border-stamp records are in LvlSub § Border stamps.
 | vertex ring | list of 0x14-byte vertices | `O+0x64` | § C |
 | Act I road lists | six vertex lists; endpoint arrays of 0x14-byte entries | `O+0x68..+0x7C`; `O+0x80`, `+0xF8`, `+0x170`, `+0x1E8`, count `+0x260` | § H6 |
 | level adjacency list | sorted nodes `{nbr, side, isPreset, +0xC, &nbr.rect, next}` | `O+0x264` | `LevelBorderAdj` at act creation (§ C1) |
-| act seed | `Seed` | act `+0x000` | rng/seeds step 3 (Act III jungle layout, § J1) |
-| Act III gate bit | `u32` | act `+0x474` | the Act III act-seed bit of rng/seeds step 3 (§ J5) |
+| act seed | `Seed` | act `+0x000` | [rng/seeds](../../spec-rng/seeds/) step 3 (Act III jungle layout, § J1) |
+| Act III gate bit | `u32` | act `+0x474` | the Act III act-seed bit of [rng/seeds](../../spec-rng/seeds/) step 3 (§ J5) |
 | jungle `Def` array, clearing count | pointer; `i32` | level `+0x1BC`, `+0x1B8` | § J1 (levels 76–78) |
 | difficulty | `u32` 0..2 | act `+0x450` | game; read only for `Levels` sizes |
 
@@ -136,7 +136,7 @@ flowchart TD
 Notation: `L` the level, `O` its outdoor record. A cell is `(x, y)`, `x` the column (0 ..< `cw`), `y` the row
 (0 ..< `ch`). `cell(x, y)`, `def(x, y)` and `grid0(x, y)` are the three grids of § B. `Step(s)` advances seed `s` once and
 returns its new low word (`u32`); a **level draw** is a `Step` of `L.seed`, an **act draw** a `Step` of the act seed.
-`Range(s, n)` and `RangeB(s, n)` are the guarded range of rng: `n < 1` gives 0 with no draw, otherwise
+`Range(s, n)` and `RangeB(s, n)` are the guarded range of [rng](../../spec-rng/overview/): `n < 1` gives 0 with no draw, otherwise
 one `Step`, then the low word `& (n − 1)` for a power of two or unsigned `mod n`. With no seed named, the seed is
 `L.seed`. `÷` is signed division truncating toward zero, `%` the signed C remainder. `Place(x, y, def, file)` is
 `OutPresetPlace` with `borderFlag` 0 (§ D1); `file = −1` means "from the rotation" (§ D2).
@@ -211,7 +211,7 @@ A1. OutdoorLevelBuild(L):                                            [C]
 - [C] A placement fits only on cells with none of the occupied-mask bits (`0x1B81`).
 - [C] **Out-room flags.** `OutRoomCreate` sets an out room's `+0x28` to its grid0 cell `| 0x80000`, and `| 0x40000` as well
   on the client copy. So the shrine, waypoint and warp-slot bits are room bits: the room prepare runs the `SubShrine` and
-  `SubWaypoint` passes from them (room-tiles.md step 5), and the warp points of a level with out rooms
+  `SubWaypoint` passes from them ([room-tiles.md](../room-tiles/) step 5), and the warp points of a level with out rooms
   follow from them. 6092 out-room flags were checked at the warp-point build
   (1000 with a shrine bit, 150 with a warp slot, 134 with a waypoint).
 - [C] No outdoor generator writes cell bits 20–25: the final cell grid of all 528 windows logged with it (30 levels,
@@ -478,6 +478,9 @@ E3. BorderCornerDef(inCode, outCode, style) → i32:                    [C]
       return style ≥ 4 ? g_BorderDefsA5[2k + style − 6] : g_BorderDefs[4k + style]   ; row k of E2a's table
 ```
 
+- [C] **`g_BorderCornerIdx`** (`i32[9][9]`, read as `g_BorderCornerIdx[in + 9·out]`, 4 bytes an entry). Rows are
+  the out code, columns the in code; `·` is −1 (no corner piece).
+
   | out \ in | −4 | −3 | −2 | −1 | 0 | +1 | +2 | +3 | +4 |
   |---|---|---|---|---|---|---|---|---|---|
   | −4 | 1 | 9 | 9 | · | · | 1 | 8 | · | · |
@@ -529,7 +532,7 @@ F2. OutShrinesPlace(L, count = 5):                                    [C]
 ```
 
 - [C] Neither pass places a preset. They mark cells, and the out room made there runs the `SubWaypoint` or `SubShrine`
-  `LvlSub` pass with the marked record (room-tiles.md step 5). Every call site passes `count` 5.
+  `LvlSub` pass with the marked record ([room-tiles.md](../room-tiles/) step 5). Every call site passes `count` 5.
 
 - [C] `g_OutShrineFlag` (`i32[4]`) holds the grid0 bit of shrine record *r*: `0x1000 << r`.
 
@@ -718,6 +721,11 @@ H4. A1RiverMidTransCave(L):                                          [C]
         else:     ok ← PlaceRandom(L, 51 Cave Entrance, −1, pad 1, sides 0xF)              ; 2N draws + rotation
         not ok → fatal error;  O.flags |= 0x40
 ```
+
+- [C] **The river index table** `g_A1RiverIdx` is read as `g_A1RiverIdx[p][0]` for the 26 piece and `g_A1RiverIdx[p][1]`
+  for the 27 piece (8 bytes a row), `p` the border `Def` in the cell. Only rows `p` 4–15 are read (`i32[12][2]`):
+  rows 0–3 would overlap the King Tomb table, but `p` = 0 takes the covered rule and no river column holds `Def` 1–3. For
+  `p` = 7 at the seam opening (file bits `0x30000`) both pieces take 3.
 
   | border `Def` p | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 |
   |---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -1222,6 +1230,11 @@ JungleRectRel(parent, w, h, d) → rect:                                [C]
   | 6 S+E | 558 | 0 | 0 | 559 | | 13 N+S+W | 0 | 571 | 0 | 0 |
   | 7 S+E+W | 0 | 0 | 0 | 560 | | 14 N+S+E | 572 | 0 | 0 | 0 |
 
+- [C] **`g_JungleClearingDefs`**, read as `g_JungleClearingDefs[v >> 4]` (4 bytes an entry); `v >> 4` is the clearing's own sides (W 1, E 2,
+  S 4, N 8): 1 → 575, 2 → 576, 3 → 577, 4 → 578, 5 → 579, 6 → 580, 7 → 0, 8 → 581, 9 → 582, 10 → 583, 11 → 0, 12 → 584.
+  Entry 0 is the last flag of `g_LinkOutdoorFlags` (never read here, since `v ≥ 16`), and entries 13–15 are row 0 of
+  `g_JungleSideDefs`. Entries 7, 11 and 13–15 are 0, so a clearing with three or four sides is fatal (0x799).
+
 - [I] The side lookup of J2e has no bound: a second side bit on one cell would index a row `d` ≥ 545, past the table.
   No logged layout had one (every `LNKS` list and Act III window of the run matches).
 
@@ -1258,6 +1271,10 @@ J4. OutdoorAct3(L):  OutSeamMark(L); OutJungleCells(L); OutKurastLevel(L); OutTr
 
 - [C] Each clearing of a jungle level gets a distinct file of its three through permutation row `r`. Level 76 takes the
   Webby clearings 575–584, 77 the Boggy 585–594, 78 the Pygmy 595–604.
+- [C] **The clearing tables.** The offset table is read by `L.id` from a base 76 entries (304 bytes) before
+  `g_JungleClearingOff`, as `g_JungleClearingOff[L.id − 76]`, so its data are the three `i32` for levels 76, 77, 78: `0, 10, 20`. `g_JungleClearingPerm` (`i32[6][3]`, read as `[k + 3r]`)
+  has the rows `0 1 2`, `1 0 2`, `0 2 1`, `1 2 0`, `2 0 1`, `2 1 0`; `r` is `Range(6)` with three clearings, else
+  `Range(2)` (rows 0–1), and `k` counts the clearings in placing order.
 
 ```
 J5. OutKurastLevel (79 … 82):                                        [C]
@@ -1333,6 +1350,22 @@ block-beta
   c0["836"] c1["858 Arm W"] c2["862 Heart"] c3["859 Arm E"] c4["836"]
   d0["836"] d1["836"] d2["860 Arm S"] d3["836"] d4["836"]
   e0["836"] e1["836"] e2["857 Entry"] e3["836"] e4["836"]
+```
+
+```
+K1. OutdoorAct4(L):                                                  [C]
+      OutSeamMark(L)
+      if L.id = 108: DiabloGrid(L); return                           ; K2
+      OutBorderBuild(L)
+      FortressTransition: O.flags & (1 << 22) → Place(0, 1, 798, −1);  O.flags & (1 << 23) → Place(0, 4, 798, −1)
+      OutBorderSubApply(L, 1, 799); (L, 2, 799); (L, 3, 799)
+      MesaFills:                                                     ; all PlaceRandom(·, −1, 0, 0xF); failures ignored
+        if L.id = 106: PlaceRandom(811)
+        a: i32 ← g_A4MesaBase[L.id − 104];  p: i32 ← g_A4PitsBase[L.id − 104]   ; 104, 105, 106: a 812, 817, 823; p 828, 832, 832
+        PlaceRandom(a); PlaceRandom(a + 1) ×2; (a + 2) ×2; (a + 3) ×2; if L.id = 105: PlaceRandom(822); (a + 4) ×4
+        PlaceRandom(p); (p + 1) ×2; (p + 2) ×2; (p + 3) ×4
+K2. DiabloGrid(L): for i in 0 ..< 25: Place((i % 5)·3, (i ÷ 5)·3, g_A4DiabloGrid[i], −1)   ; i = 5·row + column
+                                                                     [C]
 ```
 
 - [C] **The Mesa bases** `g_A4MesaBase` (`i32[3]`) `812, 817, 823` and `g_A4PitsBase` (`i32[3]`) `828, 832, 832`, by
@@ -1481,7 +1514,7 @@ plus first uses. The caves make no draw. Level 110: none. [C]
 
 ### M. The out-room grids at the room prepare (and the Act I road tiles)
 
-This step runs outside the level window: it is the first part of the room prepare of every out room (room type 1), when room-tiles.md step 5 prepares the room, before its first `LvlSub` pass. It makes no draw. Since the room-tiles model runs on the grids this section predicts, in every log that carries the outdoor lines; only its own run's logs, which have none, still take them from the log.
+This step runs outside the level window: it is the first part of the room prepare of every out room (room type 1), when [room-tiles.md](../room-tiles/) step 5 prepares the room, before its first `LvlSub` pass. It makes no draw. Since the room-tiles model runs on the grids this section predicts, in every log that carries the outdoor lines; only its own run's logs, which have none, still take them from the log.
 
 ```mermaid
 flowchart LR
@@ -1692,5 +1725,5 @@ are the `Range(6 or 2)` and seven first uses. Blood Moor is 12 × 7 cells (its l
   rects, the adjacency lists and the outdoor flags; the warp points from the out rooms' flags.
 - Reference model: replays the run (the worked examples included). It is a check of this
   spec, not a source: every statement above cites the code, the data or a run.
-- [drlg/overview](../overview/) steps 2, 7, 8; [warps.md](../warps/) § A–C, § E; room-tiles.md step 5;
-  rng/seeds; rng.
+- [drlg/overview](../overview/) steps 2, 7, 8; [warps.md](../warps/) § A–C, § E; [room-tiles.md](../room-tiles/) step 5;
+  [rng/seeds](../../spec-rng/seeds/); [rng](../../spec-rng/overview/).

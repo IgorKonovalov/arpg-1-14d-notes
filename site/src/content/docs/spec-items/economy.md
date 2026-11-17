@@ -13,7 +13,7 @@ price paths draw nothing of their own: only the wear rolls and the count of Wirt
 the store's copy of a sold item draw through the item creation that makes them. Names of functions, structs and fields are ours.
 
 Notation. All arithmetic is signed 32-bit (`i32`) with wrap-around on multiplication, and `÷` truncates toward zero,
-unless a step says otherwise. `Range` and `Step` are the primitives of rng; `RangeB` is
+unless a step says otherwise. `Range` and `Step` are the primitives of [rng](../../spec-rng/overview/#algorithm); `RangeB` is
 the second compile of `Range`, with the same result. `MulDiv(a, b, c)` is the helper of
 [monsters/stats § A](../../spec-monsters/stats/#a-muldiv-and-monlvlstats). "Stat *n*" is an ItemStatCost row id; `full(n)`
 is the value in the unit's full-stat cache, `own(n)` the item's own entry.
@@ -225,6 +225,33 @@ flowchart TD
   SO --> ET["C8 ethereal, class item: S ÷ 4 each"]
 ```
 
+```
+C1. if not ItemQualityMagicPlus(item):            ; quality not 4..9              [C]
+      (P, S, R) ← StaffModTerm(item, P, S, R, n)   ; C9
+C2. if not (item.flags & 0x10): goto C7            ; unidentified                  [C]
+C3. dP, dS, dR: i32 ← 0, 0, 0                                                       [C]
+    if automagic id ≠ 0: AddTerm(a.multiply, a.add)      ; a = its affix record
+C4. by quality (jump table, quality − 1):                                 [C]
+      1 low:                (dP, dS, dR) ← (−(P ÷ 2), −(S ÷ 2), −(R ÷ 2))   ; replaces C3
+      2 normal:             nothing
+      3 superior, 9 tempered: terms ← true
+      4 magic:              AddTerm for prefix 0, then suffix 0;  terms ← true
+      6 rare, 8 crafted:    for i in 0 ..< 3: AddTerm for prefix i, then suffix i;  terms ← true
+      5 set:                AddTerm(SetItems[fileIndex].cost mult, .cost add)
+      7 unique:             AddTerm(UniqueItems[fileIndex].cost mult, .cost add)   ; no record: as 4 magic
+C5. if terms: (P, S, R) ← StatTerms(item, P, S, R, n)    ; table below          [C]
+C6. P ← P + dP ÷ n;  S ← S + dS ÷ n;  R ← R + dR ÷ n     ; signed idiv           [C]
+    if ItemQualityMagicPlus(item): (P, S, R) ← StaffModTerm(item, P, S, R, n)
+C7. for each child in the item's own inventory (socketed gems, runes, jewels):     [C]
+      h ← child.base.cost ÷ 2;  P ← P + h;  S ← S + h;  R ← R + h
+C8. if item.flags & (1 << 22): S ← S ÷ 4                 ; ethereal               [C]
+    if ItemTypes[own type].Class < 7: S ← S ÷ 4          ; class item, again
+
+AddTerm(m, a):                                     ; the test is on P for all three  [C]
+  if P > 0xFFFF and m ≠ 0: dP += (P ÷ 1024) × m + a;  dS += (S ÷ 1024) × m + a;  dR += (R ÷ 1024) × m + a
+  else:                    dP += (m × P) ÷ 1024 + a;  dS += (m × S) ÷ 1024 + a;  dR += (m × R) ÷ 1024 + a
+```
+
 Step notes:
 
 - C3–C4. [C] The run reproduces qualities 1–7 (the low halving, the set row's terms in 66 inputs, the rare item's
@@ -297,6 +324,43 @@ StaffModTerm(item, P, S, R, n):                                                 
   (`Skills.txt:cost` mult, `ItemTypes.txt:StaffMods`)
 
 ### D. Mode steps, the NPC row, quantity and the result
+
+```
+D1. if mode = 1 and item.flags & (1 << 22) and ItemHasDurability(item) and M ≠ 0 and D ≤ 0:   [C]
+      S ← 0                                              ; a broken ethereal item
+D2. if mode = 3 and not ItemTypeQuiver(item) and not Throwable(item) and ItemHasDurability(item):   [C]
+      if M = 0 or D ≥ M:     R ← 0
+      else if own stat 252 ≠ 0: R ← (D < M − 1) ? ((M − 1) × R) ÷ M : 0     ; item_replenish_durability
+      else:                  R ← ((M − D) × R) ÷ M
+D3. rec ← NpcGetByClass(npcClass);  if rec = none: fatal error 0xCDC               [C]
+    P ← Scale(P, rec.sell mult, rec.sell mult)
+    S ← Scale(S, rec.buy mult,  rec.sell mult)            ; the test is sell mult
+    R ← Scale(R, rec.rep mult,  rec.rep mult)
+    for k in A, B, C:
+      if rec.questflag k ≠ 0 and (QuestBit(word rec.questflag k, bit 0) or QuestBit(word rec.questflag k, bit 1)):
+        P ← Scale(P, rec.questsellmult k, same);  S ← Scale(S, rec.questbuymult k, same);  R ← Scale(R, rec.questrepmult k, same)
+D4. if not IsType(item, 18 book) and not ItemTypeQuiver(item):                       [C]
+      P ← P × q
+      if base.stackable and ItemCanRepair(item):
+        Ms: i32 ← MaxStack(item)
+        if q < Ms and own stat 253 = 0: R ← R × (Ms − q);  S ← Ms × S − R
+        else:                          S ← S × Ms;  R ← 0
+      else: S ← S × q
+D5. if mode = 3 and not (item.flags & (1 << 22)): R ← R + RechargeCost(item)         [C]
+D6. S′ ← min(S, rec.max buy[d])                                                       [C]
+D7. if mode = 1: return max(S′, 1)                       ; "S′ < 1 → 1"             [C]
+    if mode = 3: if r ≠ 0: R ← R − MulDiv(R, r, 100);  return R < 1 ? 1 : R
+    if r ≠ 0: P ← P − MulDiv(P, r, 100);  return P < 1 ? 1 : P       ; mode 0 and any other mode
+
+RechargeCost(item):                                                                   [C]
+  total: i32 ← 0
+  for each stat 204 (item_charged_skill) entry with current c = value & 0xFF < max x = value >> 8:
+    k ← Skills[param >> 6];  lvl ← param & 0x3F             ; the same two globals as Encode 2, 3
+    K: i32 ← lvl + 2 × (k.reqlevel ÷ 6) + 2;  T: i32 ← K × 10000
+    t: i32 ← (T > 0xFFFF and k.cost mult ≠ 0) ? (T ÷ 1024) × k.cost mult : (k.cost mult × T) ÷ 1024
+    total ← total + ((x − c) × (t + k.cost add)) ÷ x
+  return total
+```
 
 Step notes:
 
@@ -378,6 +442,48 @@ flowchart TD
   I4 -->|no| I5["ItemHasDurability(item)"]
 ```
 
+```
+F1. ItemCanRepair(item):                                                             [C]
+      if not identified or ethereal: return false
+      if ItemHasCharges(item) and some charge is missing: return true
+      if ItemTypes[own type].Repair = 0: return false             ; ITEMS_GetBaseType → ITEMTYPES_GetRecord, no Equiv walk
+      if RepairableStack(item): return true                       ; throwable, stackable, not ethereal, own type Repair
+      return ItemHasDurability(item)
+F2. ItemHasDurability(item) = base.nodurability = 0 and base.durability ≠ 0 and M ≠ 0 and full(152) < 1   [C]
+F3. Buy (mode 0) and gamble purchase (mode 2):                                       [C]
+      price ← ItemTradePrice(…, mode);  refuse if gold + stash < price
+      a permanent stackable store item: priced at quantity 1, bought min((gold + stash) ÷ unit price, room) at a time
+      PayGold(price × count)
+F4. Sell (mode 1):                                                                   [C]
+      price ← ItemTradePrice(…, 1)
+      copy: bool ← true
+      for each test, in this order, every one evaluated (no early exit):             ; tests 2, 5, 7 [C], the rest [I]: note F4
+        1 quality 1 named Cracked;  2 flag 0x100 (broken);  3 base type 7;  4 flag 0x1000000;
+        5 flag 1 << 22 (ethereal);  6 ItemInvNonEmpty;  7 ItemIsCarry1Unique;  8 the store record's byte +4
+        if it matches: copy ← false
+      if copy: ItemCopy (an item creation), then the copy is repaired (durability and quantity to maximum) and
+        priced again; price ← min(price, copy price)
+      PlayerGiveGold(price)                          ; clipped to the carried cap, the rest dropped (§ G)
+F5. Repair all (packet bit 31):                                                      [C]
+      cost ← Σ over the 13 body slots of ItemTradePrice(…, 3) for each item that has durability below a non-zero
+             maximum and ItemCanRepair, or is a repairable stack below MaxStack, or has a charged skill with missing charges
+      PayGold(cost);  then walk the slots again with the one-item repair (F7)
+F6. Repair one item:                                                                 [C]
+      refuse unless ItemCanRepair and one of: a throwable, stackable, non-ethereal item below MaxStack; missing
+        charges; M ≠ 0 and D < M                             ; [I], note F6
+      cost ← ItemTradePrice(…, 3);  if PayGold(cost): repair (F7)
+      else if D < M:                                         ; partial repair
+        k: u32 ← (cost << 10) ÷ (M − D)                      ; unsigned div
+        if gold > 0 and 0 < k < gold × 1024 and not broken:
+          PayGold(gold);  D ← min(M, D + (gold × 1024) ÷ k)  ; all carried gold; signed idiv
+F7. ItemRepairAll(game, item, player)  ; repairs ONE item despite the name          [C] one item per call; the refills [I], note F7
+      if not ItemCanRepair(item): return
+      if throwable and stackable: quantity ← MaxStack(item)
+      refill every charged skill (ItemRefillCharges)
+      if broken: ItemRepairBroken (clears 0x100, D ← M, re-links the stats)
+      else if M > 0: D ← M
+```
+
 Step notes:
 
 - F1. [C] The test reads the item's **own** ItemTypes row. On stock data the `Equiv` closure gives the same set of
@@ -440,6 +546,22 @@ Step notes:
   [I] The sum serves to choose the most valuable corpse.
 
 ### G. Gold: payment, caps, piles and the death loss
+
+```
+G1. PayGold(player, n):                                                              [C]
+      if gold + stash < n: return 0                      ; signed; both unchanged
+      take min(gold, n) from gold, the rest from the stash;  return non-zero
+G2. caps: carried ≤ L × 10 000 (PLAYER_GoldCap);  stash ≤ 2 500 000 (PLAYER_StashGoldCap)   [C]
+G3. UnitAddGoldStat(unit, stat, delta):                                              [C]
+      v: i32 ← stat + delta
+      if v < 0: write 0                                   ; any unit, any stat
+      else if unit is a player (type 0) and ((stat = 14 and v > PLAYER_GoldCap(unit))
+              or (stat = 15 and v > 2 500 000)): write 0  ; 0, not the cap
+      else: UnitAddStat(unit, stat, delta, 0)             ; the add of delta
+G4. PlayerGiveGold(n): add min(n, cap − gold); drop the rest as piles (DropGoldAmount)  [C] the add, and at gold = cap all of n dropped; [I] the over-cap split
+    GoldPickup(pile): take min(pile, cap − gold); re-drop the remainder (DropGold)       [I]
+    StashGoldMove: deposit at most cap − stash; a withdrawal needs the room            [I]
+```
 
 - G1. [C] 54 calls (hires, purchases, resurrections) reproduce, including 4 refusals with gold and stash unchanged.
 
@@ -818,6 +940,8 @@ so the amount is `5 + 19 = 24`, unchanged by `mul=`. G7: the killer's stat 79 is
   (index 4, bodyloc 8, the belt); `Step` → `d3d536e0:4e0f1a44`, `w = 0xd3d536e0 mod 18 = 0`. From index 4 the belt
   holds `armo` and `0 < 2`, so the belt is rolled. `Step` → `714054a4:585a976c`, `roll = 0x714054a4 mod 100 = 80`,
   not below 10: no loss (durability stays 4). Three steps of the defender's seed.
+- **Weapon (frame 859).** The Barbarian's axe (`D` 3 of 24): attacker seed `d1712f2d:0b0beb6e`, `Step` →
+  `007c890f:575b5184`, `roll = 51`, not below 4: no loss. One step of the attacker's seed.
 
 ## Reimplementation notes
 
@@ -855,7 +979,7 @@ so the amount is `5 + 19 = 24`, unchanged by `mul=`. G7: the killer's stat 79 is
   Npc § Multipliers, Books,
   Skills § Charge cost columns,
   Hireling § Costs.
-- Specs: upstream rng, [items/properties § A](../properties/#a-base-stats-on-the-unit-seed),
+- Specs: upstream [rng](../../spec-rng/overview/), [items/properties § A](../properties/#a-base-stats-on-the-unit-seed),
   [items/tc § H](../tc/#h-item-pick-and-hand-off), [stats/aggregate](../../spec-stats/aggregate/),
   [monsters/stats § A](../../spec-monsters/stats/#a-muldiv-and-monlvlstats), [hirelings § E](../../spec-hirelings/overview/#e-an-entry-hireling_rollentry);
   downstream [items/vendors § I](../vendors/#i-prices-and-repair), [hirelings § K](../../spec-hirelings/overview/#k-named-only),

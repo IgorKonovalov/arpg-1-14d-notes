@@ -11,7 +11,7 @@ here). This page specifies how fast it moves and how far its position advances o
 that the rate code sets from the unit's tables and stats, the step that the unit's every-frame mode event takes, the
 snap onto a path point, the collision walk across subtiles, the run's stamina drain, and knockback's distance, speed
 and length. The modes, their events and the animation rate are [anim/timing](../timing/). Positions are 16.16
-subtiles (the high word the subtile, as in drlg/collision); a speed `v` is the path's `+0x7C`.
+subtiles (the high word the subtile, as in [drlg/collision](../../spec-drlg/collision/)); a speed `v` is the path's `+0x7C`.
 
 ```mermaid
 flowchart LR

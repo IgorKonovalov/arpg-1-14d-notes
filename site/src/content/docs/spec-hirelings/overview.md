@@ -20,7 +20,7 @@ Names of functions, structs and fields are ours. Column names are those of Hirel
 
 Notation. `S` is the **store seed** of [items/vendors § A](../../spec-items/vendors/#a-store-records-and-the-store-seed-game-creation),
 `NpcControl+0x08`; the "NPC seed" of the hireling records is the same object, and this spec defines no second seed. `Step`, `Init`
-and `Range` are the primitives of rng: `Init(x)` makes `{x, 666}`; `Range(s, n)` is 0
+and `Range` are the primitives of [rng](../../spec-rng/overview/#algorithm): `Init(x)` makes `{x, 666}`; `Range(s, n)` is 0
 with no draw when `n < 1` (signed), else one step and `low mod n` (unsigned). `vflag` is the game's expansion flag
 (`Game+0x70`): rows with `Version` 100 are used when it is set, rows with `Version` 0 otherwise. `difficulty` is
 `Game+0x6D` (0..2). `d = L − row.Level` for a mercenary of level `L` and a `Hireling` row. "÷" truncates toward zero,
@@ -746,7 +746,7 @@ on the in-game screen.
 
 - Tables: Hireling, HireDesc, Skills,
   MonStats.
-- Specs: upstream rng, [items/vendors § A](../../spec-items/vendors/#a-store-records-and-the-store-seed-game-creation),
+- Specs: upstream [rng](../../spec-rng/overview/), [items/vendors § A](../../spec-items/vendors/#a-store-records-and-the-store-seed-game-creation),
   [monsters/pool § E](../../spec-monsters/pool/#e-the-monster-level-monstatsinit), [monsters/stats](../../spec-monsters/stats/),
-  data/strings; downstream [items/quality § C](../../spec-items/quality/#c-shared-terms-and-magic-find)
+  [data/strings](../../spec-data/strings/); downstream [items/quality § C](../../spec-items/quality/#c-shared-terms-and-magic-find)
   (the owner's magic find), [save/d2s § D](../../spec-save/d2s/#d-header-fields) (the header).

@@ -12,7 +12,7 @@ row, the item level the resolver passes, four ratio words of the TC frame and th
 returns a quality code from 1 (low) to 7 (unique). It draws 0 to 6 times on the **source unit's seed**,
 interleaved with the TC picks of [items/tc](../tc/). What item creation then does with the code (building
 the unique, set, rare or magic item, or falling back when it cannot) is not part of this spec. Primitives
-are those of rng.
+are those of [rng](../../spec-rng/overview/).
 
 ```mermaid
 flowchart LR
@@ -363,7 +363,7 @@ Step notes:
 - D4, E1, E3. Every `d ÷ div` is a signed `cdq; idiv`: the divisor column is a u32 read as a signed i32, and
   `d` is signed, so the quotient truncates toward zero. A zero divisor faults (integer division by zero); no
   stock row has one. [I]
-- D9. `RangeB` is `Range` of rng (one `Step`, then the new `low mod n`; the
+- D9. `RangeB` is `Range` of [rng](../../spec-rng/overview/#algorithm) (one `Step`, then the new `low mod n`; the
   binary uses `low & (n − 1)` for a power of two, with the same result). Any `c ≤ 128` therefore wins with a
   draw. Every draw of the 1916 logged rolls reproduces. [C]
 - D2. Three charm rolls (`scha`, `lcha`) skipped the rare test and went from the set test to the always-magic
@@ -564,4 +564,4 @@ that tell the two models apart. [C]
 
 - Tables: ItemRatio, ItemTypes,
   Weapons, Armor, Misc.
-- Specs: rng (`Range`, `Step`), [items/tc](../tc/) (caller, ratio words, seed contract).
+- Specs: [rng](../../spec-rng/overview/) (`Range`, `Step`), [items/tc](../tc/) (caller, ratio words, seed contract).

@@ -78,7 +78,7 @@ flowchart LR
 | `Unit+0x50` | the `animdata.d2` record (`AnimDataRec`) | § B |
 | `Unit+0x30`, `Unit+0x34`, `Unit+0x38`, `Unit+0x3C`, `Unit+0x40` | a sequence's frames, length `<< 8`, position 8.8, step 8.8, current frame's mode | § G |
 | `Unit+0xC4` | bit 6 (the do ran), bit 14 (sequence mode changed), bit 19 (monster mode command) | § G, § L |
-| `Unit+0x20` | the unit seed (`Seed64`, rng) | the object start draw (§ C), the get-hit roll (§ M) |
+| `Unit+0x20` | the unit seed (`Seed64`, [rng](../../spec-rng/overview/)) | the object start draw (§ C), the get-hit roll (§ M) |
 | `Game+0xA8` | i32, the current game frame `T` | § E, § H |
 | the unit's stat lists | stats 67, 68, 69, 93, 96, 99, 102, 105 as the aggregate holds them | § J |
 
@@ -238,7 +238,7 @@ C3. SUNIT_AnimInit(unit):                                         [C] (SUNIT_Ani
 - C2. [C] **The object start draw.** At 725 logged object animation starts the rate is
   `FrameDelta − (FrameDelta >> 4) + draw` with draw#1 `RangeB(object seed, FrameDelta >> 3)` when `Sync` is 0 (490 starts) and no draw otherwise
   (235), and `+0x44`, `+0x48` as C2. The draw's place in the object seed's draw order is
-  objects § G's; no chained pair of two start draws on
+  [objects § G](../../spec-objects/overview/#g-creation-sunitcreate-for-an-object)'s; no chained pair of two start draws on
   one object was logged (7 pairs, each with another draw between). [I]
 - C2. [C] An object's server frame fields come from the Objects row, never from its `animdata.d2` record: the object
   branch, [), calls only the Objects row lookup and `RNG_RangeB`, neither
@@ -938,6 +938,10 @@ sequenceDiagram
   P->>P: Range(100) against stat 164
 ```
 
+- N1. [C] Over the 171 functions under the animation machine's 29 roots (three indirect stat-list callbacks
+  unfollowed), the only RNG call is the object start draw (C2); the rate (J2), the schedule, the advance and the
+  sequences draw nothing: a second, independent walker over the same roots and stops reaches 164 functions with one draw,
+  the call to `RNG_RangeB`, and the first walker's 171 bodies walked again find only `UNIT_AnimInit`'s.
 - N2. [I] On a hit, in delivery order: the durability draws,
   the stat events, the knockback handler, then `COMBAT_GetHit`: `GetHitRoll` (defender seed, 0–2, M2), then the
   command's `PlayerModeAllowed` draw (player seed, 0 or 1, M4). On a player defender these are all the player's own
@@ -1002,6 +1006,6 @@ sequenceDiagram
 
 ## Evidence
 
-- Upstream: rng, [stats/aggregate](../../spec-stats/aggregate/), [monsters/stats](../../spec-monsters/stats/).
-  Downstream: [skills/dispatch](../../spec-skills/dispatch/), [combat](../../spec-combat/overview/), objects,
+- Upstream: [rng](../../spec-rng/overview/), [stats/aggregate](../../spec-stats/aggregate/), [monsters/stats](../../spec-monsters/stats/).
+  Downstream: [skills/dispatch](../../spec-skills/dispatch/), [combat](../../spec-combat/overview/), [objects](../../spec-objects/overview/),
   [anim/movement](../movement/).

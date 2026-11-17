@@ -488,6 +488,8 @@ DimReturns(lvl, a, b) → i32:                                             [C]
   it is added to the item and mastery percents and applied as `AR + MulDiv(AR, pct, 100)`. The normal attack passes stat 325
   instead.
 
+The confirmed rows ran under emulation on synthetic skills, skilldesc and missiles records (codes 7–72; codes 43–48): 5 000 calls of `SKILLS_CalcVar` against a model of our own at levels −5…120 and wide values, and 3 000 for codes 43–48, the code byte with garbage above it in part of each; the others are read from the code only:
+
 | Codes (row) | Value | Tag |
 |---|---|---|
 | `dm78` (7) | `DimReturns(lvl, Par7, Par8)` with **no** `lvl < 1` test | [C] |
@@ -614,4 +616,4 @@ lvl 5 <          0       lvl 4 − par4 ×            ?:   96 41 skill        pa
 - excel-bin.md § Calc columns: the s32 offset fields.
 - Tables: SkillCalc, MissCalc, Skills,
   Misc.
-- Upstream: [data/excel](../excel/) (loading, `.txt` compile order), rng (`RNG_RangeB`, for `rand`).
+- Upstream: [data/excel](../excel/) (loading, `.txt` compile order), [rng](../../spec-rng/overview/) (`RNG_RangeB`, for `rand`).

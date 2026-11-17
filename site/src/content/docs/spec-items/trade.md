@@ -430,6 +430,17 @@ H3. TradeAbort(leaver L):                                             [I] (all o
 
 ### I. The save mid-trade
 
+```
+I1. PLRSAVE_Save(p):                                                  [I] (all of I1)
+      flag ← 1 if p's interaction is set and of kind 0, else 0
+      on the route for game byte +0x6A ∈ {1, 2}: D2S_WriteSave(…, flag) → D2S_WriteItemList(…, flag)
+      the routes SaveViaCallback and PLRSAVE_WriteFile receive the flag; not followed to the writer
+I2. SaveItemListOrSnapshot(buf, room, flag, …), unit u:              [I] (all of I2)
+      if flag ≠ 0 and u is a player and u has a record and rec.bytes ≤ room (signed):
+        copy rec.bytes from rec.buffer;  return rec.bytes        ; the opening inventory
+      else ITEMS_WriteInventoryList(u, …)                         ; the live list
+```
+
 - I. [I] So a player saved with an open record (from the target's accept to the end) is saved with the items as they
   were at opening and the carried gold as it is; in the request phase (no record) the live list is saved. Which
   `PLRSAVE_Save` route the saves at the drops took, and the file written, were not observed: J's save file on disk was

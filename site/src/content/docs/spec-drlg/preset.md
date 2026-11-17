@@ -6,7 +6,7 @@ sidebar:
 
 ## Purpose
 
-A preset instance (a placed `LvlPrest` record, step 4) carries the units its DS1 names: objects, monsters, NPCs and their paths. This spec says which of them a DRLG room ends up with: the act rewrites that turn some monsters into objects, the **keep/drop rolls** that remove ten unit ids by chance (one draw each, on the level seed or on a room seed), the units the game adds itself, and how the instance's list is split into room lists. It also gives the effect of each `LvlPrest` column that the tile build does not use, and level 27's file index. Primitives (`Step`, `Init`) are those of rng; the level and room seeds are those of rng/seeds.
+A preset instance (a placed `LvlPrest` record, step 4) carries the units its DS1 names: objects, monsters, NPCs and their paths. This spec says which of them a DRLG room ends up with: the act rewrites that turn some monsters into objects, the **keep/drop rolls** that remove ten unit ids by chance (one draw each, on the level seed or on a room seed), the units the game adds itself, and how the instance's list is split into room lists. It also gives the effect of each `LvlPrest` column that the tile build does not use, and level 27's file index. Primitives (`Step`, `Init`) are those of [rng](../../spec-rng/overview/); the level and room seeds are those of [rng/seeds](../../spec-rng/seeds/).
 
 ## Entry points
 
@@ -47,11 +47,11 @@ A preset instance (a placed `LvlPrest` record, step 4) carries the units its DS1
 | pending flag | `i32`, 1 at create | `PresetInstance+0x3C` | step 4 |
 | preset unit | `PresetUnit`, 0x20 bytes: `mode`, `id`, `x`, `y` (subtiles), `type`, `flags`, path | — | step 1 |
 | level seed | `Seed` | level `+0x1C4` | — |
-| DRLG room seed | `Seed` | room `+0x14` | rng/seeds step 5 |
+| DRLG room seed | `Seed` | room `+0x14` | [rng/seeds](../../spec-rng/seeds/) step 5 |
 | room rect | 4 × `i32`, tiles | room `+0x34`..`+0x40` | — |
 | room flags | `u32`: `0x40000` client copy, `0x80000` outdoors, no random population, `0x2000000` DS1 loaded | room `+0x28` | step 2, § LvlPrest columns |
 | room unit list | `PresetUnit` list, head first | room `+0x5C` | step 5 |
-| act seed | `Seed` (a copy, in the link builder) | act | rng/seeds step 3d, `drlg/warps` |
+| act seed | `Seed` (a copy, in the link builder) | act | [rng/seeds](../../spec-rng/seeds/) step 3d, `drlg/warps` |
 | `nMonStats`, `nSuperUniques` | `i32`: 734, 66 in the pinned data | — | MonStats, MonPreset |
 
 ### Constants
@@ -185,7 +185,7 @@ Step notes:
    draws (step 5). [C]
 2. **The room-seed roll uses the creation seed.** `R.seed` at that point is still the value `DRLG_RoomCreate`
    left, `Step(Init(level seed low))`, whose low word is also `R +0x04`: the roll comes before the re-seed
-   `Init(R.seed, R +0x04)` of room-tiles.md step 1, so the roll's draws change no later draw of
+   `Init(R.seed, R +0x04)` of [room-tiles.md](../room-tiles/) step 1, so the roll's draws change no later draw of
    that room. [C] (`DRLG_RoomCreate`: the room seed into all 571 room-seed rolls)
 3. **One roll fixes every room of the instance.** The room that loads first rolls for the whole instance, so
    which room that is (an activation order input) decides only which seed is used, and that seed's draws are
@@ -245,7 +245,7 @@ flowchart TD
 
 Step notes:
 
-1. `Step` here is the inlined LCG step of rng step 1 (`seed ← low × 0x6AC690C5 + high`, 64
+1. `Step` here is the inlined LCG step of [rng](../../spec-rng/overview/) step 1 (`seed ← low × 0x6AC690C5 + high`, 64
    bits), and `r` is the **new** low word. `mod 3` is unsigned (`mul 0xAAAAAAAB`, `shr 1`). [C]
 2. The ids and their keep chances, for orientation (each test is one draw):
 
@@ -435,7 +435,7 @@ What each column does beyond the file choice and the tile build. **None of these
 | `Outdoors` (`+0x10`) | ORs `0x80000` into each room's flags (set at creation in exactly the 119 183 logged rooms with `Outdoors` 1, [C]); `RoomIsOutdoors` returns that bit for a preset room (1 for an out room), so it marks the room outdoors for that test, whose two callers are the client's room change and a server skill walk (note 8) | — | [I] |
 | `Animate` (`+0x14`) | builds the animated-tile frame lists and sets room bit `0x8000000` (presentation): the bit is set in exactly the rooms whose `Animate` is 1 (104 with, 3540 without) | — | [C] |
 | no column (`+0x024`) | the animation frame period, 0 meaning 80 (read only); 0 in all 1091 records | — | [C] value / [I] meaning |
-| `KillEdge` (`+0x18`), `FillBlanks` (`+0x1C`) | tile build, room-tiles.md: 3736 and 4911 rooms built with them set match, and ignoring either breaks the logs | — | [C] |
+| `KillEdge` (`+0x18`), `FillBlanks` (`+0x1C`) | tile build, [room-tiles.md](../room-tiles/): 3736 and 4911 rooms built with them set match, and ignoring either breaks the logs | — | [C] |
 | `AutoMap` (`+0x30`) | gates the act callbacks `+0x454`/`+0x488`, which are null on the server and drive the client automap (presentation): client towns 40, 103, 109 call `+0x488` once, other `AutoMap` 1 levels `+0x454` per room, `AutoMap` 0 neither, the server neither | — | [C] |
 | `Scan` (`+0x34`) | with `Pops`, selects the level-seed roll (step 2a) and the map scan | `DRLG_PresetMapScan` | [C] |
 | `Pops` (`+0x38`) | with `Scan`, as above; also the capacity of the roof-pop tables (presentation) | `DRLG_PresetMapScan` | [C] |
@@ -577,7 +577,7 @@ The seed after the rolls is the second draw's (`954E7521:1858544F` and `3385BAE3
 - **A re-prepared room is not emptied.** Don't clear the room list before step 5; the second pass adds nothing and
   the previous list stays. [C]
 - **No shipped DS1 is cut two ways.** Every file named by two `LvlPrest` records is used by records of the same kind
-  and size, so the shared DS1 buffer's `0x84` border marks are the same in every view (the room-tiles.md
+  and size, so the shared DS1 buffer's `0x84` border marks are the same in every view (the [room-tiles.md](../room-tiles/)
   open question on shared-cache writes does not arise with the shipped data): `tri_town4` is a 43 × 48 preset level
   both times, `lake1` one 8 × 8 outdoor room, and the Maggot Lair files 10 × 10 maze rooms in levels whose `LvlMaze`
   size is 10 × 10, so the single-room test takes them whole. [C]
@@ -586,4 +586,4 @@ The seed after the rolls is the second draw's (`954E7521:1858544F` and `3385BAE3
 
 - Formats and tables: ds1, LvlPrest,
   MonPreset, MonStats, MonPlace.
-- room-tiles.md, rng, rng/seeds.
+- [room-tiles.md](../room-tiles/), [rng](../../spec-rng/overview/), [rng/seeds](../../spec-rng/seeds/).

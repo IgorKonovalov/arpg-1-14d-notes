@@ -13,12 +13,12 @@ Levels connect in two ways: through a **warp** (stairs, a cave mouth, a portal t
 - the per-level **link lists** that override `Levels` `Vis0..7`/`Warp0..7`;
 - the **warp slots** a preset DS1 cell carries, which become room flags;
 - the **warp points** list (`level+0x1E0`) that `LevelInit` builds after every level build, which
-  drlg/collision § I reads;
+  [drlg/collision § I](../collision/#i-nearwarptestgame-room-x-y-and-its-side-effects) reads;
 - the **pairing** that finds, when a room with a warp activates, the matching room of the destination level.
 
 In maze levels the warp rooms are the specials of [maze.md](../maze/). Act III's link layout and the warp bits of
 outdoor rooms are made by the outdoor generators, specified in [outdoor.md](../outdoor/) (§ J and § B). Primitives are
-those of rng; the act seed is that of rng/seeds step 3.
+those of [rng](../../spec-rng/overview/); the act seed is that of [rng/seeds](../../spec-rng/seeds/) step 3.
 
 ## Entry points
 
@@ -31,7 +31,7 @@ those of rng; the act seed is that of rng/seeds step 3.
 | Warp points, at the end of every `LevelInit` | — | [C] |
 | Room-state restore, at the end of every `LevelInit`, before the points (no warp data, no draw) | — | [C] |
 | Warp pairing, when a room with a warp bit activates | — | [C] |
-| Warp tile and warp node at room activation | see room-tiles.md step 10 | [C] |
+| Warp tile and warp node at room activation | see [room-tiles.md](../room-tiles/) step 10 | [C] |
 
 - [C] `LevelRoomStateRestore` restores room `+0x60` bit 0 from the per-room array at level `+0x22C` that `LevelUnload`
   (keep mode) saves, ORing it in room by room in list order: 25 rebuilds with a saved array, 90 rooms whose bit it set,
@@ -53,7 +53,7 @@ those of rng; the act seed is that of rng/seeds step 3.
 | `LvlWarp.txt:Id` | the warp record of a slot |
 | `LvlWarp.txt:OffsetX`, `LvlWarp.txt:OffsetY` | `+0x1C`/`+0x20`: the warp unit's offset from its cell |
 | `LvlWarp.txt:ExitWalkX`, `LvlWarp.txt:ExitWalkY` | `+0x14`/`+0x18`: where the server puts a unit that comes out of the paired warp |
-| `LvlWarp.txt:Direction` | `+0x2C`: `'b'`, `'l'`, `'r'` record fitting (room-tiles.md step 10) |
+| `LvlWarp.txt:Direction` | `+0x2C`: `'b'`, `'l'`, `'r'` record fitting ([room-tiles.md](../room-tiles/) step 10) |
 
 - [C] Stock data: all 236 `Vis` cells resolve to levels. The links are symmetric except 133 → 17. 228 slots hold
   `Vis` + `Warp`, 8 hold `Vis` without `Warp` (26↔27, 27↔28, 32↔33, 107↔108), and none hold `Warp` without `Vis`.
@@ -63,7 +63,7 @@ those of rng; the act seed is that of rng/seeds step 3.
 
 | State | Type | Owner offset | Source |
 |---|---|---|---|
-| act seed | `Seed` | act | rng/seeds steps 3a–3c |
+| act seed | `Seed` | act | [rng/seeds](../../spec-rng/seeds/) steps 3a–3c |
 | act index (0-based), difficulty | `u32` | act `+0x480`, `+0x450` | game |
 | link lists | list of `LevelLinks` `{levelId, vis[8], warp[8], next}`, 0x48 bytes | act `+0x90` | § C |
 | link builder | `LinkBuild`, 500 bytes: seed copy `+0x000`, `rect[15]` `+0x008`, table `+0x0F8`, `dir[15]` `+0x0FC`, `dir0[15]` `+0x138`, `flip[15]` `+0x174` (`step`), `flip0[15]` `+0x1B0`, `i` `+0x1EC` | stack | § B (`LinkBuild+0x0FC` is `dir`) |
@@ -96,6 +96,25 @@ flowchart TD
 ```
 
 ### A. Per-act link setup
+
+```
+A1. ActLinkInit(act):                                                [C]
+                                                                     ; T[k]: the link table at g_ActLinkTables + 240·k
+      act 0 (I):  Build(T[0], check Act1A, after LinkOutdoorFlags)
+                  Build(T[1], check Act1B, after LinkOutdoorFlags)
+                  LevelBorderAdj(1 … 17)
+      act 1 (II): Build(T[2], check Act2A);  Build(T[3], check Act2B)
+                  LevelBorderAdj(40 … 46)
+      act 2 (III): level 75 at its Levels offset; JungleLayout / KurastStack            ; outdoor.md § J
+                  LevelSeamsByTouch(75, 83);  LevelBorderAdj(75 … 83)
+      act 3 (IV): Build(T[5], check Act4A);  Build(T[6], check Act4B)
+                  level 104's outdoor data (+0x14) |= g_LinkPickOutdoorFlag   ; set by its pick (B2)
+                  LevelBorderAdj(103 … 106)
+      act 4 (V):  Build(T[7], no check);  Build(T[8], no check)
+                  LevelSeamsByTouch(111, 112);  LevelBorderAdj(111 … 112)
+                  LevelSeamsByTouch(110, 111);  LevelSeamsByTouch(109, 110)
+                  Build(T[4], check Act5C)
+```
 
 - A1. [C] This runs inside `DRLG_ActCreate` after the act seed's own draws (rng/seeds steps 3a–3c) and before the town is
   built. The run predicted the act seed at every `LevelLinkBuild` entry and exit and the act's link lists after
@@ -328,7 +347,7 @@ D1. DRLG_PresetMapScan(L, ps, flags):  the flag part                 [C]
   `OutWaypointPlace`, which marks level 3's waypoint next to its Blood Moor seam opening); an out room's
   flags are its grid0 cell `| 0x80000`.
 
-- D1. [C] `LevelPointFind` (drlg/collision § I step I2)
+- D1. [C] `LevelPointFind` ([drlg/collision § I](../collision/#i-nearwarptestgame-room-x-y-and-its-side-effects) step I2)
   takes the point list only when the level's `Levels.Position` (leveldefs `+0x90`) is set. With `Position` 0 it calls
   `LevelWaypointRoom`, which takes the first room of the level that passes the waypoint test, activates it, and returns
   the tile of the first type-2 unit of its preset list with id < `0x23D` and Objects `SubClass` bit `0x40`, falling back
@@ -432,7 +451,7 @@ F1. WarpPairLink(srcRoom, m):                                        [C]
 
 - [C] At room activation the warp cell gets its tile and its warp node: `id ← LevelWarpId(L, m)`, the LvlWarp record
   refitted to `Direction` `'l'` (orientation 10) or `'r'` (11), and one extra tile pick when `LitVersion` ≠ 0. Level 133
-  skips the tile. This is room-tiles.md step 10.
+  skips the tile. This is [room-tiles.md](../room-tiles/) step 10.
 - [C] The warp unit is a preset unit of type 5 whose class is the LvlWarp `Id`, placed at its cell plus
   `OffsetX/OffsetY` of the LvlWarp row fitted to the cell's direction, unless the cell is on the room's last column or
   row: all 21 type-5 units of the logged server walks sit at a warp cell of their room's preset instance, × 5 plus
@@ -455,7 +474,7 @@ F1. WarpPairLink(srcRoom, m):                                        [C]
 - Per act: every placed level's rect, the town indices of levels 1 and 40, level 27's index, the act seed after its one
   possible draw, and the link lists at act `+0x90`. [C]
 - Per build: each DRLG room's warp-slot and waypoint flags, the level points (`+0x2C`), and the warp points
-  (`+0x1E0`/`+0x204`/`+0x228`) that drlg/collision § I
+  (`+0x1E0`/`+0x204`/`+0x228`) that [drlg/collision § I](../collision/#i-nearwarptestgame-room-x-y-and-its-side-effects)
   reads. [C]
 - Per activated warp room: its paired room in the destination level, built on demand. [C]
 
@@ -542,5 +561,5 @@ carries slot 6 (`0x400`) in this seed.
   LvlWarp, LvlPrest § Warp slots,
   ds1 § Warp-slot cells. Types:
   (`LevelLinks`, `LinkEntry`, `LinkBuild`).
-- [maze.md](../maze/), [drlg/overview](../overview/), [preset.md](../preset/) step 7, room-tiles.md step 10,
-  rng/seeds.
+- [maze.md](../maze/), [drlg/overview](../overview/), [preset.md](../preset/) step 7, [room-tiles.md](../room-tiles/) step 10,
+  [rng/seeds](../../spec-rng/seeds/).

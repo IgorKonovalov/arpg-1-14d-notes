@@ -99,7 +99,7 @@ sequenceDiagram
 
 ### A. Game creation
 
-([chain § Algorithm](../../spec-chain/overview/#algorithm) A, rng/seeds)
+([chain § Algorithm](../../spec-chain/overview/#algorithm) A, [rng/seeds](../../spec-rng/seeds/#algorithm))
 The game seed and the map seed both start from the seed given at creation. Four game-seed draws follow, in this
 order: one seeds the monster regions (the [monster pools](../../world/monsters/#which-monsters-a-level-can-have-the-pool)), one
 the object-region seed, one the vendors' store seed and one the quest seed. The project's tool reproduces all four from

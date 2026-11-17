@@ -67,7 +67,7 @@ flowchart TD
 | frame | `Game+0xA8` | the end frame of timed states |
 | life, mana, stamina | stats 6–11, 1/256 units | value inputs at the event's entry |
 | player count of a monster | stat 100, set at creation | [monsters/stats § C](../../spec-monsters/stats/#c-the-player-count-monplayerbonus) |
-| unit type flags | `0x02` superunique, `0x04` champion, `0x08` special (set on every champion, unique and superunique) | [monsters/special](../../spec-monsters/special/), monsters/spawn § G |
+| unit type flags | `0x02` superunique, `0x04` champion, `0x08` special (set on every champion, unique and superunique) | [monsters/special](../../spec-monsters/special/), [monsters/spawn § G](../../spec-monsters/spawn/#g-the-special-group-boss-champion-or-unique) |
 
 ### Constants
 
@@ -642,5 +642,5 @@ against a `fallen2` at life 74776 with physical resistance 15). Reduced packet: 
   (12 000 cases, 0 mismatches).
 - Tables: DifficultyLevels, MonStats,
   ItemStatCost, States.
-- Upstream: rng, [monsters/stats § C](../../spec-monsters/stats/#c-the-player-count-monplayerbonus).
+- Upstream: [rng](../../spec-rng/overview/), [monsters/stats § C](../../spec-monsters/stats/#c-the-player-count-monplayerbonus).
   Downstream: [items/tc](../../spec-items/tc/) (the drop at the kill).

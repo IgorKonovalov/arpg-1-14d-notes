@@ -14,7 +14,7 @@ unit's own seed: quantity, durability, defense and the picture. The **property r
 **ethereal** and **socket** rolls take one item-seed draw each. The spec starts where
 [items/uniques-sets § A](../uniques-sets/#a-the-item-seed-at-entry) seeds the item and ends with the socket roll.
 Which affix, unique or set row is applied is decided upstream: [items/uniques-sets](../uniques-sets/) for uniques
-and sets, and [items/affixes](../affixes/) for the magic, rare, superior and automagic rows and the staff mods. Primitives are those of rng.
+and sets, and [items/affixes](../affixes/) for the magic, rare, superior and automagic rows and the staff mods. Primitives are those of [rng](../../spec-rng/overview/).
 
 ```mermaid
 flowchart LR
@@ -82,7 +82,7 @@ flowchart LR
 
 | State | Type | Source |
 |---|---|---|
-| `unit.seed` | `Seed` at `Unit+0x20` of the item unit | the unit constructor's game-seed draw (rng/seeds step 7a) |
+| `unit.seed` | `Seed` at `Unit+0x20` of the item unit | the unit constructor's game-seed draw ([rng/seeds](../../spec-rng/seeds/#algorithm) step 7a) |
 | `item.seed` | `Seed` at `ItemData+0x04`, `{start, 666}` at entry | [uniques-sets § A](../uniques-sets/#a-the-item-seed-at-entry) |
 | `item.start` | u32 at `ItemData+0x10` | the low word the item seed was initialised from; the socket count reads it |
 | `item.quality` | u32 at `ItemData+0x00`; **0** while § A runs on a drop | written by `ItemCreateByQuality` |
@@ -381,6 +381,12 @@ only then).
 | 24 | `v ← prev or Roll` | `W(stat, par, v)` | [I] |
 | 36 | `Roll` | `W(stat, param = v, value = val)` | [I] |
 
+- [C] The handler of func *f* is the word `g_PropFuncTable[f]` (4 bytes a slot); slots 0 and 25..35 are NULL. The run reached funcs 1,
+  2, 3, 5, 6, 7, 8, 10, 11, 13, 14, 15, 16, 17, 19, 20, 21 and 22 (2 279 slots), every one reproduced. A TC-named
+  forced run (a loose `treasureclassex.bin` naming the carriers; the handlers read no TreasureClassEx cell)
+  reached func 12 and func 23's make branch, three slots each, reproduced with the final lists. Funcs 18, 24 and 36
+  and func 23's skips were not reached, and no drop-path row uses 4 or 9; their rows stay inferred.
+
 - [C] **Funcs 1 and 13 roll in mode 1 too.** Superior `att` rolled 1..3 over 11 items and superior `dur%` 10..15 over
   15 items, never their maximum; the mode-1 `Reset` has no case for stats 19 and 75.
 - [C] **Func 2 rolls `ac%` in every mode** (0, 1, 3 and 4 logged); what goes to its maximum is the base defense
@@ -502,6 +508,33 @@ flowchart TD
   SQ -->|yes| SO["F4–F6 socket roll"]
   SQ -->|no| AM
   SO --> AM["automagic pick and props<br/>items/affixes"]
+```
+
+```
+F1. if itemVersion ≥ 100: EtherealRoll(item, rec)                                    [C]
+    if quality ∈ 1..3: SocketRoll(game, item, rec)
+EtherealRoll:
+F2. if rec+0x80 & 0x02: return                                                       [C]
+    if not (IsType(item, 45) or IsType(item, 50)): return                            [C] (all of F2–F3)
+    if not ItemHasDurability(item) or quality ∈ {1, 5} or base.quest: return
+    r ← Range(item.seed, 100)                                                        ; draw
+F3. if (rec+0x80 & 0x04) or (rec+0x44 & (1 << 22)) or r < 5:
+      ITEMS_MakeEthereal(item)          ; flag 1 << 22; weapon: base 21..24, 159, 160 ← (x × 3) ÷ 2; else base 31 ← (x × 3) ÷ 2
+      if ItemHasDurability(item):
+        base stat 73 ← base73 ÷ 2 + 1;  base stat 72 ← EVD
+SocketRoll:
+F4. if quality < 2 or not base.hasinv or base.stackable: return                      [C] (ITEMS_GetStartSeed, all of F4–F6)
+    cap ← ItemMaxSockets(item);  if cap = 0: return
+    cap ← min(cap, 3 / 4 / 6 by game.difficulty)
+    if itemVersion < 100 and IsType(item, 3 tors): return                            ; no draw [C]
+    r ← Range(item.seed, 100)                                                        ; draw
+    if rec+0x80 & 0x08: return                                                       ; tested after the draw [C]
+    if rec+0x80 & 0x10: r ← 0
+F5. ItemMaxSockets(item) = min(gemsockets, MaxSock1 if ilvl ≤ 25, MaxSock25 if ilvl ≤ 40, else MaxSock40)
+F6. if (rec+0x44 & 0x800) or r < 33:
+      set item.flags 0x800
+      ITEMS_SetSockets(item, item.start mod cap + 1)       ; u32 mod, NOT a draw
+      ; SetSockets: n ← min(n, 6, invwidth × invheight, ItemMaxSockets); base stat 194 ← n
 ```
 
 Step notes:
@@ -756,6 +789,6 @@ Expansion Nightmare, `gsc` (damage 8–18), ilvl 61, set row 2 *Civerb's Cudgel*
   SetItems, MagicPrefix,
   MagicSuffix, AutoMagic,
   QualityItems, Skills.
-- Specs: rng, rng/seeds, [items/uniques-sets](../uniques-sets/),
+- Specs: [rng](../../spec-rng/overview/), [rng/seeds](../../spec-rng/seeds/), [items/uniques-sets](../uniques-sets/),
   [items/affixes](../affixes/) (the picks, staff mods, automagic and their draw order),
   [save/d2s § J](../../spec-save/d2s/#j-property-list-framing).

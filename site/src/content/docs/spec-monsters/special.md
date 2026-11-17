@@ -13,7 +13,7 @@ a unique's minions, how a superunique is built from its `SuperUniques` row, and 
 client from a name seed the server sends. Every draw is given in order, with the seed it uses: the special's **unit
 seed**, a **local seed** made from the name seed, or the client's own seed. What the mods *do* (hit points, damage, auras,
 resistances) is specified in [monsters/stats](../stats/) and is only named here. Primitives (`Step`, `Range`, `Init`) are those of
-rng; `RangeB` in our symbol names is the second compile of `Range` and behaves the same.
+[rng](../../spec-rng/overview/); `RangeB` in our symbol names is the second compile of `Range` and behaves the same.
 
 ## Entry points
 
@@ -87,16 +87,16 @@ Constant data in `Game.exe`:
 
 | State | Type | Source |
 |---|---|---|
-| unit seed | `Seed` at unit `+0x20` | after `SUnitCreate` (input, [monsters/stats § B](../stats/#b-monstatsinit-in-order); spawn § J) |
+| unit seed | `Seed` at unit `+0x20` | after `SUnitCreate` (input, [monsters/stats § B](../stats/#b-monstatsinit-in-order); [spawn § J](../spawn/#j-creation-and-the-unit-seed)) |
 | mod list | u8 × 9 at `MonsterData+0x1C`, ends at the first 0 | post-create mods (§ J), then this spec |
-| flags | at `MonsterData+0x16`: `0x01` boss or pack member, `0x02` superunique, `0x04` champion, `0x08` special, `0x10` minion; `0x20`/`0x40` set by the champion-mod handlers (named) | this spec and spawn § G |
+| flags | at `MonsterData+0x16`: `0x01` boss or pack member, `0x02` superunique, `0x04` champion, `0x08` special, `0x10` minion; `0x20`/`0x40` set by the champion-mod handlers (named) | this spec and [spawn § G](../spawn/#g-the-special-group-boss-champion-or-unique) |
 | name seed | u16 at `MonsterData+0x14` | written by the `rndname` handler (§ C) |
 | superunique id | `MonsterData+0x26` | `SuperUniqueSpawn` |
 | difficulty | u8 at game `+0x06D` (0, 1, 2) | game creation |
 | expansion flag | dword at game `+0x70` | game creation |
 | placed bits | one bit per superunique at game `+0x1D30` | `SuperUniqueSpawn` |
 | monster level | stat 12 of the unit | [monsters/stats § D](../stats/#d-classic-nightmare-and-hell-monclassicdiffadjust) (read by the `aura` handler only) |
-| room seed, game seed | `+0x6C` of the active room, game `+0xD0` | spawn (placement of superuniques, MonPlace specials and minions) |
+| room seed, game seed | `+0x6C` of the active room, game `+0xD0` | [spawn](../spawn/) (placement of superuniques, MonPlace specials and minions) |
 
 ### Constants
 
@@ -120,7 +120,7 @@ Constant data in `Game.exe`:
 | grid snapshot at each preset special | value input | the collision grids a superunique or MonPlace special is placed on | `drlg/collision`, `objects` | [C] |
 | monster level read by `aura` | compared value | stat 12 after `leveladd`; it enters the draw only through `level ≥ 20` | [monsters/stats § D3](../stats/#d-classic-nightmare-and-hell-monclassicdiffadjust) | [C] |
 | handler effects and their deep callees | seed-asserted calls | skill and AI setup, stat writes, quest hooks: no seed of unit, room or game changes across them; a change would be a failure, not a taken value | [monsters/stats § G](../stats/#g-the-mod-handlers-stat-effects), [quests/progression § B](../../spec-quests/progression/#b-events-and-dispatch) | [C] |
-| placement of minions and escorts | modelled in spawn § H | `MonSpawnTry` with its room and game draws | `monsters/spawn` | [C] |
+| placement of minions and escorts | modelled in [spawn § H](../spawn/#h-placement-spawnpospick-and-monspawntry) | `MonSpawnTry` with its room and game draws | `monsters/spawn` | [C] |
 
 - [C] `MonTypeIsA` is not an oracle: its bit matrix is built from `montype` by code that is read (§ B4), and all 153 calls
   of the run were predicted.
@@ -325,8 +325,52 @@ count of 0 to 1, so `Range(local, 1)` returns 0 and row 0 is used. Stock data re
 
 ### D. Per-mod draws
 
-One row per MonUMod row. Weights are normal / nightmare / hell. "Flag 1" is the special itself and "flag 0" a member of
+One row per MonUMod row. Each row's pick weights (`cpick` and `upick` per difficulty), `xfer`, `fPick`, `exclude1`
+and `enabled` are MonUMod's own values, read from the table: the table doc's *Columns* define them, and its
+§ Pick weights per difficulty sums up the stock weights, `xfer`,
+`fPick` and `exclude1` of the pick mods. "Flag 1" is the special itself and "flag 0" a member of
 its group. No handler draws on the room or game seed. The effect column only names what [monsters/stats § G](../stats/#g-the-mod-handlers-stat-effects) specifies.
+
+| Row | Mod | Server handler | Draws, flag 1 | Flag 0 | Effect (named) | Tag |
+|---|---|---|---|---|---|---|
+| 0 | `none` | null | — | — | its `constants` is the champion chance | [I] |
+| 1 | `rndname` | always run | **1 unit-seed step**; name seed | nothing | name seed | [C] |
+| 2 | `hpmultiply` | always run | none | runs | hit points | [C] |
+| 3 | `light` | null, always tried | — | — | — | [C] |
+| 4 | `leveladd` | always run | none | runs | level + 3, experience × 5 | [C] |
+| 5 | `strong` | — | none | runs | to-hit, damage | [C] |
+| 6 | `fast` | — | none | runs | velocity | [C] |
+| 7 | `curse` | null | — | — | elsewhere | [C] |
+| 8 | `resist` | — | none | nothing | resistances | [C] |
+| 9 | `fire` | — | none | runs, `resist` part skipped | enchant damage, resistance | [C] |
+| 10, 11, 13, 14, 15 | `poisondead`, `durieldead`, `rage`, `spcdamage`, `partydead` | null | — | — | post-create mods (§ J) | [C] for 10 and 13, skipped in every window that listed them; [I] for 11, 14, 15, in no logged list |
+| 12 | `bloodraven` | null (client: the name) | — | — | Blood Raven's name | [C] (`g_ClientUModHandlers`: written by the preset path with no `SpecialModsApply` window; the client builder names it) |
+| 16 | `champion` | — | none | nothing | level − 1, experience, to-hit, damage, velocity | [C] |
+| 17 | `lightning` | — | none | runs, `resist` part skipped | enchant damage, resistance | [C] |
+| 18 | `cold` | — | none | runs, `resist` part skipped | enchant damage, resistance | [C] |
+| 19, 21 | `hireable`, `killself` | null | — | — | — | [I] |
+| 20 | `scarab` | null | — | — | post-create mod of `scarab1` classes | [C] |
+| 22 | `questcomplete` | null | — | — | appended to every superunique | [C] |
+| 23 | `poisonhit` | — | none | runs, `resist` part skipped | enchant damage | [I] |
+| 24 | `thief` | null | — | — | never written (§ G) | [I] |
+| 25 | `manahit` | — | none | runs, `resist` part skipped | enchant damage | [C] |
+| 26 | `teleport` | — | none on unit, room or game seed (skill setup asserted) | nothing | teleport skill | [C] |
+| 27 | `spectralhit` | — | none | nothing | resistances | [C] |
+| 28 | `stoneskin` | — | none | nothing | resistances | [C] |
+| 29 | `multishot` | null | — | — | elsewhere | [C] |
+| 30 | `aura` | — | **`Range(Init(nameSeed), n)`** on a local seed | nothing | aura skill and level | [C] |
+| 31–35, 40, 42 | `goboom`, `firespike_explode`, `suicideminion_explode`, `ai_after_death`, `shatter_on_death`, `worms_on_death`, `lightningdeath` | null | — | — | — | [C] for 34 and 35, in 17 applied lists with no call; [I] for 31–33, 40, 42, in no logged list |
+| 36 | `ghostly` | — | none | nothing | flag `0x40`/`0x20`, then `champion`'s effects | [C] |
+| 37 | `fanatic` | — | none | nothing | flag `0x40`/`0x20`, then `champion`'s effects | [C] |
+| 38 | `possessed` | — | none | nothing | flag `0x40`/`0x20`, then `champion`'s effects | [C] |
+| 39 | `berserk` | — | none | nothing | flag `0x40`/`0x20`, then `champion`'s effects | [C] |
+| 41 | `always_run_ai` | — | none on the three seeds (AI event, not reached) | runs | AI timer | [I] |
+
+- [C] A `[C]` row is a mod that was in some logged special's list (or always run), with its handler calls seed-asserted:
+  in the special-monsters run, and for rows 10, 12, 13, 34 and 35 in the later runs named in their rows. The `[I]` rows
+  (and the `[I]` parts of the split rows) were never in a logged list. For those the "none" rests on the static call
+  graph: no LCG step and no RNG call in the stat handlers, the single step of `rndname`, the local draw of `aura`, and RNG
+  only deep inside the skill and AI callees of `teleport`, `aura` and `always_run_ai`.
 
 ### E. Unique minions and transfer
 
@@ -384,7 +428,7 @@ F1. ChampionMemberMark(u, mod: u8 = 16):                          [C] except the
   mods and handlers of all 49 members and preset champions.
 - [C] Pack members are not linked as minions. The boss's group walk therefore reaches none of them, and they take no
   `xfer` copy. The pack size and the members'
-  placement are spawn § G5.
+  placement are [spawn § G5](../spawn/#g-the-special-group-boss-champion-or-unique).
 
 ### G. Superuniques
 
@@ -507,6 +551,13 @@ H2. MonPlace case 3, a champion at the point:                      [C]
   Nightmare and Hell (logged in Hell: [C]). In Normal both call `PresetGroupSpawn`, with class `imp1` (`deathmauler1` in level 110) for row 24
   and `minion1` for row 26: a leader in the preset's box and `MinGrp − 1 + RangeB(leader.seed, MaxGrp − MinGrp + 1)`
   members around it.
+- [I] **Every MonPlace row, from the switch.** The MonPlace branch switches on `index − 2` with the bound `0x1E`. Rows 0, 1 and 33–36 fail the bound, and rows 6, 7, 9, 12–16 and 19–21 have byte-table entry 8;
+  both go to an exit that returns 0 with no call. **These rows place nothing in `PresetMonSpawn`**:
+  `place_nothing`, `place_npc_pack`, the river monsters, `place_amphibian`, the nests, the talking and dumb guards,
+  `place_maggot`, `place_maggotegg`, `place_mosquitonest` and `place_group25` to `place_group100`. A `place_group25`–`75`
+  unit that the DRLG preset pass keeps on its room-seed draw
+  still places nothing here. The rows placed at the preset point with `SpawnAtPos(x, y, class, mode, radius −1, …)` and
+  no special code:
 
 | Row | `code` | Class | Flags |
 | --- | --- | --- | --- |
@@ -572,7 +623,7 @@ Raven's string 3111 (class 267). [C] The other fixed-name classes (211, 243,
 I2. The order is suffix, then prefix, in both rounds, and the appellation comes first in the second round. When the 50 %
 branch is taken the first pair has been drawn and is discarded. Each word is a row index `Range(seed, rows)` over the
 table's records (stock: 69 suffixes, 53 prefixes, 25 appellations). [C] An entry whose string index is 0 or does not resolve gives an empty string. [I]
-Turning a string index into text is the `data/strings` lookup, specified in data/strings § C
+Turning a string index into text is the `data/strings` lookup, specified in [data/strings § C](../../spec-data/strings/#c-index--text--strtable_getbyindex)
 (stored u16 → table and entry → UTF-16 text; the word indices 2702–2849 lie in `string.tbl`). [C]
 
 
@@ -615,11 +666,13 @@ I4. `UniqueTitle` is loaded and freed, and nothing reads it: access watchpoints 
   | 243 `diablo`, `diabloclone` | 22; `uberdiablo` (705): 22, 8, 6 | quest hook 23 | [C] the first call only: `diablo` and `diabloclone` mod 22, class 705 mod 22; [I] the later calls |
   | 256 `izual` | 22; `uberizual` (706): 6, 18 | quest hook 22 | [C] the first call only: `izual` mod 22, class 706 mod 6; [I] the later calls |
   | 544 `baalcrab` | 22; `uberbaal` (709): 22, 18, 8, 6 | quest hook 36 | [C] the first call only: `baalcrab` and class 570 quest hook 36, class 709 mod 22; [I] the later calls |
+  | 267 `bloodraven` | 12, 22 | quest hook 2; `STATE_Set(unit, 0x76, 1)` | [I] |
   | 284 `maggotqueen1`..`5` | 23, 22 | — | [I] |
   | 292 `firegolem` | 31 (flag 0) | — | [I] |
   | 366 `compellingorb` | 22 | quest hook 19, unit flag `0x20000` | [I] |
   | 402 `smith` | 22 | — | [I] |
   | 526 `nihlathakboss` | 22 | quest hook 34 | [C] the mod; [I] the hook |
+| 175 `warriv2`, 229 `radament`, 250 `summoner`, 340–343 `boneprison1`..`4`, 407 `fetish11`, 409 `hephasto`, 434 `prisondoor`, 540 `ancientbarb1`..`3` | none | quest hooks (229: 8; 250: 12, then unit flag `0x800`; 407: 17; 409: 24; 434: 32); unit flag `0x20000` (340–343); the gear call (540); an unnamed call (175) | [I] (for 540, for 175) |
 
 - [C] **The first call of `MonPostCreateBoss`, for six `BaseId`s.** For `BaseId`s 156, 211, 242, 243, 256 and 544, the table's rows above: by class, the first `ModAppendApply(game, unit, mod, 1)` or `QUESTS_HookMonster` is the one each row names, so `mephisto` and `baalcrab` reach their quest hook before their mod 22, and `duriel` its hook 13 first. Each case ends at that first callee. This covers neither the callee, nor the later mods (704 → 22, 30, 17, 8, 6; 705 → 22, 8, 6; 709 → 22, 18, 8, 6, which stay `[I]`), nor reach: a p-code run says nothing about whether a unit of an uber class exists.
 - [I] **No Uber event found in this image.** The `uber*` cases above, the aura arm (§ C3) and the other class-gated code say what a
@@ -730,11 +783,14 @@ sequenceDiagram
 
 ## Worked example
 
-Every value below is from the logs. Seeds are `low:high` in hex. A "step" is one `Step` of the named seed.
+Every value below is from the logs of the special-monsters run. The draws were re-derived
+from the seeds named and each one matches the log, and the model reproduces the whole log with 0 mismatches. Seeds are `low:high` in hex. A "step" is one `Step` of the named seed.
 
 ### Example 1: a champion pack (expansion nightmare)
 
-A random boss of class 620 `blunderbore6` (`NameStr` `Mauler`, no `minion1`), unit id 9. Its unit seed after `SUnitCreate` (input) is `2F323723:44E307EC`; it has no mods.
+The session of game seed 2106, expansion nightmare, level 112 Arreat
+Plateau. A random boss of class 620 `blunderbore6` (`NameStr` `Mauler`, no `minion1`), unit id 9. Its unit seed after
+`SUnitCreate` (input) is `2F323723:44E307EC`; it has no mods.
 
 | # | Draw | Seed after | Result |
 |---|---|---|---|
@@ -745,7 +801,7 @@ A random boss of class 620 `blunderbore6` (`NameStr` `Mauler`, no `minion1`), un
 | — | handlers 2, 4, 39 | unchanged; room `69DCEEF2:5106C7B3`, game `EE90C51B:5D9351B2` unchanged | — |
 | 4 | `ChampionPack`: step, `low mod 3 + 1` | `394C9678:2EE42422` | `0x394C9678 mod 3` = 1 → 2 members |
 
-Members (each placed with radius 4 around the boss, spawn § G5):
+Members (each placed with radius 4 around the boss, [spawn § G5](../spawn/#g-the-special-group-boss-champion-or-unique)):
 
 | Member | Unit seed after `SUnitCreate` (input) | Mods | `rndname` step → | Name seed |
 |---|---|---|---|---|
@@ -757,7 +813,7 @@ is made. The live special count went from 0 to 3.
 
 ### Example 2: a unique group (expansion nightmare)
 
-Source: the same log, line 9960. A random boss of class 620 `blunderbore6`, unit id 97, in the same level. Unit seed after
+The same session. A random boss of class 620 `blunderbore6`, unit id 97, in the same level. Unit seed after
 `SUnitCreate` (input) `4E0156CB:21241A4D`, no mods.
 
 | # | Draw | Seed after | Result |
@@ -785,7 +841,10 @@ docs).
 
 ### Example 3: a superunique (expansion hell)
 
-Rakanishu, record 3: class 20 `fallen2`, `Mod1` 17, `Mod2` 6, `Mod3` 0, `MinGrp` = `MaxGrp` = 8, `AutoPos` 0, `Stacks` 0, not yet placed. The exact placement at the preset point (5099, 5219) costs 3 room draws (room `39E33144:354998C5` → `824B6B7C:26EFD6FB`) and one game step. The unit seed after `SUnitCreate` (input) is `552E1840:49D16526`.
+The session of game seed 2111, expansion hell, level 4 Stony Field.
+Rakanishu, record 3: class 20 `fallen2`, `Mod1` 17, `Mod2` 6, `Mod3` 0, `MinGrp` = `MaxGrp` = 8, `AutoPos` 0, `Stacks` 0,
+not yet placed. The exact placement at the preset point (5099, 5219) costs 3 room draws (room `39E33144:354998C5` →
+`824B6B7C:26EFD6FB`) and one game step. The unit seed after `SUnitCreate` (input) is `552E1840:49D16526`.
 
 | # | Draw | Seed after | Result |
 |---|---|---|---|
@@ -800,7 +859,8 @@ The client shows the record's `Name`; no client draw.
 
 ### Example 4: a name with an appellation
 
-A unique of class 53, unit id 48, server name seed 54871 (`0xD657`). The client keeps 87 (`0x57`).
+The same session as example 3. A unique of class 53, unit id 48, server name seed
+54871 (`0xD657`). The client keeps 87 (`0x57`).
 
 | # | Client draw on `Init(87)` = `00000057:0000029A` | Seed after | Result |
 |---|---|---|---|
@@ -851,5 +911,5 @@ The name is format 1722 with prefix, suffix and appellation, from the keys `Fire
   UniquePrefix, UniqueSuffix,
   UniqueAppellation, UniqueTitle,
   MonStats, MonStats2.
-- Upstream: rng, rng/seeds, monsters/spawn,
-  [monsters/pool](../pool/), [drlg/preset](../../spec-drlg/preset/), drlg/collision.
+- Upstream: [rng](../../spec-rng/overview/), [rng/seeds](../../spec-rng/seeds/), [monsters/spawn](../spawn/),
+  [monsters/pool](../pool/), [drlg/preset](../../spec-drlg/preset/), [drlg/collision](../../spec-drlg/collision/).

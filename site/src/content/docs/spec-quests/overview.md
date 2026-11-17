@@ -99,10 +99,10 @@ fetch outside any logged event.
 | Spec | What it takes from here |
 |---|---|
 | [items/quest-drops](../../spec-items/quest-drops/) | the quest bits at kill time and the quest seed's non-item draws |
-| objects | the quest `InitFn`s' game-record and private-state reads |
-| monsters/spawn | the Chaos Sanctuary gate |
+| [objects](../../spec-objects/overview/) | the quest `InitFn`s' game-record and private-state reads |
+| [monsters/spawn](../../spec-monsters/spawn/) | the Chaos Sanctuary gate |
 | [monsters/special](../../spec-monsters/special/) | the forced death list and quest hooks |
-| rng/seeds | act `+0x094` as the true tomb |
+| [rng/seeds](../../spec-rng/seeds/) | act `+0x094` as the true tomb |
 | [items/cube](../../spec-items/cube/) | the cow-portal gate words |
-| drlg/collision, [drlg/warps](../../spec-drlg/warps/) | the level-point lookup and warp pairing used by placement |
+| [drlg/collision](../../spec-drlg/collision/), [drlg/warps](../../spec-drlg/warps/) | the level-point lookup and warp pairing used by placement |
 | [save/d2s](../../spec-save/d2s/) | the record's load rule and the saved words |

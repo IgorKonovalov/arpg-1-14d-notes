@@ -12,8 +12,8 @@ picked from the level's `mon` (normal) or `nmon` (nightmare, hell) candidates, e
 and up to three appearance sets. It also copies the level's density and unique-count columns. The
 spawn code later picks classes from it. This spec also gives the **monster level** rule that runs when
 any server monster is created, and the client **critter** draw, which does not use the pool.
-Primitives (`Step`, `Range`, `RangeB`, `Init`, `InitOne`) are those of rng. The game
-seed is defined in rng/seeds step 1.
+Primitives (`Step`, `Range`, `RangeB`, `Init`, `InitOne`) are those of [rng](../../spec-rng/overview/). The game
+seed is defined in [rng/seeds](../../spec-rng/seeds/) step 1.
 
 ## Entry points
 
@@ -74,13 +74,13 @@ A monster class is a MonStats record position (the stored distinct-Id ordinal, u
 
 | State | Type | Source |
 |---|---|---|
-| game seed | `Seed` at game `+0xD0` | rng/seeds step 1; under `-seed N` it is `Init(N)` |
+| game seed | `Seed` at game `+0xD0` | [rng/seeds](../../spec-rng/seeds/) step 1; under `-seed N` it is `Init(N)` |
 | region seed `R` | `Seed`, a local of `MonRegionsInit` | step A |
 | `game.monRegionSeedLow` | u32 at game `+0xEC` | step A |
 | difficulty | u8 at game `+0x06D`, 0 normal, 1 nightmare, 2 hell | game creation |
 | expansion | u32 at game `+0x070`, non-zero in an expansion game | game creation |
 | `regions[id]` | pointer array at game `+0xF0`, one `MonRegion` per level id, `[0]` unused | step B |
-| client room seed | `Seed` at active room `+0x6C` (client copy) | rng/seeds step 6 |
+| client room seed | `Seed` at active room `+0x6C` (client copy) | [rng/seeds](../../spec-rng/seeds/) step 6 |
 
 ### Constants
 
@@ -138,7 +138,7 @@ A5. BuildRegions(R, game.difficulty, game.expansion)             ; step B
 
 - [C] The game-creation calls after this one also step the game seed, one draw each, in this order: object
   regions (`OBJRGN_Create`, draw 2), the store (`NPCSTORE_CtlCreate`, draw 3) and quests (`QUESTS_InitGame`,
-  draw 4). They are specified in rng/seeds step note 7a, not here.
+  draw 4). They are specified in [rng/seeds](../../spec-rng/seeds/) step note 7a, not here.
 
 - [C] `R` is a local of `MonRegionsInit`; nothing else draws from it, and it is not kept after the build.
   Only the game seed's single draw is visible to the rest of the game.
@@ -578,8 +578,17 @@ Every other byte is 0. The `[C]` rows are the fields the run logs for every regi
 
 ## Worked example
 
+For seed 1, normal, levels 1 to 3, the model prints:
+
+```
+game seed Init(1) after 1 step(s): 6ac6935f:00000000; region seed = Init(6ac6935f)
+level   1 act 0 mlvl   0 pool [] seed after 6ac6935f:0000029a
+level   2 act 0 mlvl   1 pool [5(r2,3v) 19(r2,3v) 63(r2,1v)] seed after d52ffc3b:270b4ee5
+level   3 act 0 mlvl   2 pool [28(r1,1v) 58(r2,1v) 165(r1,3v)] seed after 679fafd2:63e02d41
+```
+
 `check` compares the same values with every logged region (1557/1557 for the run). The individual draws
-below come from stepping the same model; each can be re-derived with rng step 1. Seeds are
+below come from stepping the same model; each can be re-derived with [rng](../../spec-rng/overview/) step 1. Seeds are
 `low:high` in hex.
 
 **A.** Game seed `Init(1)` = `00000001:0000029a`. A2: `1 × 0x6AC690C5 + 0x29A = 0x6AC6935F`, so the game seed
@@ -654,7 +663,7 @@ MonStats `Level`/`Level(N)`/`Level(H)` = 2/36/67) created in level 3 (`MonLvl1Ex
   every later pool. [C]
 - **The game seed is shared.** The region init's single draw (A2) is one step in the game seed's sequence;
   the object regions, the store, quests and every server unit created later step the same seed after it
-  (rng/seeds step 7a). [C]
+  ([rng/seeds](../../spec-rng/seeds/) step 7a). [C]
 - **A dropped class still costs a pick.** `isSpawn` is tested after the pick and the slot removal (C8).
   [C]
 - **Positions, not names.** A pool cell is a MonStats record position. Resolving it by `Id` name lands on
@@ -689,4 +698,4 @@ MonStats `Level`/`Level(N)`/`Level(H)` = 2/36/67) created in level 3 (`MonLvl1Ex
 - Tables: MonStats2,
   Levels,
   MonStats, MonLvl.
-- Upstream: rng, rng/seeds, [data/excel](../../spec-data/excel/#h-monster-references).
+- Upstream: [rng](../../spec-rng/overview/), [rng/seeds](../../spec-rng/seeds/), [data/excel](../../spec-data/excel/#h-monster-references).

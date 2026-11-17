@@ -20,7 +20,7 @@ Vendor stock and gambling never reach the treasure-class resolver. Names of func
 
 Notation. `S` is the store seed, `NpcStoreCtl+0x08` (`Game+0x1D24` → `+0x08`). "Game seed" is `Game+0xD0`, "item
 seed" the item data's seed. `Step`, `Range` are the primitives of
-rng: `R(s, n)` is `Range(s, n)`, 0 with **no draw** when `n < 1` (signed), else one draw
+[rng](../../spec-rng/overview/#algorithm): `R(s, n)` is `Range(s, n)`, 0 with **no draw** when `n < 1` (signed), else one draw
 and `low mod n` (unsigned). `RandLoHi(s, lo, hi)` is `lo + R(s, hi − lo)` when `hi > lo` (signed), else `lo` with no
 draw. `clvl` is the opener's character level (stat 12). The vendor index `v` is the column group of the item tables:
 0 Akara, 1 Gheed, 2 Charsi, 3 Fara, 4 Lysander, 5 Drognan, 6 Hratli (`Hralti` in the table headers), 7 Alkor,
@@ -862,6 +862,6 @@ vend 36)
   Misc § Vendor columns, Gamble,
   StorePage, Npc,
   DifficultyLevels § Gamble columns.
-- Upstream specs: rng, rng/seeds, [quality](../quality/#f-boundaries-named-only),
+- Upstream specs: [rng](../../spec-rng/overview/), [rng/seeds](../../spec-rng/seeds/), [quality](../quality/#f-boundaries-named-only),
   [uniques-sets](../uniques-sets/), [affixes](../affixes/), [properties](../properties/).
 - Plan: 0031.

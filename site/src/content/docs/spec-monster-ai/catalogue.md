@@ -6,7 +6,7 @@ sidebar:
 
 ## Purpose
 
-What the think function of each AI row does on an AI event: which `aip` slots it reads and what each means, its decision tree, its draws in order. There are 148 rows in `g_MonAiTable` and 18 in `g_MonAiStateRows`, and each has one entry here (`R<row>` and `S<state>`), grouped by the batches. The event around the think, its seeds and the row kinds are the overview; the helpers and the 18 tier AIs are [machinery](../machinery/), and a tier row's entry here is one link to its § T entry.
+What the think function of each AI row does on an AI event: which `aip` slots it reads and what each means, its decision tree, its draws in order. There are 148 rows in `g_MonAiTable` and 18 in `g_MonAiStateRows`, and each has one entry here (`R<row>` and `S<state>`), grouped by the batches. The event around the think, its seeds and the row kinds are [the overview](../overview/); the helpers and the 18 tier AIs are [machinery](../machinery/), and a tier row's entry here is one link to its § T entry.
 
 ## Entry points
 
@@ -29,8 +29,8 @@ What the think function of each AI row does on an AI event: which `aip` slots it
 
 | State | Type | Source |
 |---|---|---|
-| the think's context | `AiCtx`: `t`, `dist`, `melee` | README D3 |
-| the AI control | `AiCtl`: `v14`, `v18`, `v1C`, the parameter list | README § E, [machinery § E](../machinery/#e-following) |
+| the think's context | `AiCtx`: `t`, `dist`, `melee` | [README D3](../overview/#d-the-ai-table-and-its-dispatch) |
+| the AI control | `AiCtl`: `v14`, `v18`, `v1C`, the parameter list | [README § E](../overview/#e-the-ai-state-on-the-unit), [machinery § E](../machinery/#e-following) |
 | the unit's seed | `U+0x20/+0x24`, every `draw#k` below unless the entry says otherwise | [machinery § F](../machinery/#f-draws-and-seeds-of-the-helpers) |
 
 ### Constants
@@ -61,7 +61,7 @@ Each entry states its own. No constant is shared across entries.
   word, the row reads that word for every record of the row, and a slot a record leaves at 0 is read as 0.
 - [I] **The row's `i` line** is the table's bytes and the MonAI index, data. **The `l` line** is the row's own logged count at the
   first boundary: the sum over the three kept batches of the `ROW` lines of each batch's check file, in order
-, and, for rows 10 and 44, and README § G says what the comparison is. A count
+, and, for rows 10 and 44, and [README § G](../overview/#g-the-first-boundary) says what the comparison is. A count
   that is `[C]` covers the first callee, its site, its words and its seed, and nothing past that call.
 - [I] **The `r` line** is the resumed comparison over the rev 4 and rev 6 logs for the row's own think (other thinks of its classes,
   the state rows, are counted under the state's entry). It is a consistency check. **Twenty entries here are under sentence H1**, on their `r` lines (`^- [RS][0-9]+r\. \[C\] Under`): R44 and S13; the ten the S1a batch raised on the rev 4 and rev 6 logs (rows 3, 4, 5, 15, 52, 63, 65, 68, 96 and state 12) and state 11's 66 fork-free decisions; and the seven raised on the 84 logs (rows 7, 26, 49, 71, 95, 114, 124). Past the first boundary, the rest here is `[C]` only on the `p` lines and the bullets that cite those batches. No row's role, symbol or reading is raised by being resumed.
@@ -134,7 +134,7 @@ Tier AI: [machinery § T2](../machinery/), not repeated here.
 
 - R3i. [C] As data: kind 1, no `init`, no `alt`; 5 records (5-9 zombie1..zombie5); reach PU; `aip` set 1,2,4; `aidel` 15/14/13; skills —.
 - R3l. [C] First boundary: 352 decisions compared (216 + 136), 0 mismatches, 4 first-call outcomes.
-- R3r. [C] Under sentence H1: 136 decisions (rev 4), all fork-free, 381 calls past the first, 4 of 4 two-way sites failing alone.
+- R3r. [C] Under [sentence H1](../overview/#h-past-the-first-boundary): 136 decisions (rev 4), all fork-free, 381 calls past the first, 4 of 4 two-way sites failing alone.
 
 #### R4. Row 4 `Bighead`
 
@@ -170,7 +170,7 @@ Tier AI: [machinery § T2](../machinery/), not repeated here.
 
 - R4i. [C] As data: kind 1, no `init`, no `alt`; 10 records (10-14 bighead1..bighead5, 580-584 bighead6..bighead10); reach PU; `aip` set 1,2,3,4; `aidel` 15/14/13; skills —.
 - R4l. [C] First boundary: 913 decisions compared (560 + 342 + 11), 0 mismatches, 2 first-call outcomes.
-- R4r. [C] Under sentence H1: 353 decisions (342 rev 4, 11 rev 6), all fork-free, 740 calls past the first, 7 of 7 two-way sites failing alone.
+- R4r. [C] Under [sentence H1](../overview/#h-past-the-first-boundary): 353 decisions (342 rev 4, 11 rev 6), all fork-free, 740 calls past the first, 7 of 7 two-way sites failing alone.
 
 #### R5. Row 5 `BloodHawk`
 
@@ -204,7 +204,7 @@ Tier AI: [machinery § T2](../machinery/), not repeated here.
 
 - R5i. [C] As data: kind 1, no `init`, no `alt`; 8 records (15-18 foulcrow1..foulcrow4, 590-593 foulcrow5..foulcrow8); reach P; `aip` set 1,2,3,4,5; `aidel` 15/14,15/13,15; skills —.
 - R5l. [C] First boundary: 399 decisions compared (128 + 271), 0 mismatches, 5 first-call outcomes. 1 not comparable (the log's window).
-- R5r. [C] Under sentence H1: 271 of 272 decisions resumed (1 stopped), all fork-free, 251 calls past the first, 6 of 6 two-way sites failing alone.
+- R5r. [C] Under [sentence H1](../overview/#h-past-the-first-boundary): 271 of 272 decisions resumed (1 stopped), all fork-free, 251 calls past the first, 6 of 6 two-way sites failing alone.
 
 #### R6. Row 6 `Fallen`
 
@@ -233,7 +233,7 @@ Tier AI: [machinery § T6](../machinery/), not repeated here.
 
 - R7i. [C] As data: kind 1, no `init`, no `alt`; 9 records (24-28 brute2..brute1, 446-449 snowyeti1..snowyeti4); reach PU; `aip` set 3,4; `aidel` 15/14/13; skills —.
 - R7l. [C] First boundary: 37 decisions compared (23 + 8 + 6), 0 mismatches, 5 first-call outcomes.
-- R7r. [C] Under sentence H1: 131 decisions of its own think in the 84 logs, all resumed, all fork-free, 212 calls past the first in 106 of them, 3 of 3 two-way sites failing alone.
+- R7r. [C] Under [sentence H1](../overview/#h-past-the-first-boundary): 131 decisions of its own think in the 84 logs, all resumed, all fork-free, 212 calls past the first in 106 of them, 3 of 3 two-way sites failing alone.
 
 #### R8. Row 8 `SandRaider`
 
@@ -473,7 +473,7 @@ else:
 
 - R15i. [C] As data: kind 4, no `init`, `alt`; 7 records (68-72 sandmaggot1..sandmaggot5, 679 sandmaggot6, 716 sandmaggot7); reach P; `aip` set 1,2,3,4,5; `aidel` 15/14/13; skills MagottUp, MagottDown, MagottLay.
 - R15l. [C] First boundary: 177 of the 181 decisions compared (70 + 62 + 45), the think's at `FindHostile(…, 0)`, 0 mismatches, one outcome, hand map. [I] The alt's 4 each fork on the kind-14 record's `+0x18`, which no log holds.
-- R15r. [C] Under sentence H1: its think only: 107 decisions (62 and 45), all fork-free, 167 calls past the first, 9 of 9 two-way sites failing alone.
+- R15r. [C] Under [sentence H1](../overview/#h-past-the-first-boundary): its think only: 107 decisions (62 and 45), all fork-free, 167 calls past the first, 9 of 9 two-way sites failing alone.
 
 #### R16. Row 16 `ClawViper`
 
@@ -875,7 +875,7 @@ B[v14, place], (x, y) of places 1 to 4; index v1C + 4·v14:
 
 - R26i. [C] As data: kind 1, no `init`, no `alt`; 7 records (122-126 arach1..arach5, 685 arach6, 717 arach7); reach PU; `aip` set 1,2,3,4,5; `aidel` 15/14/13; skills SpiderLay.
 - R26l. [C] First boundary: 119 decisions (73 + 28 + 18) compared at `UnitLifePct(U)`, 0 mismatches, one outcome, hand map; the site control fails 119.
-- R26r. [C] Under sentence H1: 75 decisions of its own think in the 84 logs, all resumed, all fork-free, 145 calls past the first in 75 of them, 7 of 7 two-way sites failing alone.
+- R26r. [C] Under [sentence H1](../overview/#h-past-the-first-boundary): 75 decisions of its own think in the 84 logs, all resumed, all fork-free, 145 calls past the first in 75 of them, 7 of 7 two-way sites failing alone.
 
 #### R27. Row 27 `ThornHulk`
 
@@ -1222,7 +1222,7 @@ switch v14:                                                                [I]
 
 - R49i. [C] As data: kind 1, no `init`, no `alt`; 6 records (238-241 cantor1..cantor4, 673-674 cantor5..cantor6); reach P; `aip` set 1,2,3,4,5,6; `aidel` 15/14/13; skills ZakarumHeal, ZakarumLightning, MonTeleport, MonBlizzard.
 - R49l. [C] First boundary: 74 decisions (57 + 17) compared at `UnitLifePct(U)`, 0 mismatches, one outcome, hand map; the site control fails 74.
-- R49r. [C] Under sentence H1: 99 decisions of its own think in the 84 logs, all resumed, all fork-free, 385 calls past the first in 99 of them, 12 of 12 two-way sites failing alone.
+- R49r. [C] Under [sentence H1](../overview/#h-past-the-first-boundary): 99 decisions of its own think in the 84 logs, all resumed, all fork-free, 385 calls past the first in 99 of them, 12 of 12 two-way sites failing alone.
 
 #### R52. Row 52 `FrogDemon`
 
@@ -1271,7 +1271,7 @@ MonAiInit(G, U, ctl, ctl.state);  Delay(1)
 
 - R52i. [C] As data: kind 5, no `init`, `alt`; 3 records (247-249 frogdemon1..frogdemon3); reach P; `aip` set 1,2,3,4,5,6,7,8; `aidel` 15/14/13; skills Submerge, Emerge.
 - R52l. [C] First boundary: 600 decisions compared (200 + 400), 0 mismatches, 2 first-call outcomes.
-- R52r. [C] Under sentence H1: 400 decisions (rev 4), all fork-free, 406 calls past the first, 1 of 1 (narrow: one two-way site) two-way sites failing alone.
+- R52r. [C] Under [sentence H1](../overview/#h-past-the-first-boundary): 400 decisions (rev 4), all fork-free, 406 calls past the first, 1 of 1 (narrow: one two-way site) two-way sites failing alone.
 
 #### R56. Row 56 `Tentacle`
 
@@ -1353,7 +1353,7 @@ act:
 
 - R63i. [C] As data: kind 1, no `init`, no `alt`; 1 records (273 gargoyletrap); reach ·; `aip` set 1,2,3,4; `aidel` 15/15/15; skills GargoyleTrap.
 - R63l. [C] First boundary: 145 decisions compared (91 + 54), 0 mismatches, 2 first-call outcomes.
-- R63r. [C] Under sentence H1: 54 decisions (rev 4), all fork-free, 147 calls past the first in 49 of them, 10 of 10 two-way sites failing alone.
+- R63r. [C] Under [sentence H1](../overview/#h-past-the-first-boundary): 54 decisions (rev 4), all fork-free, 147 calls past the first in 49 of them, 10 of 10 two-way sites failing alone.
 
 ### Batch 4: pool-D (`SkeletonMage` to the traps)
 
@@ -1406,7 +1406,7 @@ Idle(1)
 
 - R65i. [C] As data: kind 1, no `init`, `alt`; 8 records (278-282 fetishshaman1..fetishshaman5, 662-664 fetishshaman6..fetishshaman8); reach PU; `aip` set 1,2,3,4,5; `aidel` 15/14/13; skills FetishInferno, FetishAura, Resurrect2.
 - R65l. [C] First boundary: 104 decisions compared (15 + 27 + 62), 0 mismatches, 1 first-call outcome.
-- R65r. [C] Under sentence H1: 89 decisions (27 and 62), all fork-free, 370 calls past the first, 5 of 5 two-way sites failing alone.
+- R65r. [C] Under [sentence H1](../overview/#h-past-the-first-boundary): 89 decisions (27 and 62), all fork-free, 370 calls past the first, 5 of 5 two-way sites failing alone.
 
 #### R66. Row 66 `SandMaggotQueen`
 
@@ -1459,7 +1459,7 @@ Idle(1)
 
 - R68i. [C] As data: kind 1, no `init`, no `alt`; 5 records (298-300 vilemother1..vilemother3, 675-676 vilemother4..vilemother5); reach PU; `aip` set 1,2,3,4,5,6,7; `aidel` 15/14/13; skills Nest.
 - R68l. [C] First boundary: 150 decisions compared (71 + 79), 0 mismatches, 1 first-call outcome.
-- R68r. [C] Under sentence H1: 79 decisions (rev 4), all fork-free, 259 calls past the first, 6 of 6 two-way sites failing alone.
+- R68r. [C] Under [sentence H1](../overview/#h-past-the-first-boundary): 79 decisions (rev 4), all fork-free, 259 calls past the first, 6 of 6 two-way sites failing alone.
 
 #### R69. Row 69 `VileDog`
 
@@ -1570,7 +1570,7 @@ eat:
 
 - R71i. [C] As data: kind 1, no `init`, no `alt`; 4 records (307-309 regurgitator1..regurgitator3, 694 regurgitator4); reach PU; `aip` set 1,2,3,4,5,6; `aidel` 15/14/13; skills RegurgitatorEat.
 - R71l. [C] First boundary: 53 decisions compared (44 + 9), 0 mismatches, 2 first-call outcomes.
-- R71r. [C] Under sentence H1: 129 decisions of its own think in the 84 logs, all resumed, 126 fork-free, 161 calls past the first in 124 of them, 12 of 12 two-way sites failing alone.
+- R71r. [C] Under [sentence H1](../overview/#h-past-the-first-boundary): 129 decisions of its own think in the 84 logs, all resumed, 126 fork-free, 161 calls past the first in 124 of them, 12 of 12 two-way sites failing alone.
 
 #### R72. Row 72 `DoomKnight`
 
@@ -2929,7 +2929,7 @@ STEP[i].y = clamp(2 − min(k, 8 − k))
 
 - R95i. [C] As data: kind 1, no `init`, no `alt`; 9 records (373-376 slinger1..slinger4, 394-395 slinger5..slinger6, 610-612 slinger7..slinger9); reach P; `aip` set 1,2,3,4,5,6; `aidel` 15/13,14/12,13; skills —.
 - R95l. [C] First boundary: 58 decisions compared (15 + 43), 0 mismatches, 1 first-call outcome.
-- R95r. [C] Under sentence H1: 192 decisions of its own think in the 84 logs, all resumed, all fork-free, 219 calls past the first in 192 of them, 9 of 9 two-way sites failing alone.
+- R95r. [C] Under [sentence H1](../overview/#h-past-the-first-boundary): 192 decisions of its own think in the 84 logs, all resumed, all fork-free, 219 calls past the first in 192 of them, 9 of 9 two-way sites failing alone.
 
 #### R96. Row 96 `FetishBlowgun`
 
@@ -2975,7 +2975,7 @@ hunt:
 
 - R96i. [C] As data: kind 1, no `init`, no `alt`; 8 records (396-400 fetishblow1..fetishblow5, 659-661 fetishblow6..fetishblow8); reach P; `aip` set 1,2; `aidel` 15/14/13; skills SkeletonRaise.
 - R96l. [C] First boundary: 179 decisions (61 + 61 + 57) compared at `ParamsHead(U)`, 0 mismatches, one outcome, hand map (the S1b model's first call); the site control fails 179.
-- R96r. [C] Under sentence H1: 117 of 118 decisions resumed (1 stopped), all fork-free, 264 calls past the first, 10 of 10 two-way sites failing alone.
+- R96r. [C] Under [sentence H1](../overview/#h-past-the-first-boundary): 117 of 118 decisions resumed (1 stopped), all fork-free, 264 calls past the first, 10 of 10 two-way sites failing alone.
 
 #### R97. Row 97 `Spirit`
 
@@ -3050,7 +3050,7 @@ No `aip`, no draw.
 
 - R114i. [C] As data: kind 1, no `init`, no `alt`; 6 records (436-440 reanimatedhorde1..reanimatedhorde5, 698 reanimatedhorde6); reach PU; `aip` set 1,2,3,4,5,6,7,8; `aidel` 15/14/13; skills Self-resurrect, Charge.
 - R114l. [C] First boundary: 43 decisions compared (12 + 31), 0 mismatches, 2 first-call outcomes.
-- R114r. [C] Under sentence H1: 243 decisions of its own think in the 84 logs, all resumed, all fork-free, 221 calls past the first in 221 of them, 8 of 8 two-way sites failing alone.
+- R114r. [C] Under [sentence H1](../overview/#h-past-the-first-boundary): 243 decisions of its own think in the 84 logs, all resumed, all fork-free, 221 calls past the first in 221 of them, 8 of 8 two-way sites failing alone.
 
 #### R115. Row 115 `SiegeBeast`
 
@@ -3308,7 +3308,7 @@ else: Idle(15)
 
 - R124i. [C] As data: kind 1, no `init`, no `alt`; 5 records (501-505 frozenhorror1..frozenhorror5); reach PU; `aip` set 1,2,3,4; `aidel` 15/14/13; skills Horror Arctic Blast.
 - R124l. [C] First boundary: 143 decisions compared (95 + 40 + 8), 0 mismatches, 1 first-call outcome.
-- R124r. [C] Under sentence H1: 135 decisions of its own think in the 84 logs, all resumed, all fork-free, 406 calls past the first in 135 of them, 6 of 6 two-way sites failing alone.
+- R124r. [C] Under [sentence H1](../overview/#h-past-the-first-boundary): 135 decisions of its own think in the 84 logs, all resumed, all fork-free, 406 calls past the first in 135 of them, 6 of 6 two-way sites failing alone.
 
 #### R125. Row 125 `BloodLord`
 
@@ -3771,7 +3771,37 @@ No `aip` slot read.
 
 #### R31. Row 31 `NpcOutOfTown`
 
-No `aip` slot read. `R3` is `AiCtlParamGet(3)`; `Pfx` below means the class's pair of quest calls: for class 527 the second name, for the others the first.
+No `aip` slot read. `R3` is `AiCtlParamGet(3)`; each quest call below is a pair of functions: class 527 calls the second, the other classes the first.
+
+```
+AiNpcOutOfTownInit, called first on every event:              [I]
+  if R3's two words are 0:
+    (R3.x, R3.y) ← (X + 3, Y + 3)
+    if the first test = 0: call its partner;  UnitSetStat(U, 6, 0, 0);  SetMode(12, X, Y)
+    R3+0x14 ← 1;  R3+0x18 ← 0;  Idle(1);  returns 1
+  returns 0
+
+think:                                                                     [I]
+1. if the init returned 1: return
+2. class 527: its own call
+3. if NpcInteractAny(L): Idle(40); return          ; L when U is a monster with its data
+4. if U's mode is 12: return
+5. AiNpcNearPlayer                                 ; its result is not read
+6. if no R3: the init again;  Idle(40); return
+7. if R3+0x14 ≥ 2:
+     R3+0x14 ← R3+0x14 + 1
+     p ← the point call;  if none: Idle(20); return
+     if R3+0x14 < 8 and AiPathDistToPoint(U, p) > 0: WalkPt(p); return
+     the partner, UnitSetStat(U, 6, 0, 0), SetMode(12, X, Y); return
+8. if AiPathDistToPoint(U, R3) > 1 (signed) and R3+0x18 ≤ 5:
+     R3+0x18 ← R3+0x18 + 1
+     if class 527 and its test ≠ 0: Idle(20);  R3+0x18 ← 0; return
+     WalkPt(R3); return
+9. if R3+0x14 = 1:
+     if the second test = 0: R3+0x14 ← 1;  R3+0x18 ← 1;  Idle(20); return
+     R3+0x14 ← 2
+10. Idle(20)
+```
 
 - R31a. [I] No draw. `UnitSetStat(U, 6, 0, 0)` is `hitpoints`. The block is read from the code.
 - R31b. [C] The think to its first boundary, 6 reached, and the init, 4: families `oot`, `h77a0`, 240 cases each; no control separates them.
@@ -3815,6 +3845,24 @@ No `aip` read. [C] The whole map: family `vendor`, 240 cases, all drawing; contr
 #### R54. Row 54 `NpcStationary`
 
 No `aip` slot read.
+
+```
+1. p ← AiNearestPlayer(&f)                                                 [I]
+2. if p ≠ 0 and p ≠ U:
+     n ← AiDistUnits(U, p)
+     if p is a player and PlayerIsBusy(p) = 1: Idle(10); return
+     if NpcInteractAny(L): Idle(10); return                ; L when U is a monster with its data
+     if n < 24:
+       if v18 = 0: v18 ← 60;  a player p: UnitSetEvent(U, 18, p)
+       else: v18 ← v18 − 1
+     else:
+       if v18 ≤ 0: v18 ← 60
+       v18 ← v18 − 1
+     Idle(20); return
+3. class 251: if its quest test ≠ 0 and AiNpcMode0IfFree = 1: SetMode(0, 0, 0);  its quest call; return
+   class 406: if its quest test ≠ 0 and AiNpcMode0IfFree = 1: SetMode(0, 0, 0);  its quest call; return
+4. Idle(20)
+```
 
 - R54a. [C] No draw on the logged path: the exit seed equal in all 316 fork-free decisions. [I] The block is read from the code. `AiNpcMode0IfFree` does its own `SetMode(0, 0, 0)`. Its first call cannot fail: 0 of 3 sites, so the row does not count for the catalogue sample.
 - R54b. [C] The map to its first call, `nstat`, 4 boundaries, and `AiNpcMode0IfFree`'s, `h7350`, 240 cases each; no control separates them.
@@ -4034,7 +4082,7 @@ think:                                                                     [I]
 - S11a. [I] `Velocity` is loaded u16 but tested as i16, and `Run·100` cannot wrap. Stock `Velocity` 0..15 and `Run` 0..20 tell no widths apart.
 - S11b. [C] The init's map and the think's first call only: families `st11i`, `st11`, 240 cases each.
 - S11p. [C] **Logged paths of the block** (the S1b model, the think): 134 decisions, 66 fork-free, 0 mismatches. Step 1's state-56 arm and step 2's idle at the limit 30. [I] The limit from `v14`, step 1's other arm, steps 3 to 6 (68 decisions fork on `MonModeAllowed`).
-- S11r. [C] Under sentence H1, the 66 fork-free decisions of 134 (rows 12 and 64): 0 mismatches, 66 calls past the first, the one two-way site of the subset failing alone. [I] The other 68, which branch on the words `+0x32`/`+0x34` read: a consistency check only, 394 calls matched in all.
+- S11r. [C] Under [sentence H1](../overview/#h-past-the-first-boundary), the 66 fork-free decisions of 134 (rows 12 and 64): 0 mismatches, 66 calls past the first, the one two-way site of the subset failing alone. [I] The other 68, which branch on the words `+0x32`/`+0x34` read: a consistency check only, 394 calls matched in all.
 
 - S11i. [C] As data: kind 1, `init`, no `alt`.
 
@@ -4056,7 +4104,7 @@ Setter: `CurseSetAiState` for `auratargetstate` 27.
 - S12a. [C] No draw on the logged paths (56 decisions). [I] The other paths, read from the code.
 - S12b. [C] The first call only: family `st12`, 240 cases.
 - S12p. [C] **Logged paths of the block** (the S1b model): 56 decisions, all fork-free, 0 mismatches, 230 calls past the first. Steps 1 to 6 on their taken arms. [I] The town arm, `m` set, `u` = 0.
-- S12r. [C] Under sentence H1: 56 decisions (rev 4: row 37 52, row 64 4), all fork-free, 230 calls past the first, 3 of 3 two-way sites failing alone.
+- S12r. [C] Under [sentence H1](../overview/#h-past-the-first-boundary): 56 decisions (rev 4: row 37 52, row 64 4), all fork-free, 230 calls past the first, 3 of 3 two-way sites failing alone.
 
 - S12i. [C] As data: kind 0, no `init`, no `alt`.
 
@@ -4098,7 +4146,7 @@ RunHome: AiPathOverrideSet(pathctl, 1, 0, 0);  if MonAiRunToPoint(home): end the
 - S13b. [C] The map to its first boundary, 3 reached, and `AiPathSkillStep`'s, 2: families `st13`, `h5b70`, 240 cases each; `h5b70`'s controls `cmp`, `u16` fail the 45, 7 they separate.
 - S13c. [C] State 13 is held by one class 45 unit per process, in two processes of one seed, the only one of its class with a home record; 7 others of the class in those processes hold state 0, and no unit in the five logs holds two states. So no 0 → 13 is logged; how she came to hold it lies before each attach.
 - S13p. [C] **Logged paths of the block** (the S1c model, beyond S13d): every branch and store of the think fails alone reversed but step 2's two (the record found, its words non-zero), whose flips stop at the unmodelled push and refill in 160 of 160; `AiPathSkillStep` from step 6 in 159 decisions, fire 21 (`MonAiUseSkill(4, Skill1, 0, …)`, `v14 + 1`, `v18 ← T`, each store seen at the next decision), reset 5, fall-through 133, every branch and store failing alone, `v14 < count` against the given count only (README H1b); RunHome accepted in its one logged decision: `AiPathOverrideSet` with `EDX` 1, (0, 0), `MonAiRunToPoint(home)` non-zero, the event ending (the run-ok test fails it reversed). [I] As S13f lists, and the refused run, its `CancelEvents(2, 0)` and fall-through, RunHome from steps 3 and 5, the path control word.
-- S13r. [C] Under sentence H1 with H1b's three given words: 160 decisions, 988 calls past the first, 7 of 7 two-way sites failing alone; Normal, owner-played. The stock census has 1 of 160.
+- S13r. [C] Under sentence H1 with [H1b's three given words](../overview/#h-past-the-first-boundary): 160 decisions, 988 calls past the first, 7 of 7 two-way sites failing alone; Normal, owner-played. The stock census has 1 of 160.
 - S13d. [C] The block on the arms the logs reach: 160 decisions, 0 mismatches, every boundary call, the seed at each and at the exit, `v14`, `v18`, also across 158 consecutive pairs. Fire 21, reset 5, melee A1 97, melee idle 8, far run 28, far idle 5, step 4's RunHome 1. Normal, the player as target.
 - S13e. [C] `CountessFirewall` fires at the four points of `cryptcountess1.ds1`'s one path, in file order, one per decision, at the offset (12500, 11000), which equals Levels id 25's `OffsetX`, `OffsetY` times 5. The path's anchor in that file is MonPreset's act 1 row 40, The Countess. It is `File1` of her preset's two, one seed; `File2`'s path matches none of the four. It starts again at a decision whose gap since the last fire is over the limit: restarts are logged at gaps 704 to 730 and none at gaps up to 699.
 - S13f. [I] Read, not reached: steps 1, 2's push and refill, 3, 4 at home, 5 (home distances reach 29, so 30 to 40 is not separated), every refused RunHome, `AiPathSkillStep`'s early returns and its `neg` for a `T` below `v18`, the mode as the pushed 4 (class 45's `Sk1mode` is also 4), the limit's exact 700 and `>`, and Nightmare and Hell. The setter too: first logged decisions already have `v14` 3 and 4.
@@ -4135,7 +4183,7 @@ Per decision: the commands, mode changes and path requests the entry's block nam
 
 ## Worked example
 
-None written out here. Outside the tier's, the recorded seed-to-decision cases are those of R44m, S13d and R10r, in the kept logs. [Machinery § Worked example](../machinery/#worked-example) and README § Worked example hold the tier's.
+None written out here. Outside the tier's, the recorded seed-to-decision cases are those of R44m, S13d and R10r, in the kept logs. [Machinery § Worked example](../machinery/#worked-example) and [README § Worked example](../overview/#worked-example) hold the tier's.
 
 ## Reimplementation notes
 
@@ -4146,3 +4194,5 @@ None written out here. Outside the tier's, the recorded seed-to-decision cases a
 ## Evidence
 
 - MonAI, MonStats.
+
+To check the count: every row has one heading `#### R<n>. Row <n> ` and every state row one heading `#### S<n>. State row <n> `; counting this page's headings that start with each form gives 148 and 18.

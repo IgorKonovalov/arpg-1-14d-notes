@@ -13,7 +13,7 @@ and the right mouse skill. This spec gives that path in order, with every game-s
 level (`Experience`), what a kill is worth to the player (`XP_Compute`), and what a level-up changes. A level-up draws
 nothing.
 
-Names of functions and fields are ours. Stat ids are ItemStatCost rows: 0 `strength`, 1 `energy`, 2 `dexterity`, 3 `vitality`, 4 `statpts`, 5 `newskills`, 6/7 `hitpoints`/`maxhp`, 8/9 `mana`/`maxmana`, 10/11 `stamina`/`maxstamina`, 12 `level`, 13 `experience`, 29 `lastexp`, 30 `nextexp`, 70 `quantity`, 72/73 `durability`/`maxdurability`, 85 `item_addexperience`, 107 `item_singleskill`. Life, mana and stamina are stored with 8 fraction bits (`points << 8`). "Game seed" is `Game+0xD0`, "unit seed" a unit's `Unit+0x20`, "item seed" the item data's seed; `Step`, `Range` and `Init` are the primitives of rng. Seeds are written `low:high` in hex.
+Names of functions and fields are ours. Stat ids are ItemStatCost rows: 0 `strength`, 1 `energy`, 2 `dexterity`, 3 `vitality`, 4 `statpts`, 5 `newskills`, 6/7 `hitpoints`/`maxhp`, 8/9 `mana`/`maxmana`, 10/11 `stamina`/`maxstamina`, 12 `level`, 13 `experience`, 29 `lastexp`, 30 `nextexp`, 70 `quantity`, 72/73 `durability`/`maxdurability`, 85 `item_addexperience`, 107 `item_singleskill`. Life, mana and stamina are stored with 8 fraction bits (`points << 8`). "Game seed" is `Game+0xD0`, "unit seed" a unit's `Unit+0x20`, "item seed" the item data's seed; `Step`, `Range` and `Init` are the primitives of [rng](../../spec-rng/overview/#algorithm). Seeds are written `low:high` in hex.
 
 ```mermaid
 flowchart TD
@@ -79,7 +79,7 @@ The record index of CharStats is the class id 0..6 (`Expansion` marker row not c
 
 | State | Type | Source |
 |---|---|---|
-| game seed | `Seed` at `Game+0xD0` | rng/seeds step 1; the same at the start of every new character of one game process |
+| game seed | `Seed` at `Game+0xD0` | [rng/seeds](../../spec-rng/seeds/) step 1; the same at the start of every new character of one game process |
 | client class, status word, name | u8 at client `+0x08`, u16 at `+0x0A`, string at `+0x0D` | the stub's header (§ A) |
 | client act | `client+0x1AC` | `g_StartAct` at client creation: 0, or `N − 1` under `-act N` |
 | game item version | `game+0x78` | 101 in an expansion game |
@@ -420,6 +420,46 @@ Step notes:
 
 ### G. Kill experience — `XP_Compute`
 
+```
+G0. XP_OnMonsterKill(game, killer, victim), as the code's map:           [C] (XP_OnMonsterKill; one player:)
+      if killer or victim is null, or killer's type is not 0 or 1: end
+      exp: i32 ← victim's base stat 13;  if exp ≤ 0 (signed): end
+      credit ← XpCreditPlayer(killer, game, victim);  if none: end
+      mlvl: i32 ← victim's base stat 12
+      the mercenary's award                                              ; G6 note: before the party test, whatever the share does
+      clvl: i32 ← credit's base stat 12
+      if UnitPartyId(credit) = 0xFFFF:                                   ; in no party: no alive test, no distance test
+        add ← XP_Compute(exp, clvl, mlvl);  PLAYER_AddExperience(credit, clvl, add)   ; § H
+      else:
+        XP_PartyShare(credit, exp, game, victim, clvl, mlvl)             ; J4: n = 0 pays nobody, n = 1 pays credit, n ≥ 2 splits
+    exp is the killed monster's base stat 13 (monsters/stats)            [C]
+    XpCreditPlayer(killer, game, victim) → player or none, as the code's map:   [C]
+      if killer's type = 0: return killer                                ; a state on the victim is not read
+      owner ← MonsterOwner(killer)                                       ; AI control +0x28 game, +0x2C id, +0x30 type, by GameFindUnit
+      s ← none
+      if UnitHasExpState(killer): s ← StatListFindFlag(killer, 0x800)
+      if UnitHasExpState(victim): s ← StatListFindFlag(victim, 0x800)    ; the victim's wins, even a none
+      if s ≠ none: owner ← GameFindUnit(game, type of s's owner, id of s's owner)
+      return owner if owner is a player, else none
+G1. XP_Compute(exp: i32, clvl: i32, mlvl: i32) → i32:
+      if exp > 8388607: exp ← 8388607    ; 2^23 − 1                      [I] (all of G1 not tagged otherwise)
+      else if exp ≤ 0: return 1                                          [C] the code's map
+G2.   if clvl ≥ MaxLvl(class): return 0                                 [C]
+G3.   XP_LevelDiffPenalty:                                               [C] (XP_LevelDiffPenalty, all of G3)
+        if mlvl ≤ clvl:            f ← g_XpPenaltyBelow[min(clvl − mlvl, 10)]
+        else if clvl ≥ 25 and mlvl > 0:  exp ← MulDiv(exp, clvl, mlvl);  f ← 256
+        else:                      f ← g_XpPenaltyAbove[min(mlvl − clvl, 10)]
+        if f ≠ 256: exp ← MulDiv(exp, f, 256)
+G4.   XP_ApplyExpRatio:  r ← EXP_GetRatio(clvl);  s ← EXP_GetRatio(0)    [C]
+        if 1 ≤ s ≤ 31:
+          exp ← (exp × r) >> s                                           ; signed, arithmetic shift
+          but if exp > (0x7FFFFFFF >> ((r >> s) + s)): exp ← (exp >> s) × r    [I]
+G5.   s85 ← stat 85 (item_addexperience) of the player                   [C]
+      if s85 ≠ 0: exp ← exp + MulDiv(exp, s85, 100)
+G6.: no change for a player (it caps a mercenary's gain)    [C]
+      return exp
+```
+
 Step notes:
 
 - G3. `MulDiv` is the signed, truncating one of [monsters/stats § A](../../spec-monsters/stats/#a-muldiv-and-monlvlstats). The
@@ -682,7 +722,7 @@ the Barbarian has one copy more (the buckler), so only its eighth copy (`isc`) t
 
 ## Evidence
 
-- Upstream: rng, rng/seeds step 7a, [items/uniques-sets § A](../../spec-items/uniques-sets/#a-the-item-seed-at-entry),
+- Upstream: [rng](../../spec-rng/overview/), [rng/seeds](../../spec-rng/seeds/) step 7a, [items/uniques-sets § A](../../spec-items/uniques-sets/#a-the-item-seed-at-entry),
   [items/properties §§ A, F](../../spec-items/properties/), [items/affixes §§ H–J](../../spec-items/affixes/),
   [monsters/stats](../../spec-monsters/stats/) (the monster's experience, `MulDiv`).
 - Downstream: [save/d2s](../../spec-save/d2s/) (§ D1 bit 0, the first save); [player/party](../party/) composes § G0, § G6 and § J4 with every player-count reader.

@@ -17,7 +17,7 @@ game is created. It draws no random numbers.
 |---|---|
 | [excel.md](../excel/) | MPQ precedence and file lookup, `.bin` vs `.txt`, record addressing, code and name links, the treasure-class index space, monster references, string-table keys (stored indices), cell values, the `.txt` compiler |
 | [calc.md](../calc/) | the formula bytecode in `*code.bin`: encoding and opcodes, the `.txt` compiler, the evaluator `CALC_Eval`, the skills/missiles/items contexts, their function tables and variables |
-| strings.md | string tables at run time: load order and condition, index → text, key → index, hash probing, UTF-8 → UTF-16, the 5382 rule, fallbacks and fatal paths |
+| [strings.md](../strings/) | string tables at run time: load order and condition, index → text, key → index, hash probing, UTF-8 → UTF-16, the 5382 rule, fallbacks and fatal paths |
 
 Per-table record layouts are not specs. They live, one doc per table, and the container formats.
 
@@ -72,5 +72,5 @@ flowchart TD
 
 - `items/tc` consumes the TC index space and the `ItemN` resolution in [excel.md](../excel/#g-treasure-classes).
 - `monsters/*` and `drlg/*` index `monstats`, `levels` and `leveldefs` by record position.
-- `data/strings` takes over at the string index stored in the records ([excel.md](../excel/#i-string-table-keys), then strings.md).
+- `data/strings` takes over at the string index stored in the records ([excel.md](../excel/#i-string-table-keys), then [strings.md](../strings/)).
 - [data/calc](../calc/) takes over at the `*code.bin` offsets stored in formula columns.

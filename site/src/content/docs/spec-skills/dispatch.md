@@ -630,6 +630,9 @@ H3. ITEMSKILL_Cast(caster, id, lvl, target, x, y, effect) → bool:    [I] (ITEM
   no ammunition, the helpers' tries, `ItemCheckStart` and the restore of the
   target, point and bit 6 are the reading, and so is the effect flag's do function `ItemEffect`, which no line logs.
   [I]
+- H3. The effect flag is 1 only from handler 20 without `ItemTgtDo` (§ K): handler 20's `ItemTgtDo`-clear path pushes 1
+  (after the test of `[row+7]` against the mask byte and the `je`), and the
+  other eight item-cast calls push 0. So an item Nova, Frost Nova or Chain Lightning runs its `ItemEffect` only on attack, kill or hit. [C] (static)
 - H4. **`ItemTarget` 2 draws.** `ITEMSKILL_Cast` gives helper 2 its own caster, whose seed the helper steps twice per
   try before the try's collision test (`low mod 40 − 20` added to x and to y), at most 10 tries until the point is
   free. The first try's two steps are reproduced up to the first collision test. [C] The later tries, from the reading. [I]
@@ -1022,6 +1025,22 @@ L3. SpawnOwnedMonster(block) → unit:                                  [I] (all
   later falls (a skill shrine wearing off), `PetLimitRefresh` recomputes each type's limit and runs `PetLimit`. [I]
 
 
+```
+L5. RaiseSkeletonDo(unit, id, lvl):            (srvdofunc 31)        [I] (all of L5 except as tagged)
+      SkillClass3SelfHit(…)                                          ; before the record test
+      the corpse test; remove the corpse; m ← SpawnOwnedMonster(…)
+      SummonSetLevel(m, 0, lvl)                                      ; L2
+      SummonClassRoll(caster, m, id, lvl):
+        class 363 (necroskeleton): flag ← 0
+          if lvl > 2 (signed): Step(caster.seed); flag ← (low mod 100) < Skills[id].Param1 (+0x148)       ; draw
+          SummonSetDataBytes(flag, …; EAX 1): copy row 1 of the 9-byte rows into
+            MonsterData +4, +5, +0xC, +0xD, +6, +7, +8, and +0x0B only when flag ≠ 0; then +9 from the row
+        class 364 (necromage): SummonSetDataBytes(0, …; EAX 1): the same copy (no +0x0B);
+          Step(caster.seed); MonsterData +0x0F, +0x10 ← low & 3; call an unnamed routine  ; draw
+        other classes: nothing
+      SummonInitStats(m, id, lvl, 0);  stat 349 as resistances;  add to the target list
+```
+
 - L5. **Do 31's caster draw.** In 12 of 12 Raise Skeleton casts (class 363, skill level 20; 8, 4) the caster's seed steps exactly once between the call of
   `SummonClassRoll` and its return, and nowhere else in the do event. [C]
  The order
@@ -1197,7 +1216,7 @@ N2. SkillWeaponWear(unit, chance, amount):     (from start 7, Impale, after its 
   [sim/frame § J5 and § K](../../spec-sim/frame/#j-draws-per-pass-and-the-shared-seeds). [C]
 - P2. **Armageddon re-seeds its caster.** The periodic function of Armageddon and Diablogeddon (do 146) seeds the
   caster's seed with `Init` of its skill entry's `+0x18` word and stores a fresh `RNG_Range(1 000 000)` there; the
-  first period's word and its conditions are rng/seeds' *Armageddon's cast
+  first period's word and its conditions are [rng/seeds](../../spec-rng/seeds/#reimplementation-notes)' *Armageddon's cast
   draw*. [I]
 
 ## Outputs
@@ -1206,7 +1225,7 @@ N2. SkillWeaponWear(unit, chance, amount):     (from start 7, Impale, after its 
  among E1–E2's 124 sites. [C] (`SKILLS_SrvDo`, static)
 - A queued combat hit (start- or do-built) for [combat/delivery](../../spec-combat/delivery/); missiles for
   [skills/missiles](../missiles/); timed states for [stats/states](../../spec-stats/states/); summoned monsters for
-  monsters/spawn and [monsters/stats](../../spec-monsters/stats/): inside the events the logs hold
+  [monsters/spawn](../../spec-monsters/spawn/) and [monsters/stats](../../spec-monsters/stats/): inside the events the logs hold
   1 599 do events with a delivered hit, 82 start events with a hit test, 3 962 do events with missile creations, 873
   do and 13 start events with timed states, and 219 summons. [C] What the named specs do with them is theirs. [I]
 

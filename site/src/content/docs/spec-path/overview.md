@@ -11,7 +11,7 @@ request, builds a 0x34-byte context, takes the unit's own marks off the collisio
 the first point it got. This page is the request, the 17 types, the dispatch, the draws per type and the grid a planner reads. The planners
 themselves, as pseudocode, are [path/search](../search/). Who asks for a plan and why is each caller's ([skills/catalogue](../../spec-skills/catalogue/),
 [skills/missiles](../../spec-skills/missiles/), [anim/movement](../../spec-anim/movement/), the AI's in [monsters/ai/machinery § D](../../spec-monster-ai/machinery/#d-the-path-request)); the
-per-frame step along the points is [anim/movement § B](../../spec-anim/movement/#b-the-per-frame-step). The grid's cells and marks are drlg/collision.
+per-frame step along the points is [anim/movement § B](../../spec-anim/movement/#b-the-per-frame-step). The grid's cells and marks are [drlg/collision](../../spec-drlg/collision/).
 
 ```mermaid
 flowchart LR
@@ -94,7 +94,7 @@ The record's fields are `PathRequestFields`, 0x200 bytes zeroed at creation. Coo
 | Name | Value | Anchor | Tag |
 |---|---|---|---|
 | point slots | 78 | `+0x9C`..`+0x1D3` | [C] (0x200 bytes allocated and zeroed; `+0x1D4` is its own field) |
-| window | ` | dx | `, ` | dy | ` ≤ 100, 100 itself passing | — | [C] (control `cmp` fails all 36 it separates) |
+| window | `\|dx\|`, `\|dy\|` ≤ 100, 100 itself passing | — | [C] (control `cmp` fails all 36 it separates) |
 | limit cap of `PathSetByte90` | 77 | — | [C] (control `cap` fails all 20 it separates) |
 | town levels | 1, 40, 75, 103, 109 | — | [C] (family `town`) |
 
@@ -109,7 +109,7 @@ A record holds two masks, and they are not interchangeable. [C] In the `PATH_` f
 
 | Who | `testMask` | `markMask` | Tag |
 |---|---|---|---|
-| player | `0x1C09` | `0x80` | [C] (`PATH_DynamicCreate`: every logged plan from `PlrModeStartMove`, 3 999, and Charge, 213; the other 558 are the skill overrides below, Whirlwind's `0xC01`, 158, and the Leap or Leap Attack flight's 0 / 0, 400), the marks at drlg/collision § F |
+| player | `0x1C09` | `0x80` | [C] (`PATH_DynamicCreate`: every logged plan from `PlrModeStartMove`, 3 999, and Charge, 213; the other 558 are the skill overrides below, Whirlwind's `0xC01`, 158, and the Leap or Leap Attack flight's 0 / 0, 400), the marks at [drlg/collision § F](../../spec-drlg/collision/#f-unit-marks) |
 | monster | `PATH_MonTestMask`: `flying` `0x1804`, `opendoors` `0x3401`, else `0x3C01`; the wraith (`BaseId` 38) `0x804`, `PATH_DynamicCreate`'s own branch, taken before `PATH_MonTestMask` is called | `0x100` | [C] (`PATH_MonTestMask`: mark `0x100` in 21 375 of 21 375 monster plans, the test by this rule in 21 126, the function's three arms 21 099 and the wraith branch 27) |
 | a vulture after its take-off | 0: `AiVultureTakeOff` calls `PathSetCollMask(path, 0)` | `0x100` | [C] (the 249 other monster plans, classes 111 and 113) |
 | missile | `g_MissileCollideTypes[CollideType].mask` | 0 at creation; `0x40` when Missiles `Collision` ≠ 0 | [C] |
@@ -358,13 +358,13 @@ All 68 direct calls of `PathPlan`, each type read at its site. "Current" plans w
 
 - [C] **A planner reads the live grid: the cells as they are at the planner call, with the unit's and the target's unmarks of steps 15 and 16a already run.** Given the game's own cells at the call (`PLG`), its context and its record, the models reproduce **33 722 stock plans with 0 mismatches, 20 671 of the second run and 13 051 of the first, on 11 types** (2, 4, 5, 6, 7, 8, 9, 10, 13, 14, 15), each compared on its return, its first `EAX` point words and its exit seed.
 - [I] **The first run's other 842 plans** also show 0 mismatches and back nothing here. They come after the probe's first write in two sessions (`k-pal-stony` 532, `k-pal-jail` 310): a breakpoint wrote the start's fraction word, against, so they are not stock. By type: 4 82, 5 47, 6 51, 7 141, 13 369, 14 27, 15 125, and none of 2, 8, 9, 10. A "run 1" count on this page or the next holds them unless it says stock. (`review-s54/logs.txt`)
-- [C] **This is not the predicted grid.** The 0 mismatches take the grid from the game. The same planners on a grid predicted as the built map plus the units are F3's claim, which failed. A reimplementation is held to the planners by this count, and to the grid only by drlg/collision § F7's order rule.
+- [C] **This is not the predicted grid.** The 0 mismatches take the grid from the game. The same planners on a grid predicted as the built map plus the units are F3's claim, which failed. A reimplementation is held to the planners by this count, and to the grid only by [drlg/collision § F7](../../spec-drlg/collision/#f7-no-bit-is-reference-counted-the-grid-is-the-result-of-its-operations-in-order)'s order rule.
 - [I] **What the model took from the game:** the planner's address, the context and the record at the call, and the target unit's position. So `PathPlan`'s head, the refresh, the free step, the town test and the slot are inputs here, not predictions, and keep § C's tags. Each context's start equals its record's, and none of the 9 773 plans with a `PLC` in the first run has a record-only refusal reason.
 - [C] **The tail** (the aim and the "every point at the position" refusal) agrees in all 13 265 plans of the first run that reached a planner or a straight type, 72 of them with a non-zero count and a return of 0. The aim's writes (`+0x24`, `+0x64`–`+0x66`, `+0x6A`–`+0x7F`) equal the game's record in 19 284 of 19 284 plans with a return over both runs, and in the 154 with a count and a return of 0 apart from `+0x24`, which the fail path zeroes; 17 406 of them changed those bytes after the planner call.
 
 #### F2. The grid is the result of its operations, in order
 
-- [C] **The grid at a planner call is the result of the marks and unmarks in order, not the union of the present holders. A reimplementation runs the operations and never computes a union of holders.** An unmark is the same footprint with AND-NOT and no bit is reference-counted, so it clears a shared bit another holder also set. The rule and its cases are drlg/collision § F7.
+- [C] **The grid at a planner call is the result of the marks and unmarks in order, not the union of the present holders. A reimplementation runs the operations and never computes a union of holders.** An unmark is the same footprint with AND-NOT and no bit is reference-counted, so it clears a shared bit another holder also set. The rule and its cases are [drlg/collision § F7](../../spec-drlg/collision/#f7-no-bit-is-reference-counted-the-grid-is-the-result-of-its-operations-in-order).
 
 #### F3. The counted oracle
 
@@ -376,11 +376,11 @@ All 68 direct calls of `PathPlan`, each type read at its site. "Current" plans w
 
 #### F4. Each grid rule at its tag
 
-Corpse cells below are drlg/collision § F5's **server** rows; the client's plus is another copy of the grid and is never what a server planner reads.
+Corpse cells below are [drlg/collision § F5](../../spec-drlg/collision/#f5-corpse-marks-by-copy-of-the-grid)'s **server** rows; the client's plus is another copy of the grid and is never what a server planner reads.
 
 | Rule | What the grid holds | Tag and scope |
 |---|---|---|
-| O1, objects | An object's rectangle is in the grid when `HasCollision[mode]` of its class is set; each operate handler that changes the state marks or unmarks itself; the mode change does not | [C] for the bits `0x400` and `0x800`: 0 cells differ over the 154 780 rooms of the 15 663 plans, against 64 229 and 1 572 with the rule off. [I] the operate handlers' route, as drlg/collision § F. The other object bits, `0x0002` and `0x0004`, keep 626 and 3 708 cells of unnamed source |
+| O1, objects | An object's rectangle is in the grid when `HasCollision[mode]` of its class is set; each operate handler that changes the state marks or unmarks itself; the mode change does not | [C] for the bits `0x400` and `0x800`: 0 cells differ over the 154 780 rooms of the 15 663 plans, against 64 229 and 1 572 with the rule off. [I] the operate handlers' route, as [drlg/collision § F](../../spec-drlg/collision/#f-unit-marks). The other object bits, `0x0002` and `0x0004`, keep 626 and 3 708 cells of unnamed source |
 | T1, the plan's target | Under flag `0x800`, a target whose `UNIT_GetSizeX` is not 0 is unmarked, whatever its type, and marked again at the tail when the unmark returned non-zero | [C] a targeted object of size 1 or more: with the rule off, 274 `0x400` and 20 `0x800` cells differ and 35 more plans are wrong; with it on, 0 of those cells. [I] the size test's 0 branch and the other unit types as targets, read, not run |
 | C1, a dead monster, `deadCol` 0 | `UnitCorpseColl(unit, 1)`: the live mark off and a 3×3 of `0x8000`, the record's mask and pattern unchanged, from mode 0 on | [C] 1 527 `COR` lines, all the full 3×3 |
 | C2, `deadCol` 1 | The call is skipped, the live mark stays | [C] classes 403 and 404, 18 distinct dead. [I] class 273 on the server |
@@ -391,7 +391,7 @@ Corpse cells below are drlg/collision § F5's **server** rows; the client's plus
 | L1, a reserved landing | Four skill starts mark the landing before the flight; landing unmarks it | [C] the calls at the three reached sites, 128, 237 and 109 lines, and 474 releases. [I] the holding until release (51 plans in the tie), Jump's site (no stock user) and a monster's arm |
 | The `0x200` bit | Its source is unknown: 92 597 cells differ on the hold-out and no logged unit holds them | [I] no plan depends on them on these logs; no move mask read holds `0x200`, the spawn mask `0x3F11` does |
 
-drlg/collision § F6 holds the operations of T1, W1 and L1 in order.
+[drlg/collision § F6](../../spec-drlg/collision/#f6-marks-around-a-plan-an-act-change-and-a-reserved-landing) holds the operations of T1, W1 and L1 in order.
 
 ### G. What each count tests
 
@@ -458,6 +458,7 @@ flowchart TD
 - H2. [I] The names are ours, given at the code reading, not an observed use: `+0x64` the facing, `+0x65` the direction to turn to, `+0x66` the turn step per direction difference. `+0x66` is applied by the client's turn step (H5).
 - H3. [C] `PathSetFacing(path, dir)` writes `dir & 0x3F` to both `+0x64` and `+0x65`; a null path writes nothing (200 emulated cases, 120 with dir ≥ 64 and 20 null paths, controls `mask7f` and `oneonly` separating, family `facing`).
 - H3. [I] **The other writers of the three bytes.** `PathSetDir(path, dir)` has `PathFaceDir`'s body (H2), the dir on the stack, and takes the fatal path for a dir ≥ 64. `PathFaceXY(path, x, y, now)` takes the direction to a subtile centre; with `now` ≠ 0 it writes `+0x64` and `+0x65` as `PathSetFacing` does, else it calls `PathFaceDir`. With those, `PathFaceDir` and the turn step (H5), the image's stores at `+0x66` on a path are `PathFaceDir`'s and `PathSetDir`'s only. The getters are `PathGetFacing` (`+0x64`, 21 call sites) and `PathGetFacingTarget` (`+0x65`, 5).
+- H4. [C] **`PathFaceDir`'s read of `g_PathFaceStep`:** index `(dir − +0x64) & 63`, 4 bytes apart, and only the low byte goes to `+0x66` (`mov al, [g_PathFaceStep + edx*4]`, a `u8`). The family's 173 reads of the table are that read; its model takes the same bytes from the image, so they say nothing of what the table holds.
 
 ```
 g_PathFaceStep   i 0..63:   d = ((i + 32) & 63) - 32                  ; -32..31
@@ -512,4 +513,4 @@ A class 225 missile's type-10 plan, line 1633, its exit at line 1634.
 ## Evidence
 
 - Tables: PathTypes, MonStats2, Objects, Missiles.
-- Specs: drlg/collision §§ F, F5, F6, F7; [anim/movement](../../spec-anim/movement/); [skills/missiles](../../spec-skills/missiles/) H1, H4, D3; [skills/catalogue](../../spec-skills/catalogue/) K11; rng.
+- Specs: [drlg/collision](../../spec-drlg/collision/) §§ F, F5, F6, F7; [anim/movement](../../spec-anim/movement/); [skills/missiles](../../spec-skills/missiles/) H1, H4, D3; [skills/catalogue](../../spec-skills/catalogue/) K11; [rng](../../spec-rng/overview/).

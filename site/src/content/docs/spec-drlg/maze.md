@@ -14,7 +14,7 @@ used to have. It gives the growth loop, the extra links (`Merge`), the special r
 that replace dead ends, the fixed shapes of some level types, the placement on the level rectangle (and the two levels
 placed against a neighbour level), and the theme pass. Every draw is listed with its seed, in order. The draws come
 from the level seed and from the maze rooms' own seeds. Primitives (`Step`, `Range`, `Init`) are those of
-rng. The level and room seeds are those of rng/seeds steps 4–5. Which warp
+[rng](../../spec-rng/overview/). The level and room seeds are those of [rng/seeds](../../spec-rng/seeds/) steps 4–5. Which warp
 each special room carries, and the level links, are in [warps.md](../warps/).
 
 ## Entry points
@@ -49,13 +49,13 @@ each special room carries, and the level links, are in [warps.md](../warps/).
 | level id, level type | `u32` | level `+0x1D0`, `+0x1C0` | leveldefs |
 | level rectangle `L.rect` (tiles) | `{x, y, w, h}` `i32` | level `+0x1C`–`+0x28` | [warps.md § C](../warps/#c-level-rectangles-and-the-links-after-the-layout) |
 | level room list, count | list, prepended (next at room `+0x24`); `i32` | level `+0x10`, `+0x08` | this spec |
-| maze room seed `R.seed` | `Seed` | DRLG room `+0x14` | `DRLG_RoomCreate` (rng/seeds step 5) |
+| maze room seed `R.seed` | `Seed` | DRLG room `+0x14` | `DRLG_RoomCreate` ([rng/seeds](../../spec-rng/seeds/) step 5) |
 | maze room rect | `{x, y, w, h}` `i32` | DRLG room `+0x34` | this spec |
 | maze room adjacency | list of `{room, dir}`, prepended | DRLG room `+0x00` (`RoomAdj+0x04` is `dir`) | this spec |
 | maze room `Def`, forced index, lock | `i32`, `i32`, bit 1 | `MazeRoomData+0x00`, `MazeRoomData+0x04`, `MazeRoomData+0x0C` | this spec |
 | difficulty | `u32` 0..2 | act `+0x450` | game |
 | act index (0-based) | `u32` | act `+0x480` | game |
-| the two Act II tombs | `u32` level ids | act `+0x094` (the true tomb), `+0x484` | rng/seeds step 3c |
+| the two Act II tombs | `u32` level ids | act `+0x094` (the true tomb), `+0x484` | [rng/seeds](../../spec-rng/seeds/) step 3c |
 | level 27's preset file index, level 27's rect (level 28 only) | `i32`; rect | level 27 | [warps.md](../warps/) (the link builder's level-6 draw on Black Marsh sides 1 and 3, else level 27's create-time index) |
 | level 108's rect (level 107 only) | rect | level 108 | [warps.md § C](../warps/#c-level-rectangles-and-the-links-after-the-layout) |
 
@@ -98,7 +98,7 @@ flowchart TD
 
 Notation: `L` the level, `L.seed` its seed, `L.rooms` its room list (newest first), `L.count` its length. `R.seed` is a
 maze room's own seed. `Step(s)` advances seed `s` once and returns its new low word (`u32`). `Range(s, n)` is the
-guarded range of rng: `n < 1` gives 0 with no draw, otherwise one `Step`, then `lo & (n − 1)` for a
+guarded range of [rng](../../spec-rng/overview/): `n < 1` gives 0 with no draw, otherwise one `Step`, then `lo & (n − 1)` for a
 power of two or `lo mod n` (unsigned). A **level draw** is a `Step` of `L.seed`; a **room draw** is a `Step` of a maze
 room's seed. Rects are in tiles. `÷` truncates toward zero.
 
@@ -340,6 +340,10 @@ D2. Attach(entry):                                                   [C] but the
 | Baal (34) [1058] | Next: 1078–1081, Waypoint: 1082–1085 (exceptions) |
 | Ice (33) [1002] | Prev: 1018–1021, Next: 1022–1025, Down: 1026–1029, Theme: 1030–1033, Waypoint: 1034–1037 (exception) |
 
+- [C] **Temple tables** (as `matchDef → def, dir`; `idx` −1). Down has **three** entries: 1042 → 1046 (1),
+  1043 → 1047 (0), 1045 → 1048 (3). Waypoint has four: 1042 → 1049 (1), 1043 → 1050 (0), 1045 → 1052 (3),
+  1044 → 1051 (2). Down is placed from entry `r` of the Down table (16 bytes an entry) unless the level is 124, and
+  Waypoint on level 123 from entry `r` of the Waypoint table. (data: 122, 123)
 - [C] Down reads `r` 0..2 only (the draw is `mod 3`), so the word after its third entry, which
   is Waypoint's entry 0, is never read as Down's entry 3. `MazeSpecialPlace` reads one entry and then sets
   `r ← (r + 1) mod 4`, so Waypoint is read at `r` 1..3, and its entry 0 is never read either.
@@ -485,6 +489,9 @@ and against the act's true tomb (`+0x094`) and Kaa's tomb
 - [C] **Lair 64's entries**, as read from the data: Tight Spot is the single entry, `{485 → 509, idx −1,
   dir 1}`; the fixed Treasure address is entry 3 of the Treasure table, `{482 → 505, −1, dir 2}` (a W dead
   end); the Prev entry 0 that follows is `{489 → 500, −1, dir 3}`. (data)
+- [C] **Lair 64's sequence**: after the draw `r`, Tight Spot with `&r`, then `r ← 3` and Treasure from the fixed address
+  (so `r` becomes 0), then Prev from entry `r` of the Prev table (16 bytes an entry). Both windows of level 64 match room for room with their draws;
+  levels 62 and 63 reproduce the other branch (Next from entry `r` of the Next table, then Prev).
 
 ### G. Placement
 
@@ -529,6 +536,9 @@ G3. MazeRiverOfFlame(L)  (level 107):                                [C] (8 wind
 
 - G2. [C] The finder is taken from `g_BarracksFinders`, three function pointers: `k` 0 `MazeFindEast`, 1 `MazeFindSouth`,
   2 `MazeFindWest` (read).
+- G3. [C] The forge entry is `g_RiverForgeSpecials[r]` (16 bytes an entry), a table of two entries, the W and E dead ends of base 836:
+  `{837 → 853 Forge W, idx −1, dir 2}` and `{838 → 854 Forge E, idx −1, dir 0}`. No rotation pointer is passed.
+
 - G1. [C] No test against the level rectangle is made during growth. The rooms grow freely around R0, and this shift puts
   the bounding box at the level origin.
 - G1. [I] No sampled stock seed reaches the fatal error. An offline sweep of the maze model over every `DrlgType` 1 level
@@ -617,7 +627,7 @@ level's warp points, are [warps.md](../warps/). [C]
 
 Seeds are `low:high`, hex. Directions: 0 W, 1 N, 2 E, 3 S.
 
-**1. Den of Evil (level 8), map seed 12345, normal**. `LvlMaze`: `Rooms` 1/1/1, 24 × 24, `Merge` 500. Level rect `(1500, 1000, 200, 200)`.
+**1. Den of Evil (level 8), map seed 12345, normal**. `LvlMaze`: `Rooms` 1/1/1, 24 × 24, `Merge` 500. Level rect `(1500, 1000, 200, 200)`. The window starts at `E18C3A55:0090CE8A` (after R0's draw, [drlg/overview](../overview/#worked-example)).
 
 | # | Draw | Seed after | Value | Effect |
 |---|---|---|---|---|
@@ -691,4 +701,4 @@ Result, list order (absolute, after the shift): 100 at `(1500, 1324)`, 94 at `(1
 
 - Reference model: replays the windows of both runs (the worked examples included). It is a
   check of this spec, not a source: every statement above cites the code, the data or a run.
-- [drlg/overview](../overview/), [warps.md](../warps/), rng/seeds, rng.
+- [drlg/overview](../overview/), [warps.md](../warps/), [rng/seeds](../../spec-rng/seeds/), [rng](../../spec-rng/overview/).

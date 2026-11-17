@@ -8,7 +8,7 @@ A monster, a summon or a hireling does not think on every frame. It has an **[AI
 frame or is called when a mode ends. One event runs a few checks, looks for a target, and calls the unit's
 **[think function](../../reference/glossary/)**, chosen from a table by the MonStats `AI` column and the unit's AI state. The think draws on
 the unit's own seed and gives one command: a mode, a skill, a path request, or a wait until the next event. This page explains
-that system and how much of it has been checked. It restates the overview, the
+that system and how much of it has been checked. It restates the [overview](../../spec-monster-ai/overview/#purpose), the
 [machinery](../../spec-monster-ai/machinery/#purpose) and, for row detail it does not repeat, the
 [catalogue](../../spec-monster-ai/catalogue/#purpose).
 
@@ -32,7 +32,7 @@ say how sure they are at their head and name the exceptions.
 
 ## The big picture
 
-The order is overview § B's, and the steps' confidence is given below the chart. The
+The order is [overview § B](../../spec-monster-ai/overview/#b-the-tick)'s, and the steps' confidence is given below the chart. The
 think call is where the logs compare a decision.
 
 ```mermaid
@@ -146,7 +146,7 @@ decisions, 10 in 594, 11 in 36, with 12 absent. This is a statement about those 
 and the curses not cast, Nightmare and Hell are outside it.
 
 **Who has which row.** A monster's row is its record's. Every hireling row's class uses row 61. Summons enter like any monster; which
-summon uses which row is overview E10.
+summon uses which row is [overview E10](../../spec-monster-ai/overview/#e-the-ai-state-on-the-unit).
 
 ## Finding a target
 
@@ -517,6 +517,6 @@ From the specs' open questions:
 
 ## Where to read more
 
-- The specs: overview, [machinery](../../spec-monster-ai/machinery/#reimplementation-notes) and [catalogue](../../spec-monster-ai/catalogue/#reimplementation-notes), whose *Reimplementation notes* list the traps.
+- The specs: [overview](../../spec-monster-ai/overview/#reimplementation-notes), [machinery](../../spec-monster-ai/machinery/#reimplementation-notes) and [catalogue](../../spec-monster-ai/catalogue/#reimplementation-notes), whose *Reimplementation notes* list the traps.
 - The [glossary](../../reference/glossary/) for D2 terms and `aip`.
 - Related wiki pages: [monsters](../../world/monsters/) (how a monster is created and what its stats are), [skills and missiles](../../characters/skills/) (what a skill command does), [pathing](../pathing/) (the planners behind a request), [the server frame](../server-frame/) (the order of events in a frame), [animation and timing](../animation/) (a mode's frames and the step), [characters and hirelings](../../characters/characters/), [randomness](../../foundations/randomness/) (unit seeds and draws) and [how we know](../../reading-the-tags/).

@@ -12,8 +12,8 @@ and frees the rest. When the room is activated again, the units are re-created f
 population, with their own draws on the room seed and the game seed. This spec defines the reference counts that
 drive activation, the client lists, the release timer and test, the save rule, the record layouts, the restore order
 and its draws, the stats of a restored monster and the wanderer tick. The room build itself is
-room-tiles; the first population is monsters/spawn and
-objects. Primitives (`Step`, `Range`, `Init`) are those of rng.
+[room-tiles](../room-tiles/); the first population is [monsters/spawn](../../spec-monsters/spawn/) and
+[objects](../../spec-objects/overview/). Primitives (`Step`, `Range`, `Init`) are those of [rng](../../spec-rng/overview/).
 
 ```mermaid
 stateDiagram-v2
@@ -68,16 +68,16 @@ stateDiagram-v2
 | State | Type | Owner offset | Source |
 |---|---|---|---|
 | game frame | `u32`, compared signed in `% 12` and the item expiry, unsigned in the 7500-frame test | game `+0xA8` | `GameTick` |
-| game seed | `Seed` | game `+0xD0` | rng/seeds |
+| game seed | `Seed` | game `+0xD0` | [rng/seeds](../../spec-rng/seeds/) |
 | references per distance | 4 × `u16` | DRLG room `+0x0C + 2·d`, d = 0..3 | § B |
 | status | `u8`, lowest d with a reference, 4 = none | DRLG room `+0x44` | § B |
-| DRLG room flags | `u32`: `0x100000` built, `0x200000` released by the server, pinned | DRLG room `+0x28` | § E, room-tiles |
+| DRLG room flags | `u32`: `0x100000` built, `0x200000` released by the server, pinned | DRLG room `+0x28` | § E, [room-tiles](../room-tiles/#release-and-re-activation) |
 | populated bit kept across a release | `u32`, bit 0 | DRLG room `+0x60` | § D |
 | active room of the DRLG room | pointer, 0 while released | DRLG room `+0x30` | § E |
 | idle count | `u32` | active room `+0x0C` | § E |
 | active-room flags | `u32`: bit 0 populated, bit 1 inactive units restored, 4 client copy | active room `+0x34` | § D |
 | client list, count | sorted pointers, `u32` | active room `+0x48`, `+0x78` | § C |
-| room seed | `Seed` | active room `+0x6C` | rng/seeds step 6 |
+| room seed | `Seed` | active room `+0x6C` | [rng/seeds](../../spec-rng/seeds/) step 6 |
 | unit list | newest first, next = unit `+0xE8` | active room `+0x74` | § E |
 | act room list, new-rooms flag | list (next = room `+0x7C`), `u32` | DUNGEON act `+0x10`, `+0x54` | § D |
 | DUNGEON act `+0x50` | `u32`; the constructor's client-act argument: 1 on a client act, 0 on a server act | DUNGEON act `+0x50` | § E |
@@ -278,12 +278,46 @@ D1. NewRoomsUpdate(game):                                         [C]
 - [C] Every caller of `RoomRestoredSet` passes 1 (three calls, the third's `EBX` set to 1). [I] No other
   code clears bit 1, and it lives in the active room, which a release frees: the restore runs once per activation.
 - [C] On a first activation the restore finds no record and draws nothing (no record and both seeds unchanged in 1 459
-  first activations) (objects § B B2);
+  first activations) ([objects § B](../../spec-objects/overview/#b-the-window-in-the-room-driver-and-the-revisit) B2);
   the presets, objects and population are [drlg/preset § 6](../preset/#6-handover-to-the-server-spawners-boundary),
-  objects and monsters/spawn § A.
+  [objects](../../spec-objects/overview/) and [monsters/spawn § A](../../spec-monsters/spawn/#a-when-the-pass-runs-and-the-room-seed-before-it).
 
 
 ### E. Release
+
+```
+E1. RoomsDeactivate(game):                                        [C]
+      for a in 0 ..< 5 with an act:
+        room ← act's room list head
+        while room:
+          next ← room.next                                        ; read before the room may be freed
+          room.idle ← 0 if room[+0x78] ≠ 0 else room.idle + 1     ; RoomIdleCount, u32
+          if room.idle > 10 and RoomReleaseAllowed(act, room):
+            for u in room.units, head first (next = u[+0xE8], read before the call):
+              InactiveUnitSaveTest(game, u)                       ; § F
+            ActiveRoomFree(act, room)                             ; E3
+          room ← next
+
+E2. RoomReleaseAllowed(act, room) → bool:                         [C]
+      if act[+0x50] ≠ 0: fatal error                              ; [I] never taken, 0 on the server at every pass
+      R ← room.drlg
+      if R.flags & (1 << 22): return false                        ; pinned
+      if R's act is a client act: fatal error                     ; [I] never taken
+      if R.status < 2: return false
+      if R's level is a town or level 120:
+        if any DRLG room of the level has status < 2: return false   ; [I] for level 120, not reached
+      return true
+
+E3. ActiveRoomFree(act, room):                                    [C] the unlink and R[+0x30] ← 0: 3 212 freed rooms absent from the next pass's list, `+0x30` = 0 until re-activation; [I] the near-list removal, the unit bits and the order
+      unlink room from the act list
+      for each neighbour of room's near list but room itself: remove room (swap with the last entry)
+      RoomReleaseWrap(R ← room.drlg, EDX ← act[+0x50], room.flags):
+        R[+0x30] ← 0;  R[+0x60] ← room.flags & 1
+        if R.flags & 0x100000: RoomTilesRelease(R, EDX ← (wrapper EDX = 0))   ; room-tiles § Release
+      DUNGEON_RoomFree(room):
+        for u still in room.units: u[+0xC4] |= (1 << 23); unless u[+0xC4] bit 22: u[+0xC8] |= 0x20; unlink u
+        free the collision map, the tile lists and the room
+```
 
 - [C] **Frames.** The count rises only on passes with `+0x78` = 0 and drops to 0 on any pass that sees a client, so
 a room is freed on the 11th client-free pass in a row: 120 frames after the first client-free pass, which falls 0 to 11
@@ -398,7 +432,7 @@ units the rule saves.
 - [I] Tests 3, 4, 6 and 7 and `restore` 0 were not reached (no pet or owned monster, no `+0xD0` < 8, no necromancer
 summon, no `+0xC4` bit 9, no `restore` 0 class). Since `restore` 2 is tested last it overrides every earlier test, the
 dead-unit tests included.
-- [C] **Objects** follow objects § B B4,
+- [C] **Objects** follow [objects § B](../../spec-objects/overview/#b-the-window-in-the-room-driver-and-the-revisit) B4,
 whose level flag is `Levels.SaveMonsters` (leveldefs `+0x94`): `save` starts as that flag or the preset flag
 `0x2000000`; `Objects.Restore` = 0 or sparkle bit `0x02` → no; `RestoreVirgins` and mode ≠ 0 → no. The rule held on
 3 023 objects (`Restore` 0: 15; `RestoreVirgins` on a used object: 30; the starting flag set on all of them, 653 by the
@@ -575,7 +609,7 @@ for, and the kept lifecycle logs were not searched for a unit seed after the han
 - [C] The save copies unit `+0xC8` to record `+0x14`, and the restore sets the new unit's `+0xC8` bit `0x200` when the record's
 has it, so the restore carries that bit over (§ 6). [I] That it is set
 only there: 17 register stores to `[reg+0xC8]` are not resolved. The group link, the AI restore, the target lists and the mod
-re-append are code readings; movement of a restored monster is a boundary oracle (phase 4), and what the restore keeps of its AI is monsters/ai E9.
+re-append are code readings; movement of a restored monster is a boundary oracle (phase 4), and what the restore keeps of its AI is [monsters/ai E9](../../spec-monster-ai/overview/#e-the-ai-state-on-the-unit).
 
 - [I] **A dead special saved without `0x08` or `0x10` would come back alive**: `SpecialMonRestore` places the unit
 in mode 1 whatever record flag 4 says, with stat 6 by the 7500-frame rule. By the dead-champion reading of § F (every
@@ -806,10 +840,10 @@ restore is not specified here.
   the `0x400` drop's alignment-2 half and the expired-item drop; the 1 500-frame sweep; the town-follow recipes.
 hold the static
   town-follow reads.
-- drlg/room-tiles § Release and re-activation: what the tiles release frees.
-- objects § B: the object save (B4) and
+- [drlg/room-tiles § Release and re-activation](../room-tiles/#release-and-re-activation): what the tiles release frees.
+- [objects § B](../../spec-objects/overview/#b-the-window-in-the-room-driver-and-the-revisit): the object save (B4) and
   re-creation (B5).
-- monsters/spawn § A, § H and § K; [monsters/special](../../spec-monsters/special/);
-  [monsters/stats](../../spec-monsters/stats/); [save/d2s § I](../../spec-save/d2s/#i-one-item); rng.
+- [monsters/spawn](../../spec-monsters/spawn/) § A, § H and § K; [monsters/special](../../spec-monsters/special/);
+  [monsters/stats](../../spec-monsters/stats/); [save/d2s § I](../../spec-save/d2s/#i-one-item); [rng](../../spec-rng/overview/).
 - Tables: Levels, MonStats, MonStats2,
   Objects, States.

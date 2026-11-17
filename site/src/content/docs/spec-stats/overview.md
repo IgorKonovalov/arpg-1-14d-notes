@@ -82,4 +82,4 @@ its target pass, and the pass copies the packet it fills to every unit hit with 
   stats), [monsters/stats](../../spec-monsters/stats/) (a monster's creation stats, the stat callback),
   [data/calc](../../spec-data/calc/) (the passive and aura calcs). Downstream: [combat](../../spec-combat/overview/) (every stat it
   reads), [player/creation § I](../../spec-player/creation/#i-level-up--player_levelup) (the refill maxima),
-  objects (shrine and well operates).
+  [objects](../../spec-objects/overview/) (shrine and well operates).

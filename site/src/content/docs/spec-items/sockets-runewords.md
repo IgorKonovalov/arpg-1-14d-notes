@@ -558,6 +558,13 @@ Step notes:
   stats 21, 23, 159 and 22, 24, 160 (+3 each), which only the non-weapon branch writes, and `dmg%` 20 as stats 17/18;
   *Famine* and the five *Splendor* (`ac%` on shields) reproduced in the run with the rune as the item. [C]
 
+- E3. **Per-func coverage.** The run's 50 runewords reached funcs 1, 2, 3, 5, 6, 7, 8, 10, 11, 15, 16, 17, 19, 21, 22
+  and 23, counted from the logged `SLOT` lines between `RWA` and `RWX` (the per-func table, which the project's socket checker
+  prints), and every slot reproduced draw for draw. Ranged lines drew for funcs 1 and 22; the 36 func 3
+  slots drew nothing, 15 of them on ranged lines. Funcs 8, 10 and 21 met only fixed lines (`min` = `max`), so their
+  one-draw case rests on the shared `PROP_RollValue`, which the ranged lines of funcs 1, 2 and 22 corroborate. The
+  second run's three runewords (*Prudence*, *Eternity*, *Leaf*) add func 20 and func 17's `par`-0 branch at
+  `min` = `max`, each reproduced. [C]
 - E3. The `[I]` rows of the table (func 8's reuse branch, func 17's `par`-0 roll on a ranged line, func 11's ilvl
   branch, func 7's `+1` fallback, func 24) are read from the handlers, with the stock-row counts,
   and none has a stock case: funcs 8 and 11 as their rows say; func 17's ranged rows and func 24's *Faith* are `server`
@@ -669,7 +676,7 @@ sequenceDiagram
 - [C] An insert that makes no runeword makes **no draw** on any seed. An insert that completes a runeword draws only
   on the completing child's item seed, in line order then slot order, one draw per ranged `Roll` (none when `min =
   max`, none for a reuse slot whose slot-1 value is non-zero) and one per `charged` line. The game seed and the
-  parent's seeds are unchanged at the end of the insert. (`ITEMS_InsertSocket`, `RUNEWORD_Apply`; rng for `Range`)
+  parent's seeds are unchanged at the end of the insert. (`ITEMS_InsertSocket`, `RUNEWORD_Apply`; [rng](../../spec-rng/overview/#algorithm) for `Range`)
 
 ## Outputs
 
@@ -694,7 +701,7 @@ Session `rw1` (slot 2, game seed `-seed 2001`, expansion, Normal). The parent is
    list gets stat 35 = 7.
 3. Match: 3 children = stat 194 = 3, quality 2, rune sequence Ko Ko Mal, `lrg` is `shie` → `shld`: record 41.
 4. Apply, lines in order, on Mal's item seed (`Range(s, n)`: step `s ← low × 0x6AC690C5 + high` as a u64, then
-   `low mod n`, rng § Algorithm):
+   `low mod n`, [rng § Algorithm](../../spec-rng/overview/#algorithm)):
 
 | line | code (func) | block | draw | seed after (low, high) | value written |
 |---|---|---|---|---|---|
@@ -746,7 +753,7 @@ Session `rw1` (slot 2, game seed `-seed 2001`, expansion, Normal). The parent is
 
 ## Evidence
 
-- [items/properties](../properties/): the block walk, the roll, the handlers per func; rng: `Range`.
+- [items/properties](../properties/): the block walk, the roll, the handlers per func; [rng](../../spec-rng/overview/): `Range`.
 - Tables: Gems, Runes, Weapons,
   Armor, Misc, ItemTypes,
   Properties.

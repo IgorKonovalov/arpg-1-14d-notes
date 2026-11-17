@@ -14,7 +14,7 @@ nightmare/hell factors, the class's `MonProp` row and its skills. Later in the c
 each stat as an ordered integer computation, the draws on the unit seed in order, the unit's stat-change callback that
 rescales current HP and regeneration when max HP changes, and the per-mod effects. To-hit and damage are not creation
 stats. They are computed at attack time and are given here for reference only (§ H). Primitives (`Step`, `Range`, `Init`) are those of
-rng; `RangeB` in our symbol names is the second compile of `Range` and behaves the same.
+[rng](../../spec-rng/overview/); `RangeB` in our symbol names is the second compile of `Range` and behaves the same.
 
 ```mermaid
 flowchart TD
@@ -124,7 +124,7 @@ It predicts the unit-seed draws of `MonStatsInit`, the base stats after the clas
 
 | Input | Kind | What this spec needs | Owner | Tag |
 |---|---|---|---|---|
-| unit seed at `MonStatsInit` entry | seed input | `Init(step(game).low)` (rng/seeds 7a); 22 creations of the run start from another seed, which the model takes from the log: the region append's `MonVariantRoll` on the unit seed, which the chain predicts ([chain § Algorithm](../../spec-chain/overview/#algorithm) E2) | rng/seeds, spawn § J | [C] |
+| unit seed at `MonStatsInit` entry | seed input | `Init(step(game).low)` (rng/seeds 7a); 22 creations of the run start from another seed, which the model takes from the log: the region append's `MonVariantRoll` on the unit seed, which the chain predicts ([chain § Algorithm](../../spec-chain/overview/#algorithm) E2) | [rng/seeds](../../spec-rng/seeds/), [spawn § J](../spawn/#j-creation-and-the-unit-seed) | [C] |
 | monster level | value input | stat 12 before this spec's writes | [pool § E](../pool/#e-the-monster-level-monstatsinit) | [C] |
 | mod lists and flags | value input | which handlers run, with which flag, in which order | [monsters/special](../special/#c-mod-handlers) | [C] |
 | re-created monster's stats 7, 12, 13 | specified elsewhere | the restore writes 13 and 7 from the inactive record; 12 is this spec's `MonsterInit` level plus the re-applied mods | [drlg/lifecycle § H](../../spec-drlg/lifecycle/#h-the-restore) | [C] |
@@ -192,6 +192,44 @@ flowchart TD
   b11 --> b12["B12 MonEquip"]
 ```
 
+```
+MonStatsInit(game, room, regionEntry), unit = the new monster:   [C] except the lines tagged [I]
+B1. UnitStatListCreate(unit, callback: MonStatCallback)          ; before the first SetStat
+B2. MonComponentsPick(regionEntry, unit):                        ; unit-seed draws
+      if regionEntry ≠ 0 and regionEntry.nVariants ≠ 0:
+        i ← RangeB(unit.seed, regionEntry.nVariants)             ; draw#1
+        appearance[0..15] ← regionEntry.variant[i]               ; 16 bytes to MonsterData+0x04
+      else for k in 0 ..< 16:
+        c: i32 ← MonCompCount(unit, k)                           ; MonStats2 component count
+        if c < 1: appearance[k] ← 0                              ; no draw
+        else: Step(unit.seed); appearance[k] ← (c is a power of 2) ? low & (c − 1) : low mod c   ; one draw, also for c = 1
+B3. if class = 311: MonsterData.b0E ← Range(unit.seed, 4)        ; [C] draw
+    if class = 312: MonsterData.b0E ← MonsterData.b0F ← Range(unit.seed, 4)   ; [C] one draw
+B4. pb ← MonPlayerBonus(game, room, unit)                        ; § C
+B5. d, level as in pool § E
+    SetStat(12, level);  SetStat(100, max(1, pb.players))
+    SetStat(36, ResDm[d]); SetStat(37, ResMa[d]); SetStat(39, ResFi[d])
+    SetStat(41, ResLi[d]); SetStat(43, ResCo[d]); SetStat(45, ResPo[d])   ; s16 cells, as they are
+    SetStat(20, ToBlock[d])                                      ; u8
+    SetStat(68, 100); SetStat(67, 75); SetStat(69, 100); SetStat(352, 128)
+B6. o ← MonLvlStats(class, L, d, level, mask 7)                  ; § A2
+B7. base: i32 ← o.minHp + RangeB(unit.seed, o.maxHp − o.minHp + 1)   ; draw; no step when the range is < 1
+B8. hp: i32 ← base + MulDiv(base, pb.hpPct, 100)
+    if hp ≥ 8388608: hp ← 8388607                                     ; 2^23, 2^23 − 1
+    SetStat(7, hp << 8);  SetStat(6, hp << 8)
+    SetStat(31, o.ac)
+    SetStat(13, o.exp + MulDiv(o.exp, pb.xpPct, 100))
+    r: u32 ← MonStats.DamageRegen                                ; r < 0 → fatal 222; r & 0xFFFFF000 → fatal 223 [I]
+    if r = 0: SetStat(74, 0)
+    else if (hp << 8) > 0x7FFFFFFF ÷ r: SetStat(74, ((hp << 8) >> 12) × r)   ; [I] overflow branch
+    else: SetStat(74, ((hp << 8) × r) >> 12)
+B9. MonClassicDiffAdjust(unit, game.expansion, game.difficulty)  ; § D
+B10. for k in 0 ..< 8:                                           ; [C]
+       if Skill[k] ≥ 0 and Sk_lvl[k] > 0: UnitSkillAdd(unit, Skill[k], Sk_lvl[k] + pb.skillBonus)
+B11. MonProp (§ F)
+B12. MonEquipInit(unit, …, level, level, 1)                      ; [C] the call; its walk: note B12
+```
+
 Step notes:
 
 B1. The callback is what rescales stat 6 and recomputes stat 74 whenever max HP changes later (§ E). The first
@@ -200,7 +238,7 @@ B1. The callback is what rescales stat 6 and recomputes stat 74 whenever max HP 
 B2. The run made the variant-set pick in 4 255 creations and the per-component draws in 316, all predicted. The
 per-component fallback draws for every count ≥ 1, unlike `MonVariantRoll` of [pool § D](../pool/#d-appearance-sets-monvariantroll),
 which skips counts < 2. [C] The appearance pick and the HP draw are the two unit-seed steps that
-spawn § J1 sees on most creations. [C]
+[spawn § J1](../spawn/#j-creation-and-the-unit-seed) sees on most creations. [C]
 
 B3. The `doomknight` draw comes right after the appearance pick, on the unit seed. Class 311 (`doomknight2`) stores it in `MonsterData +0x0E` (appearance byte 10): all 99 creations of a nightmare *River of Flame* (107) session. Class 312 (`doomknight3`) writes one `Range(4)` to both `+0x0E` and `+0x0F` (bytes 10 and 11): 63 creations in a nightmare *Chaos Sanctuary* (108) session, the two bytes equal in every one and all four values met.
 
@@ -208,7 +246,7 @@ B5. Blank MonStats cells are used as the value 0; there is no "none" test. No he
 resistances at creation. [C] Stat 100 is
 the creation player count and stays fixed (§ C). [C]
 
-B7. `RangeB(seed, n)` steps once and returns `low mod n` for `n` ≥ 1, and returns 0 with no step for `n` < 1 (signed), as in rng. So `maxHp = minHp` still steps (`n` = 1), and a reversed range (`maxHp < minHp`) makes no step and gives `minHp`. [C] for the draw. The reversed range is `[C]` by composition: is straight-line code (the `n` computation, the call, the add of `minHp`), `MonLvlStats` scales `minHp` and `maxHp` each on its own and never compares them, and `RNG_RangeB`'s `n` ≤ 0 branch is `[C]` in rng. Two stock rows are reversed in Normal: `mephistospirit` (401, placed by `mephcomp.ds1` in level 102) and `minionspawner1` (484, in no pool or DS1). No logged creation met one. [C]
+B7. `RangeB(seed, n)` steps once and returns `low mod n` for `n` ≥ 1, and returns 0 with no step for `n` < 1 (signed), as in [rng](../../spec-rng/overview/#algorithm). So `maxHp = minHp` still steps (`n` = 1), and a reversed range (`maxHp < minHp`) makes no step and gives `minHp`. [C] for the draw. The reversed range is `[C]` by composition: is straight-line code (the `n` computation, the call, the add of `minHp`), `MonLvlStats` scales `minHp` and `maxHp` each on its own and never compares them, and `RNG_RangeB`'s `n` ≤ 0 branch is `[C]` in rng. Two stock rows are reversed in Normal: `mephistospirit` (401, placed by `mephcomp.ds1` in level 102) and `minionspawner1` (484, in no pool or DS1). No logged creation met one. [C]
 
 B8. The hpregen formula is evaluated on the HP before the classic adjustment; § E recomputes it with a different
 rounding when max HP changes. Stat 13 has no cap. [C]
@@ -552,7 +590,7 @@ them and compares the unit seed after each. The stat handlers of § G make no dr
 
 ## Worked example
 
-Every value is from the logs, expansion hell at `/players 8`, single player (`L` = 1). The HP draws were re-derived from the logged seeds with the rng step and match the log. Seeds are `low:high` in hex. Table cells are those of the hell columns (`(H)`), quoted only as needed.
+Every value is from the logs, expansion hell at `/players 8`, single player (`L` = 1). The HP draws were re-derived from the logged seeds with the [rng](../../spec-rng/overview/) step and match the log. Seeds are `low:high` in hex. Table cells are those of the hell columns (`(H)`), quoted only as needed.
 
 ### Example 1: a normal monster (`skeleton6`, class 648, Glacial Trail)
 
@@ -668,5 +706,5 @@ One of its three minions, the same class created with `RangeB(1717)` = 411: base
   MonLvl, MonProp,
   DifficultyLevels, MonUMod,
   ItemStatCost.
-- Upstream: rng, rng/seeds, [monsters/pool](../pool/), monsters/spawn,
+- Upstream: [rng](../../spec-rng/overview/), [rng/seeds](../../spec-rng/seeds/), [monsters/pool](../pool/), [monsters/spawn](../spawn/),
   [monsters/special](../special/), [items/properties](../../spec-items/properties/).

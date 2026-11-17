@@ -12,7 +12,7 @@ a quality, a unique/set index and upgrade flags. This spec covers the TC choice 
 level upgrade, the pick loop (positive and negative `Picks`), `NoDrop` and its player-count scaling,
 the recursion into sub-TCs with ratio inheritance, and the hand-off. The quality roll that runs inside
 the walk is specified by `items/quality`; here it is a call with a known seed contract. Primitives
-(`Step`, `Range`) are those of rng; TC indices and the load of the TC array are
+(`Step`, `Range`) are those of [rng](../../spec-rng/overview/); TC indices and the load of the TC array are
 in [data/excel § G](../../spec-data/excel/#g-treasure-classes).
 
 ## Entry points
@@ -22,7 +22,7 @@ in [data/excel § G](../../spec-data/excel/#g-treasure-classes).
 | A monster dies (death event → death drop, `noNoDrop = 0`) | → → `MONSTER_DropItems` | [C] |
 | A corpse skill re-drops a monster (`noNoDrop = 1`) | → → `MONSTER_DropItems` | [C] |
 | Monster TC → level upgrade → resolver | `TC_DropByIndex` → `TC_ResolveDrops` | [C] |
-| A chest or other object drops (named only; the callers are objects § J) | → `TC_ResolveDrops` | [C] |
+| A chest or other object drops (named only; the callers are [objects § J](../../spec-objects/overview/#j-operate-chests-and-containers-up-to-the-drop)) | → `TC_ResolveDrops` | [C] |
 
 - [C] **The two monster chains.** All 973 entries of `MonDeathDrop` logged in the H2a run return after its one call
   site in `MonDeathEvent`, which is reached through a table in `.rdata`; the 858 death drops that pass its guard are
@@ -55,11 +55,11 @@ Offsets are byte offsets into the owner; struct names are ours.
 | `game.difficulty` | u8, 0 Normal, 1 Nightmare, 2 Hell | `Game+0x6D` |
 | `game.expansion` | u32, non-zero in an expansion game | `Game+0x70` |
 | `game.type` | u8 (`3` in every single-player call logged, `2` in every TCP/IP host call logged:) | `Game+0x6A` |
-| `game.seed` | `Seed`, seeds every created item unit | `Game+0xD0` (rng/seeds step 7a) |
+| `game.seed` | `Seed`, seeds every created item unit | `Game+0xD0` ([rng/seeds](../../spec-rng/seeds/#algorithm) step 7a) |
 | player lists, party list | the game's player units, parties | `Game+0x1120`, `Game+0x1D2C` |
 | `g_PlayersOverride` | u32, set by the `/players N` command | `g_PlayersOverride` |
 | `src` | the source unit: the dying monster, or the object | argument |
-| `src.seed` | `Seed` at `Unit+0x20`, **every TC draw steps it** | rng/seeds step 7a |
+| `src.seed` | `Seed` at `Unit+0x20`, **every TC draw steps it** | [rng/seeds](../../spec-rng/seeds/#algorithm) step 7a |
 | `src.type`, `src.classId` | u32 (`1` monster, `2` object, `0` player, `4` item), class at `unit+0x04` | |
 | monster type flags | u16 at `monsterData+0x16` (`unit+0x14` → `+0x16`): `0x02` superunique, `0x04` champion, `0x08` unique, `0x10` minion | — |
 | superunique id | `monsterData+0x26` | — |
@@ -748,7 +748,7 @@ Step notes:
   ([items/uniques-sets](../uniques-sets/) D2).
 - H7. **The item's seed comes from the game seed**, not from `src.seed`: drops pass no seed in the
   record, so `ItemCreate` leaves the two game-seed draws of the unit constructor in place
-  (rng/seeds step 7a). In all 988 drop creations of the H2b run the record passed no
+  ([rng/seeds](../../spec-rng/seeds/#algorithm) step 7a). In all 988 drop creations of the H2b run the record passed no
   seed, the unit seed and the item seed were those of two game-seed steps from the game seed at `ItemCreate`'s entry
   (`{g1.low, 666}`, `{g2.low, 666}`), and the source seed was the same before and after. [C]
  In a
@@ -825,7 +825,7 @@ Step notes:
   output array and no level upgrade. The `|b − a|` and the return-1 guards of `LevelMonLvl` (`d ≥ 3`, an invalid level
   id) have no stock case: `b ≥ a` for every act, difficulty and game type, and every chest's level is a valid id. The
   callers, how many drops they ask for and the forced quality they pass (0, or 4/6 for a sparkle chest) are
-  objects § J.
+  [objects § J](../../spec-objects/overview/#j-operate-chests-and-containers-up-to-the-drop).
 - [C] **The chest drop passes its tier as the resolver's `ilvl`.** The call pushes the tier (0, 1 or 2)
   in the `ilvl` slot and its forced quality in the forced-quality slot; the 59 chest calls log `ilvl` = the modelled
   tier in every call. The resolver's `ilvl` feeds only the quality roll (H4), so a chest drop's quality roll runs at

@@ -50,7 +50,7 @@ here; which event sets each bit is [quests/progression](../../spec-quests/progre
 |---|---|---|
 | quest record of a player | 768 bits for the game's difficulty: `PlayerData+0x10 + 4·Game+0x6D`; "word *q*, bit *s*" is bit `16q + s` | `QUESTS_PlayerRecord` |
 | `questSeed` | `Seed` at `QuestControl+0x18`, `QuestControl` = `Game+0x10F4` | `Game+0x10F4`, `QUESTS_GetSeed` |
-| `game.seed` | `Seed` at `Game+0xD0` | rng/seeds |
+| `game.seed` | `Seed` at `Game+0xD0` | [rng/seeds](../../spec-rng/seeds/) |
 | `d` | difficulty, u8 at `Game+0x6D` |  |
 | `game.expansion` | `Game+0x70` |  |
 | `game.type` | `Game+0x6A` (3 in every logged single-player game) | [items/tc](../tc/#inputs) |
@@ -71,7 +71,7 @@ here; which event sets each bit is [quests/progression](../../spec-quests/progre
 | `FORGE_RUNES[2]` | `r15`…`r25` (Hell) | `g_ForgeRunesHell` | [C] (owner-played session 3507: entry 4 → `r19`) |
 | `QUAL_KEHK_RUNES` | `r07 r08 r09` | `g_QualKehkRunes` | [C] (given in that order) |
 | `ANYA_REWARDS[d]` | per class row (§ F5) | `g_AnyaRewardsNormal`, `g_AnyaRewardsNightmare`, `g_AnyaRewardsHell` | [C] (the three arrays read from the image against their reader, § S2c qd 47; each difficulty's table, the code read from it by the logged draw) |
-| `INIT_HIGH` | 666 (`0x29A`), the high word of every `Init` | rng step 5 | [C] |
+| `INIT_HIGH` | 666 (`0x29A`), the high word of every `Init` | [rng](../../spec-rng/overview/) step 5 | [C] |
 
 ### Inputs and oracles
 
@@ -126,7 +126,7 @@ Step notes:
 - A1. [C] **The step is game-seed draw 4.** Game creation steps the game seed in `MonRegionsInit` (draw
   1), `OBJRGN_Create` (draw 2), `NPCSTORE_CtlCreate` (draw 3, the store seed of [items/vendors](../vendors/)) and then
   `QUESTS_InitGame`: in all 53 sessions of the run, and in the 7 owner-played ones, the game seed at `QUESTS_InitGame`'s
-  entry was exactly three steps past `Init(N)` of the session's seed (rng/seeds step 7a).
+  entry was exactly three steps past `Init(N)` of the session's seed ([rng/seeds](../../spec-rng/seeds/) step 7a).
 
 - A1. [C] `g_QuestDescs` (37 records) gives each quest object its record word at `+0x14`; object id and word are equal
   for Act I (objects 0–6) and differ after (7 → 8 … 13 → 14, 14 → 16 … 20 → 22, 21 → 24 … 24 → 27, 25 → 29, 26 → 30,
@@ -139,7 +139,7 @@ Step notes:
   (`QUESTS_InitGame`, qd 8)
 - A2. [C] The scripts write the step inline (`s ← lo·0x6AC690C5 + hi`, the compiler's multiply-shift for `mod 7` and
   `mod 5`) or call `RNG_Range`/`RNG_RandLoHi` on the quest seed; all are `Step` then `low mod n` of
-  rng step 2, and `RandLoHi(s, lo, hi)` is `lo + Range(s, hi − lo)`. The run's 28 scripted draws reproduce so; every
+  [rng](../../spec-rng/overview/) step 2, and `RandLoHi(s, lo, hi)` is `lo + Range(s, hi − lo)`. The run's 28 scripted draws reproduce so; every
   inline multiply-shift constant of a quest-seed function is an exact `/ 5` (`0xCCCCCCCD`, 8 sites) or `/ 7`
   (`0x24924925`, 5 sites); `RandLoHi`'s form reproduces 7 513 store-seed draws. (`RNG_Range`,
   `RNG_RandLoHi`, qd 9)
@@ -224,6 +224,12 @@ reproduces both drops.
 - B6b. [I] Only the resolved player's own record is read; no other party member's record enters. No party was run,
   and no non-player killer that no step resolves (every logged one had an owner), so B6b's return is not met either.
 
+- B6. [I] **No class gets a special mode-0 record.** `MonModeRecord` tests `MonStats+0x1A5`, then
+  switches on the class in two jump tables (classes 243–418 and 544–709, and 543 directly), which reach five targets:
+  four give a special record only for modes 4, 5, 8, 9, 10 or 11, and the fifth, like every class outside the ranges,
+  falls to `g_MonModeRecords[mode]` (16 bytes a record). The run reached the default record and Baal's block; Diablo's block and
+  the two others were not run, so Diablo's record and his drop-before-script order rest on this reading.
+  (qd 13)
 
 **The quest-dependent TCs.** Exactly five classes have a `TCQuestId`, and each has all three `TreasureClass4` cells.
 [C]
@@ -702,6 +708,10 @@ F3. Personalize(player, item):                                    [C] (NPC_MenuA
   run's one gem-holding item carried its child into the call already, so these are not separated.
 
   66. Why the leg's rare is identified at creation is not read.
+- [I] The gate is `ItemCanRepair`, called first in `ItemRepairAll`: it refuses a non-item,
+  an unidentified item (`+0x18 & 0x10` clear) and an ethereal one (`& (1 << 22)`), so an ethereal item comes back from
+  any of the three services unrepaired. No run had an identified ethereal item at the tail (the run's ethereal imbued
+  `cap` was unidentified too, at full durability).
 
 #### F4. Given items (`QUESTS_GiveItem`)
 
@@ -885,7 +895,7 @@ Seeds are `low:high` in hex. A `Step` row's result is the low word after the ste
 
 - **Larzuk draws even when the bound is 1.** A magic item with `max` 1 still costs one item-seed step (`RangeB(…, 1)`
   steps for `n` ≥ 1): a magic Buckler (`buc`, `max` 1) had its item seed stepped once, `r` 0, `n` 1. [C]
-  (`RNG_RangeB`, rng step 2)
+  (`RNG_RangeB`, [rng](../../spec-rng/overview/) step 2)
 - **The Khalim chests are not the other chests.** Their gold piles come first and their part after; the Act II chests
   give the item, then the chest drop, then the gold (E1, E1b). [C]
 - **The quality a script asks for is not always the item's.** A base with Misc `unique` 1 comes back at 7 (§ E). [C]
@@ -902,6 +912,6 @@ Seeds are `low:high` in hex. A `Step` row's result is the low word after the ste
 - Tables: MonStats § Quest TCs, Misc,
   Weapons, Armor, States,
   TreasureClassEx, SuperUniques.
-- Upstream: rng, rng/seeds, [items/tc](../tc/),
+- Upstream: [rng](../../spec-rng/overview/), [rng/seeds](../../spec-rng/seeds/), [items/tc](../tc/),
   [items/cube § K](../cube/#k-the-copys-seeds--itemcopy) (the copy's seeds). Downstream:
-  objects (the quest objects), [monsters/pool](../../spec-monsters/pool/) (E4).
+  [objects](../../spec-objects/overview/) (the quest objects), [monsters/pool](../../spec-monsters/pool/) (E4).

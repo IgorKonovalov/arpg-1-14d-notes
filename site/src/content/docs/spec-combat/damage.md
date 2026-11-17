@@ -332,6 +332,7 @@ draw's exit. [C]
 
 | Step | Computation | Draw on `0109323f:20d5284f` → | Field |
 |---|---|---|---|
+| 2 | `mn` 32 << 8 = 8192, `mx` 87 << 8 = 22272, `ed` = `100 × 405 ÷ 100` = 405 (a Dimensional Blade: `StrBonus` 100, `DexBonus` 0); `lo` = 8192 + 33177 = 41369, `hi` = 22272 + 90201 = 112473 | `RangeB(71104)` = 50826 → `0be642ca:006e9c81` | phys 92195 |
 | 3 | deadly strike 15 | `Range(100)` = 83, no doubling → `fa6da1f3:04f69279` | — |
 | 4 | fire 768..1536 | `RangeB(768)` = 120 → `465ee278:6873a378` | fire 888 |
 | 4 | lightning: no stats | no draw | 0 |
@@ -366,5 +367,5 @@ The exit seed `9fdf9862:101f40ba` is the one logged at the builder's return. [C]
 - § 3 (the missile's critical chain, which is not step 3's).
 - Tables: Weapons, MonStats, ElemTypes,
   ItemStatCost, Skills.
-- Upstream: rng, [monsters/stats § H](../../spec-monsters/stats/#h-to-hit-and-damage-at-attack-time-reference-only),
+- Upstream: [rng](../../spec-rng/overview/), [monsters/stats § H](../../spec-monsters/stats/#h-to-hit-and-damage-at-attack-time-reference-only),
   [items/properties](../../spec-items/properties/) (the item stats an attacker carries).

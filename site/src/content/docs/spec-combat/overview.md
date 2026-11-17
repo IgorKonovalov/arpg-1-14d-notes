@@ -30,7 +30,7 @@ flowchart LR
 | [reductions.md](../reductions/) | the percent P, DR and MDR, resistances with the difficulty penalty, caps, immunity and pierce, absorb |
 | [delivery.md](../delivery/) | queue and delivery, crushing blow, open wounds, leech, stun, cold, freeze, poison, the life change, the life tick |
 
-Names of functions, structs and fields are ours; the server module is the binary's own `.\UNIT\SUnitDmg.cpp`. Primitives (`Step`, `Range`, `RangePow2`) are those of rng; `RangeB` is the second compile of `Range`. `MulDiv(a, b, c)` is the helper of [monsters/stats § A](../../spec-monsters/stats/#a-muldiv-and-monlvlstats). Divisions are signed and truncate toward zero unless stated. Life, mana and damage fields are in 1/256 points.
+Names of functions, structs and fields are ours; the server module is the binary's own `.\UNIT\SUnitDmg.cpp`. Primitives (`Step`, `Range`, `RangePow2`) are those of [rng](../../spec-rng/overview/); `RangeB` is the second compile of `Range`. `MulDiv(a, b, c)` is the helper of [monsters/stats § A](../../spec-monsters/stats/#a-muldiv-and-monlvlstats). Divisions are signed and truncate toward zero unless stated. Life, mana and damage fields are in 1/256 points.
 
 ## Entry points
 
@@ -63,7 +63,7 @@ Names of functions, structs and fields are ours; the server module is the binary
 
 | State | Type | Source |
 |---|---|---|
-| unit seed of each unit | `Seed` at `Unit+0x20` | rng/seeds |
+| unit seed of each unit | `Seed` at `Unit+0x20` | [rng/seeds](../../spec-rng/seeds/) |
 | unit stats | i32 values of the stat lists | value inputs (the boundary section) |
 | hit queue | list at `Unit+0xAC` | [delivery § A](../delivery/#a-queue-and-delivery) |
 | frame | `Game+0xA8` | timed states |
@@ -137,7 +137,7 @@ is on 7, the rest are in no logged packet. [I]
 | Name | Value | Anchor | Tag |
 |---|---|---|---|
 | normal attack `SrcDam` | 128 | `Skills.txt:SrcDam` | [C] |
-| LCG multiplier of the inlined draws | `0x6AC690C5` | rng | [C] |
+| LCG multiplier of the inlined draws | `0x6AC690C5` | [rng](../../spec-rng/overview/) | [C] |
 
 ## Algorithm
 
@@ -283,7 +283,7 @@ CritChain(u, w) → bool:                                              [C] (all 
 
 - B4. The weapon-share test, the order and the stop at the first success are as above. The block is
   `MissileDamageBlock` and the chain `MissileCritRoll`; the steps are the inline LCG of
-  rng step 1 on `Unit+0x20`, with the unsigned remainder compared signed. [C] `MissileCritRoll`
+  [rng](../../spec-rng/overview/) step 1 on `Unit+0x20`, with the unsigned remainder compared signed. [C] `MissileCritRoll`
   emulated whole over 3 000 cases, 1 216 / 1 475 / 309 ending after one, two and three steps, 784 with a negative stat
   337 (an unsigned compare fails 1 142); with no used skill the mastery value is `SKILLS_GetMasteryBonus`' largest
   stat-344 entry for one of the weapon's item types, from 0.
@@ -300,7 +300,7 @@ CritChain(u, w) → bool:                                              [C] (all 
   [I] that the site is the `SrcMissDmg` branch and the argument the source missile, the caller's reading.
 - B4. The pierce count makes a **local** seed, `Init(baseStat(owner, 328))`, and steps it up to four times while
   `low mod 100 < stat 166 + stat 156`, for a player or monster owner and a `Pierce` row; no game or unit seed is
-  drawn (rng/seeds, *Reimplementation notes*). [C] (`Missiles.txt:Pierce`: 1 066 `Pierce` creations, 856 with draws,
+  drawn ([rng/seeds](../../spec-rng/seeds/), *Reimplementation notes*). [C] (`Missiles.txt:Pierce`: 1 066 `Pierce` creations, 856 with draws,
   [skills/missiles C4](../../spec-skills/missiles/#c-the-damage-the-missile-carries))
 
 **B5. The progressive finisher (the attacker's seed).** A player's normal attack under a charged progressive state (an Assassin's charge-up skills) runs `COMBAT_PrgFinisher` between the queue and the delivery (A1); the run met none (the boundary section). Its own `RNG_Step` is a **peek**, but the `srvprgfunc` entries it calls **draw on the attacker's seed**; the full algorithm is [delivery § A3](../delivery/#a-queue-and-delivery). The assassin finishing moves (do 42, 46, 50, 52) also call the finisher, with their own queued hit, outside this attack event (delivery § A2).
@@ -454,6 +454,6 @@ crushing blow at `/players 8`. [C]
   pierce count), 5 (the hit, the to-hit roll), 6 (`MISSILE_BuildDamage`'s draw order), 9 (draws per event), and the
   architect's ruling on the creation draws (review).
 - Types:. Plan: 0037.
-- Upstream: rng, rng/seeds, [monsters/stats](../../spec-monsters/stats/),
+- Upstream: [rng](../../spec-rng/overview/), [rng/seeds](../../spec-rng/seeds/), [monsters/stats](../../spec-monsters/stats/),
   [player/creation](../../spec-player/creation/), [items/properties](../../spec-items/properties/), [data/calc](../../spec-data/calc/).
   Downstream: [items/tc](../../spec-items/tc/) (the drop at the kill).

@@ -15,7 +15,7 @@ cases of `ItemCreateByQuality` and the fallback steps of
 against the item's affix level (alvl), its type, its version and the affixes already on it, then makes one weighted
 draw. The spec covers row selection only. The property values a chosen row gives (`mod1code`..`mod3code`) and the
 post-switch ethereal and socket rolls belong to [items/properties](../properties/). This
-spec starts where [items/uniques-sets](../uniques-sets/) ends. Primitives are those of rng.
+spec starts where [items/uniques-sets](../uniques-sets/) ends. Primitives are those of [rng](../../spec-rng/overview/).
 
 ```mermaid
 flowchart LR
@@ -446,7 +446,7 @@ Step notes:
   every affix. They depend on the item's type and version only, never on its affixes. All 105 logged rares drew both
   names before the count. [C]
 - E2. This spec stops at the merged name ids. The string each id is shown as is traced in
-  data/strings § D, step note *Rare names, a load-time key and a
+  [data/strings § D](../../spec-data/strings/#d-key--index--strtable_getbykey), step note *Rare names, a load-time key and a
   client-side index*: the load stores `STRTABLE_GetByKey` of the merged record's `name` at record `+0x0C`, and the
   client shows `STRTABLE_GetByIndex` of that index (every hovered record had a non-zero one; what a 0 index shows is
   inferred there). [C]
@@ -801,6 +801,7 @@ boundary; quality 4 takes no socket roll), which hands the automagic pick `c35f8
 
 | Step | Draw | Seed after | Value |
 |---|---|---|---|
+| J4, C2 | 1 | `004bc4a3:517d17c7` | mustRoll: the bit is ignored |
 | C4 | — | — | block `automagic`, group 303, alvl 2: one candidate, id 1426 (automagic row 9, *of the Jackal*), weight `6 × 1` |
 | C7 | 2 | `be791936:001f9a30` | W = 6, `0xbe791936 mod 7 = 5` → 5 − 6 < 0 → **1426** |
 | J4 | oracle | `8d4260be:4f71e1d0` | automagic properties; the return seed (`ICX`) |
@@ -842,5 +843,5 @@ A single candidate still costs both draws. [C]
   LowQualityItems, Skills,
   ItemTypes, Weapons, Armor,
   Misc, Properties.
-- Specs: rng (`Step`, `Range`), [items/uniques-sets](../uniques-sets/) (the switch, the entry seed,
+- Specs: [rng](../../spec-rng/overview/) (`Step`, `Range`), [items/uniques-sets](../uniques-sets/) (the switch, the entry seed,
   the fallbacks), [items/quality](../quality/) (the quality code). [items/properties](../properties/): the property values, ethereal and sockets.

@@ -564,7 +564,7 @@ Step notes:
   through `FILE_LoadWhole` and returns its first byte: the archive copy's `00` (and a loose `00 00 00 00` under
   `-direct`) gives 0 and the tables load from `lng\ENG\`; the install's `Use_rus`, `0B`, copied over `Use` with
   `-direct` as its Russian launcher script does, gives 11, after which the loads use the `CYR` font charset (and the
-  program ends, data/strings § H). The byte is cached for the later calls. [C]
+  program ends, [data/strings § H](../strings/#h-language)). The byte is cached for the later calls. [C]
 
 - I1. The clamp of values above 13 to 0 is reached only by a made-up `use` byte, which no shipped file holds. [I]
 
@@ -607,7 +607,7 @@ Step notes:
   install the 11078 path is unreachable; a missing table is a crash, with no fallback to `eng`. [C] for the load
   condition, [I] for the crash
 - I3. The whole run-time lookup (loading, index → text, key → index, hash probing, text conversion, fallbacks) is
-  specified in data/strings; this section keeps the stored-index view.
+  specified in [data/strings](../strings/); this section keeps the stored-index view.
 
 ### J. Compiling a `.txt` (`-txt` only)
 

@@ -71,7 +71,7 @@ Skills § Dispatch.
 | the grid a plan reads, and the cells a step crosses | a value oracle, counted: [path/overview §§ F2, F3](../../spec-path/overview/#f3-the-counted-oracle). Types 4, 10 and 14 read no cell | [C] types 4 and 10 as [path/search](../../spec-path/search/) §§ K and I state them; type 14's `PathPlanSpiral` calls only the cosine and sine tables and its non-stack operands are the path's (static); [I] the step's cell list |
 | the numbered do, hit and damage functions outside § G's table | value oracles of the checker; specified in the [catalogue](../catalogue/) §§ C–F | [I] |
 | the result of a hit that does not miss | logged as the hit's return | [I] |
-| the room collision word | drlg/collision | [I] |
+| the room collision word | [drlg/collision](../../spec-drlg/collision/) | [I] |
 
 ### Constants
 
@@ -204,6 +204,15 @@ B1. MissileCreate(game, p) → missile:                                [I] (all 
   frames left at its creation (823 of 823), and the 230 unit hits in do-1 frames all came at frames left below the
   activate mark. [I] The boundary itself, `≤` against `<`: no hit came at frames left
   equal to the mark
+- B1. **The monster-owner hook** runs slot 5 of the owner's unique mods (`UModEventRun`: it needs a non-zero first
+  unique-mod byte, then calls all nine, a later 0 not stopping it). Mod 29's function acts only when bit 3 of the
+  monster data's byte `+0x16` is set, the missile is type 3 with an owner, its class lies in the Missiles count, the
+  row's `+5` bit 4 is clear and the owner is not already marked (`+0x16` bit `0x80`), and sets that mark. It makes a
+  local seed `Init(1397049683)`, overwrites its high word with the owner's unit id and draws nothing from it before the
+  first creation; the point is the owner's revalidated path target, else the missile's path position; `(dx, dy)` are
+  the signs of owner − point, zeroed for classes 0x3F–0x42; the first side missile is `SkillMissileCreate(owner, skill,
+  lvl, 0, 0, x0 − dy, y0 + dx, 0)` with the missile's skill and level. [C] The second, at
+  `(x0 + dy, y0 − dx)`, lies past the first creation's allocation. [I]
 
 ```
 B2. SkillMissileCreate(game, cls, unit, skill, lvl, dx, dy, tx, ty, useAmmo):   (line)   [I] (all of B2–B4)
@@ -420,7 +429,7 @@ D4. PathVelocityStep(path, k):                                       [C] (all of
 - D7. **The `0x40` mark.** A `Collision` row's path marks its cell with `0x40`; do functions 3 (26 rows: the clouds,
   blizzards, `plaguejavelin`) and 5 (`meteorfire`) OR `0x40` into their cell while still or each frame; `HitUnit`
   unmarks it when a missile ends there, and do 31 unmarks it too. The one stock missile reader would be collide type
-  7, which no stock row uses; the placement readers are drlg/collision § F's. [C]
+  7, which no stock row uses; the placement readers are [drlg/collision § F](../../spec-drlg/collision/#f-unit-marks)'s. [C]
   the server's writers are `MissileCreate` (the path's mark mask), do 3 and do 5, the unmarkers `HitUnit` and do 31; among the calls with a
   constant mask holding `0x40` the server readers are `MonDeathDrop`, the Zealot AI and six AI pattern tests; type 7
   is the only collide type whose mask holds `0x40` (static). [I] when do 3 and 5 mark and `HitUnit` unmarks
@@ -574,10 +583,12 @@ F1. MISSILE_BuildDamage(game, m, unit, pkt):                          [C] (MISSI
 
 A missile's seed is private: only the missile draws on it, except where a site below re-seeds it. After such a
 re-seed the missile's draws are a function of the creator's value, not of the game seed. The table is also
-rng/seeds § Reimplementation notes's *Skill and missile re-seeds*.
+[rng/seeds § Reimplementation notes](../../spec-rng/seeds/#reimplementation-notes)'s *Skill and missile re-seeds*.
 
 | Site | Re-seeds | From | Draws after | Tag |
 |---|---|---|---|---|
+| callback `MissCbReseedFromArg` (ring 37) | the new missile | the argument alone (the ring's local low word) | `PathPlan`'s walk: the range capped at 77, type 10, `+0x90`/`+0x91` the capped byte, then `PathPlan(path, missile, 0)` with no step before it | [C] to `PathPlan`'s entry; [I] the walk's steps (H1) and that the argument is do 37's ring word |
+| callback `MissCbReseedZigzag` (ring 143) | the new missile | the argument | a zig-zag path: two steps before the first point (the first's low bit the turn sign, the second's `lo mod 3 + 2` the turn size), then one after each point `i` with `i mod 15 = 0` (the sign flips, a new size): `2 + ⌈n ÷ 15⌉` steps for `n ≥ 1` points, 2 for `n ≤ 0`, `n` the range capped at 77 | [C] |
 | callback | the new missile | path `+0x10` (u16) + the argument, a 32-bit add | 1 inline; only when its low dword mod 100 (unsigned) is at least 20, type 10 and `PathPlan` | [C] to `PathPlan`'s entry; [I] the walk's steps after it (H1) |
 | — | the parent missile | `SubX + elapsed` | 2 `RangeB` | [C] |
 | hit 58 (row 654) | the missile | `SubX` | 2 `Range` | [C] up to its creation |
@@ -640,7 +651,7 @@ rng/seeds § Reimplementation notes's *Skill and missile re-seeds*.
 ## Outputs
 
 - A missile unit with its stats, path and seed; its hits as combat packets for [combat/delivery](../../spec-combat/delivery/);
-  the `0x40` cell marks for drlg/collision; sub-missiles. [C] the unit with its stats, path
+  the `0x40` cell marks for [drlg/collision](../../spec-drlg/collision/); sub-missiles. [C] the unit with its stats, path
   and seed at the creation's return; its hits' builds carried to `MISSILE_ApplyDamage` (17 452 unit calls); sub-missiles
   from hits (961 creations inside a hit call name the hitting missile as their source). [I] the cell marks as outputs, which no line logs (D7)
 

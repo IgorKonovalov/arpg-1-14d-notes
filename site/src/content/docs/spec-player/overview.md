@@ -19,7 +19,7 @@ experience a kill is worth, and the level-up. This page is the map; the claims, 
 
 ## Upstream and downstream
 
-- Upstream: rng and rng/seeds (the game seed and unit seeds), the item model
+- Upstream: [rng](../../spec-rng/overview/) and [rng/seeds](../../spec-rng/seeds/) (the game seed and unit seeds), the item model
  for each starting item, [monsters/stats](../../spec-monsters/stats/) for a monster's
   experience; the experience arithmetic of a kill is [creation § G](../creation/#g-kill-experience--xp_compute), and a
   party's share of it [creation § J](../creation/#j-other-level-and-experience-changes), composed in [party.md](../party/).

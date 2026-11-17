@@ -11,14 +11,14 @@ where and how many are placed, which become champions, uniques or superuniques, 
 they get. Four stages are written so far: the level pools with the monster level, the random population of
 a room, the special monsters (mods, minions, superuniques, names), and the stats each monster is created with. This page is the
 map: the order of the stages, which seed each one steps, and what each passes on. Primitives are those of
-rng; seed owners are in rng/seeds.
+[rng](../../spec-rng/overview/); seed owners are in [rng/seeds](../../spec-rng/seeds/).
 
 ## Files
 
 | File | Covers |
 |---|---|
 | [pool.md](../pool/) | the monster regions built at game creation (pool pick, appearance sets, copied Levels fields), the monster level rule, client critters |
-| spawn.md | random population of a room: gate, density, class pick, normal or special, groups, champion packs, unique and MonStats minions, placement |
+| [spawn.md](../spawn/) | random population of a room: gate, density, class pick, normal or special, groups, champion packs, unique and MonStats minions, placement |
 | [special.md](../special/) | champion or unique mods, mod handlers, unique minions and `xfer`, pack members, superuniques, MonPlace 2 and 3, the client name roll |
 | — | the AI tick, the AI table and state, target search, the command, the path request, following, the 18 tier AIs |
 | [stats.md](../stats/) | hit points, defence, experience, resistances and block from `MonStats` × `MonLvl` per difficulty, the player count (at creation only), the classic nightmare/hell factors, the stat callback, MonProp, the mod handlers' stat effects |
@@ -49,7 +49,7 @@ flowchart TD
 
 - [C] **Each monster unit is seeded from the game seed.** Server monsters are created by the server unit
   constructor, one game-seed draw each: across 10 782 logged `SUnitCreate` calls the game seed moved exactly one step.
-  (rng/seeds step 7a)
+  ([rng/seeds](../../spec-rng/seeds/) step 7a)
 - [C] **The monster level is set at unit creation**, from the class and the level the monster is created in,
   before the stats are read from `MonLvl.txt`: MonStats `Level*`, or the area's `MonLvlEx` in expansion nightmare
   and hell. The logged cases are listed in pool.md § E, including the four hireling classes that have a `Hireling`
@@ -77,7 +77,7 @@ flowchart TD
 ## Downstream
 
 - `items/tc` reads a monster's class and level stat when it drops.
-- spawn.md starts from the regions of [pool.md](../pool/#outputs). [special.md](../special/) starts from the
+- [spawn.md](../spawn/) starts from the regions of [pool.md](../pool/#outputs). [special.md](../special/) starts from the
   specials it creates, and [stats.md](../stats/)
   from the unit seed after `SUnitCreate`.
 - [stats.md](../stats/) starts from the level set in [pool.md § E](../pool/#e-the-monster-level-monstatsinit).

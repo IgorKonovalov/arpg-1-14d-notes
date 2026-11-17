@@ -13,7 +13,7 @@ every header field, the item bitstream as a function of the runtime item, and th
 property lists. How a dropped item's stats are rolled and stored before they are saved is
 [items/properties](../../spec-items/properties/); the stat ids are rows of ItemStatCost. The bytes are documented in
 d2s.md; this spec is about the code that produces and consumes them. Seed primitives
-are those of rng, and the seeds written here come from rng/seeds.
+are those of [rng](../../spec-rng/overview/), and the seeds written here come from [rng/seeds](../../spec-rng/seeds/).
 
 Names (client, player data, item data) follow: the **client** is the server's per-connection client object, **player data** is `unit+0x14` of a player unit, and **item data** is `unit+0x14` of an item unit (partial types).
 
@@ -107,12 +107,12 @@ Names (client, player data, item data) follow: the **client** is the server's pe
 | expansion | u32 at `game+0x70`, non-zero in an expansion game | game creation |
 | ladder | `game+0x74` | game creation |
 | item version | u16 at `game+0x78`: 101 expansion, 2 classic | game creation |
-| map seed | u32 at `game+0x7C` | rng/seeds step 1 |
-| seed override flag | `game+0x84`, non-zero under `-seed N` | rng/seeds step 2 |
+| map seed | u32 at `game+0x7C` | [rng/seeds](../../spec-rng/seeds/) step 1 |
+| seed override flag | `game+0x84`, non-zero under `-seed N` | [rng/seeds](../../spec-rng/seeds/) step 2 |
 | client | `Client` (class `+0x08`, status `+0x0A`, name `+0x0D`, act `+0x1AC`, weapon switch `+0x45C`, `+0x480`, `+0x488`) | join, then the reader |
 | player data | `PlayerData` (quests `+0x10`, waypoints `+0x1C`, NPC records `+0x60`, mouse skills `+0x70`–`+0x8C`) | player unit `+0x14` |
 | base stat list | player unit `+0x5C`, ≤ 512 entries `{u16 param, u16 id, s32 value}` | unit stats |
-| item unit | mode `+0x10`, RNG `+0x20`, initial seed `+0x28` (`Unit+0x28`) | item creation, rng/seeds step 7a |
+| item unit | mode `+0x10`, RNG `+0x20`, initial seed `+0x28` (`Unit+0x28`) | item creation, [rng/seeds](../../spec-rng/seeds/) step 7a |
 | item data | `ItemData` (quality `+0x00`, flags `+0x18`, ilvl `+0x2C`, version `+0x30`, automagic `+0x36`, prefixes `+0x38`, suffixes `+0x3E`, body `+0x44`, page `+0x45`, gfx `+0x49`, name `+0x4A`) | item unit `+0x14` |
 
 ### Constants
@@ -396,6 +396,19 @@ header row `0x028`)
   that touch client `+0x488` are its two accessors. A character's first full save writes the
   client's initial value, 0 in every sample.
 
+```
+D1. Status word (client +0x0A), checked by D2S_CheckStatus:       [C] (bits 0–5 and the expansion bounds)
+      bit 0   new character (stub): cleared; if the file ends at the header, build a fresh character
+              (NewCharFromStub) instead of reading sections
+      bit 2   hardcore: must equal the game's hardcore flag (bit 0x800 of a callee's return), else (11) or (12)
+      bit 3   dead: refused when hardcore (10)
+      bit 5   expansion: must equal game+0x70 ≠ 0, else (8) or (9)
+      bit 6   ladder: tested (codes 25, 26) only when the host flag is set, never on this image [I]
+      bits 8–12  progression: Nightmare needs ≥ 5 (expansion) / ≥ 4 (classic); Hell needs ≥ 10 / ≥ 8, else (13) or (14)
+                                                                   [I] the classic bounds 4 and 8
+D2. The u16 at 0x026 is the high half of the status u32: always 0.  [C] (0 in 144 game-written saves)
+```
+
 - D1. [C] Each code met in the save loading run, with a file swapped into the listed file's game: a
   hardcore file in a softcore game 11, softcore in hardcore 12, dead hardcore 10, classic file in an expansion game 9,
   expansion file in a classic game 8, progression 4 in Nightmare 13, progression 0 in Hell 14; progression 5 in
@@ -548,6 +561,16 @@ E3. NPCs: 01 77, u16 0x34, then 3 × 8 bytes (first record of player data +0x60 
     and 3 × 8 bytes (second record), d = 0, 1, 2; read back in the same order.            [C] (D2S_WriteNpcs, D2S_ReadNpcs, note E)
 ```
 
+- E. [C] **Second sources** (and the H1a waypoint cases): the quest
+  tag, version 6 and size `0x12A` in all 144 game-written saves, no quest bit of 192 blocks lost over 64 built and
+  written pairs, and block 0 the played Normal game's; the waypoint version 1 and size `0x50` in all 144 saves, all 432
+  blocks starting `02 01` and ending with 8 zero bytes; the waypoint bits read by the game's menu as the project's save
+  editor set them (two saves); the NPC tag and size in all 144 saves, and the NPC section of the 64 pairs back
+  byte-identical. Markers: a Normal record with marker `0x0102`, waypoint 0 clear and 1 set read as `0x0003`; a
+  `0x0101` and a 0 record each read as 16 zero bytes with waypoint 0 set (the marker 0 too: `WAYPOINT_Load` stores
+  `0x0102` and the zero dword overwrites it); the next write stored `0x0102` back; marker
+  `0x0303` gave 16 (mapped 3).
+
 - E1. The quest load rule as the quest runs check it, and what the game writes into the record before Save and Exit,
   are [quests/progression § A](../../spec-quests/progression/#a-the-quest-record).
 - E1–E3. [I] **Slot d is difficulty d** for all three sections. For quests and waypoints this is
@@ -646,6 +669,23 @@ flowchart LR
   jf --> kf["kf, u8, golem item<br/>expansion"]
 ```
 
+```
+H1. WriteInventoryList(owner, bb):                               [C] (ITEMS_WriteInventoryList, note H1)
+      Write "JM", u16 count
+      for each item of the inventory list, except the two hand slots (body 4, 5) of the equipped
+      list and the cursor item, then those items:                 ; the cursor item: [I]
+        n ← WriteOneItem(item)       ; § I, then its socketed items
+        if n = 0: count ← count − 1               ; ITEMS_Serialize refused it (unit +0xC8 bit 15)   [I]
+      ; socketed items follow their parent, each starting on a byte boundary, not counted
+H2. Corpses: "JM", u16 count (0 or 1), per corpse: u32, u32, u32, then an item list   [C]
+    count ≥ 2 refused (0x68); the first u32 is uninitialised stack (note), the other two
+    the position getters UnitGetSubX / UnitGetSubY                                         [I]
+H3. Expansion only: "jf", then the mercenary's item list with a hired mercenary (the test, C3i);   [C]
+    "kf", then u8 1 and the golem's item if the player owns a pet of type 3 whose class is 291
+    (irongolem) and that golem holds an item, else u8 0.                             [I]
+H4. Reader: "JM", count, then count items, each followed by its n_filled socketed items.   [C]
+```
+
 - H1. [C] In all 200 logged writes of the S1a corpus no other top-level item follows a hand-slot item, while the
   earlier, non-final serialiser passes of the same writes walk the list with the hand items first, so the order is the
   writer's; the count equals the items written. No write had an item on the cursor or a refused item.
@@ -739,6 +779,65 @@ stateDiagram-v2
 The item starts on a byte boundary and ends at the next one (zero padding).
 
 ```
+I1. SerializeItem(item, bb):                                     [C] (ITEMS_SerializeBits, note I1)
+      d ← item.data ; rec ← the item's Weapons/Armor/Misc record
+      Write(bb, "JM", 16)                                        ; read back signed and compared
+      f: u32 ← (d.flags with bit 19 cleared) | (1 << 23)               [C]
+      if rec.compactsave (+0x143): f ← f | 0x00200000            [C] (note I1)
+      Write(bb, f, 32)
+      Write(bb, d.version, 10)                                   [C]
+      Write(bb, item.mode, 3)                                    [C]
+      if item.mode ∈ {3, 5}: world position as two 16-bit values   [I]
+                             ; no body and no store              [I]
+      else:
+        Write(bb, d.bodyLoc, 4)                                  [C]
+        Write(bb, grid x, 4); Write(bb, grid y, 4)               [C] (ITEMS_SerializeBits, note I1)
+        Write(bb, d.invPage + 1, 3)                              [C]
+      if f bit 21 (simple) and f bit 16 (ear):                    [C]
+        Write(bb, ear class, 3); Write(bb, ear level, 7)         ; in place of the code
+        ear name, 7 bits per char including the terminating 0
+      else:
+        Write(bb, rec.code, 32)                                  [C]
+      if f bit 21 (simple): WriteCompact (I2); return
+      Write(bb, number of socketed items, 3)       ; n_filled, [C]
+      WriteFull (I3)
+    every width-limited value x is written as ClampU(x, n):     [C] (BITBUF_WriteClamped; note I1)
+      ClampU(x, n) = x if n = 32, else min((u32) x, 2^n − 1)     ; a negative s32 saturates to all ones
+
+I2. WriteCompact (simple item):
+      if item is gold (type 4): Write(1 bit "amount > 4095"), then the amount (12 or 32 bits)   [I]
+      if rec.quest and rec.questdiffcheck: stat 356 in its Save Bits    [C]
+      realm flag (1 bit; 97 bits when set)                       [I] (no realm game)
+    ; no n_filled: bit 108 of a simple item is the realm flag
+
+I3. WriteFull (extended item, save flag set):                    [C] (ITEMS_WriteFull, note I3)
+      Write(bb, item.unit+0x28, 32)                 ; seed      [C]
+      Write(bb, clamp(d.ilvl, 1, 99), 7)            ; ilvl      [C]
+      q ← d.quality (2 if the item has no item data); Write(bb, q, 4)   [C]
+      has_gfx: 1 bit (variable graphics); if 1: Write(bb, d.gfx, 3)   gfx [C]; has_gfx [C]
+      has_class: 1 bit = (d.autoAffix (+0x36) ≠ 0); if 1: Write(bb, class_affix, 11)   0 [C]; 1 [I]
+        class_affix = d.autoAffix − automagicBase when above it    [C] (g_MagicAffixInfo, note I3)
+      quality fields (I4)
+      if f bit 26 (runeword): Write(bb, Runes[rw]+0x82 as u16, 16), 0xFFFF if none   [C] +0x82; 0xFFFF [I]
+      if f bit 16 (ear; only a non-compactsave ear reaches here, none in the shipped data):   [I]
+        class 3 bits, level 7 bits (d+0x48), name
+      else if f bit 24 (personalized): name, 7 bits per char including the terminating 0 (d+0x4A)   [C]
+      realm: 1 bit; when present, then u32, u32, u32 0   [C]
+      Fixed(v, id) = ClampU(v + SaveAdd[id], SaveBits[id]), in SaveBits[id] bits   [C] (note I3)
+          ; no ValShift: [I], stats 31, 72, 73 have ValShift 0 in the shipped table
+      if ItemIsType(50) (armor): Fixed(base stat 31, 31) (armorclass),            [C] (ITEMS_WriteFull, STATS_GetUnitBaseStat, STATS_GetUnitStat, note I3)
+          then Fixed(base stat 73, 73) (maxdurability),
+          then Fixed(stat 72, 72) (durability) if base stat 73 ≠ 0
+      else if ItemIsType(45) (weapon): stat 73, then 72 if 73 ≠ 0, as for armor  [C] (ITEMS_WriteFull, note I3)
+      else if ItemIsType(4) (gold): 1 bit (stat 14 ≥ 0x1000), then stat 14 in 12 bits, or 32 when the bit is set; no SaveAdd   [I]
+      if stackable: stat 70 (quantity), a fixed 9 bits, no SaveAdd   [C] (note I3)
+      if f bit 11 (socketed): base stat 194 in SaveBits[194] bits, no SaveAdd    [C]
+      if q = 5 (set): 5 bits, bit i set when the item holds the stat list of the i-th set state of the set-state table   [C] (ITEMS_WriteFull, note I3)
+      property lists (§ J): the main list (state 0, flag 0x40), then each set list whose bit is set,
+      then, if f bit 26, the runeword list (state 171)                           [C] (ITEMS_WriteFull, note I3)
+```
+
+```
 I4. Quality fields, written only when the item is identified (f bit 4) or the save flag is set;
     a save always sets it:                                       [C] (note I3)
       q ∈ {1, 3} (low, superior): Write(qualityIndex, 3)
@@ -790,9 +889,19 @@ I4. Quality fields, written only when the item is identified (f bit 4) or the sa
   an expansion game (`game+0x78` = 101); `location` = unit mode, modes 0, 1 and 2 seen. A classic game's item
   version 2 is read from the code only.
 - I3. [C] The saved `seed` is the item unit's `+0x28`, the value its RNG was initialised from. For a server-created
-  item that is the game-seed draw of rng/seeds step 7a; one Blood Moor drop picked up and saved
+  item that is the game-seed draw of [rng/seeds](../../spec-rng/seeds/) step 7a; one Blood Moor drop picked up and saved
   had at its creation the `+0x28`, quality and ilvl it was saved with. The item-data seed (`+0x04`) is not saved.
   `ilvl` values 1 and 99 and qualities 1, 2, 4 and 7 were compared.
+- I3. [C] **Second sources for I3 and I4**: all 649 extended items
+  decode by I3 and re-encode byte for byte, with seed, ilvl, quality and gfx equal to the logged item in the 200
+  writes; `has_gfx` = the base type's `VarInvGfx` ≠ 0 on all 649 (`ItemVarInvGfx` returns `ItemTypes +0x23`); the
+  armour, weapon and stackable fields of 3 saved props-forced items and 269 starting items equal their logged stats
+  (`Save Add` and `Save Bits` applied); the sockets of 24 socketed items come back; the one set item of the corpus
+  has bits `0b11` and exactly two set lists, and the reader takes the lists in one loop over the five bits with the
+  same body for each (`1 << i` tested, state word `i` of the set-state table, 4 bytes a word: 165–169); the runeword list is that loop's extra pass with state 171 when the runeword flag is set; 7 unidentified
+  items carry their quality fields. Prefix and suffix ids by data over every magic, rare and crafted item with a main
+  list (85 items, 127 ids) with failing counterfactuals, and the writer's `cmp`/`jle`/`sub` read in the code.
+
 - I3. [C] **`class_affix`, by its writer/reader pair.** Both compute the automagic base as
   `(+0x10 − +0x04) / 0x90` of `g_MagicAffixInfo`; the writer subtracts it when `+0x36` is above
   it, the reader adds it back to a non-zero 11-bit value and stores `+0x36`. For a save
@@ -1125,4 +1234,4 @@ The drop's creation (`CPOST`, after `DropCreateItem`) logged the same unit id, `
 
 - fifth session:
   the right-skill slot, the Nightmare `difficulty` byte, `progression` 5.
-- rng/seeds step 7a: the draw behind an item unit's `+0x28`.
+- [rng/seeds](../../spec-rng/seeds/) step 7a: the draw behind an item unit's `+0x28`.

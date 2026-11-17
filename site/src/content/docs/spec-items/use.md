@@ -311,6 +311,60 @@ sequenceDiagram
   H->>H: the removal
 ```
 
+```
+F1. ItemUsePotion(item, arg2, x, y, skill), kind 3:                  [C] to the first of the boundaries in F's first note (all of F1a–F1f)
+ F1a. len: i32 ← eval(rec.len);  state: i32 ← rec.state;  rem: i32 ← 0;  L ← none
+      if len > 0:
+        if state < 1 or state ≥ nStates: return 0
+        L ← UNIT_FindStatListByState(user, state)
+        if L: rem ← L.end − frame                                    ; can be negative
+ F1b. for k in 0 ..< 3:
+        s: i32 ← rec.stat[k]
+        if s < 0 or s ≥ nISC: break                                  ; kind 5 continues instead
+        v: i32 ← eval(rec.calc[k])
+        if s ∈ {26, 74}: v ← v << 8
+        if s ∈ {8, 26}:  v ← PotionManaMul(user, v);  n: i32 ← stat(user, 1)   ; energy
+        if s ∈ {6, 74}:  v ← PotionLifeMul(user, v);  n ← stat(user, 3)        ; vitality
+ F1c.   if s ∈ {6, 8, 26, 74} and n > 0:                             ; draws even when v is 0
+          r1: u32 ← RNG.RangeB(seed: user.seed, n: n)                ; draw#1
+          r2: u32 ← RNG.Range(seed: user.seed, n: 100)               ; draw#2
+          if (i32) r2 < (i32) (r1 >> 1): v ← v × 2                   ; r1 >> 1 logical
+ F1d.   v ← v << isc[s].ValShift
+        if v ≤ 0: continue
+        if s ∈ {6, 74} and user is a player: v ← GolemHealShare(user, v)     ; § H5
+ F1e.   if len < 1:                                                  ; instant: no stock row of kind 3
+          if isc[s].maxstat < nISC and stat(s) + v > stat(maxstat): v ← stat(maxstat) − stat(s)
+          UnitAddStat(user, s, v, 0)                                 ; boundary
+ F1f.   else:
+          end: i32 ← frame + rem + len
+          if no L: L ← the new list (F2)                             ; STATLIST_Alloc is a boundary
+          SetEnd(L, end)                                             ; bit 2 when end > 0
+          old: i32 ← L.base(s)
+          if k = 0: UnitQueueEvent(user, 12, end, 0, 0)              ; boundary
+          if len + rem > 0: STATLIST_SetStat(L, s, (old × rem + v) ÷ (len + rem), 0)   ; boundary; truncating
+F1g. After the loop, when stat 6 got an amount, on a player:         [I]
+      when |stat 352 − pct| > 4:  MsgLifePct;  stat 352 ← UnitLifePct    ; life × 128 ÷ max, 128 at full
+      ; no stock potion of kind 3 names stat 6; both rejuvenations do
+F1h. Returns 1 when any slot reached F1e's add or passed F1f's allocation, len + rem ≤ 0 included; else 0   [C] every amount ≤ 0 returns 0, and the 1 of a refill slot with len + rem ≤ 0 and no callee (family `potret`, 2 400 cases); [I] the 1 after a slot reached UnitAddStat or STATLIST_SetStat
+      ; an amount the class scale, the doubling or the shift takes to ≤ 0 as i32 counts as ≤ 0
+      ; so every amount ≤ 0 returns 0: C2's clear and message 0x7C, and D1 uses nothing up. A null record or a bad state also returns 0
+
+F2. A fresh list:                                                    [C] for a player user: 16 fresh lists with words 2, end, user type 0 (UAL), then STATE_Set, the callback and LinkToUnit; [I] the non-player branch
+      STATLIST_Alloc(game+0x1C, 2, end, user type, user id);  its state;  STATE_Set(user, state, 1)
+      a non-player user: UNIT_CancelEvents(3, 0), event 3 at frame + 1
+      the remove callback STATE_DefaultRemoveCB;  STATLIST_LinkToUnit(user, list, 1)
+      ; the loop goes on with rem = 0, so the rate is v ÷ len
+
+F3. PotionLifeMul(user, v: i32) → i32:                               [C] (family classmul, to the return)
+      Amazon, Paladin, Assassin:                 v + (v >> 1)        ; arithmetic shift
+      Barbarian, every non-player, a null unit:  2 × v
+      others (Sorceress, Necromancer, Druid):    v
+F4. PotionManaMul(user, v: i32) → i32:                               [C] (family classmul, to the return)
+      Amazon, Paladin, Assassin:                 v + (v >> 1)        ; arithmetic shift
+      Sorceress, Necromancer, Druid:             2 × v
+      others (Barbarian), a non-player, a null unit:  v
+```
+
 Step notes:
 
 - F1. [C] The map up to the first of `UnitAddStat`, `STATLIST_Alloc`, `UnitQueueEvent`, `STATLIST_SetStat`
@@ -365,6 +419,64 @@ G3. Returns 1 when any slot passed the tests, else 0:                [I]
 - G1. [I] **A kind-5 use from the belt (`rvs`, `0x26`) did not move the player's seed**, 1 case; the entry hook is the kind-3 function, so no entry line exists for it.
 
 ### H. The other kinds
+
+```
+H1. Identify (kind 1) is two requests.
+    Test (first request: ItemUse sees flag 4 clear):                 [C] (family idtest, 120)
+      set item flag 4 on the scroll or tome
+      a book or scroll with no Books row: return 1, no message
+      ends at the client lookup PlayerGetClient
+    After that boundary:                                             [I]
+      message 0x3F, the row's spell icon, the skill                  ; (icon, 0, 1, skill)
+      returns 1                                                      ; so ItemUse returns 0 (C2): nothing is used up
+    Use (second request, packet 0x27, flag 4 set):                   [C] (family idfn, 300)
+      refuse while InteractIsPlayer: user +0x6C set, +0x68 type 0, and the unit found
+      refuse an identified target
+      refuse a target not in the user's inventory                    ; InvHoldsItem
+      ends at ItemIdentify(target)
+    ItemIdentify:                                                    [I]
+      fatal on flag 0x100000
+      flag 0x10 through ItemIdentifyAttach;  flag 1 set;  flag 0x4000 cleared
+      refresh;  close the event
+
+H2. The cube (kind 7):                                               [C] (family cube, 300)
+      busy: an interaction, a cursor item, or player data +0x4C
+      not busy: ends at PlayerSetInteract(user, 4, cube guid)
+      busy and the interaction is object class 0x10B: ends at PlayerClearInteract
+      otherwise: return 0
+    After:                                                           [I]
+      messages 0x11, 0x15;  InvBookSkillsRebuild, read as far as its walk of page-0 items
+      returns 0, so PlayerUseInvItem falls to D2's codes and returns 0: the cube stays
+
+H3. Kinds 6 and 9:                                                   [I]
+    Kind 6, ItemUseCure:
+      for each of cstate1, cstate2 (+0x9A) that is a valid state:
+        the unit's list of that state is unlinked and freed;  the state cleared when set
+      then ItemUseTimedState
+      returns 1 when any named state was processed or the state applied
+    Kind 9, ItemUseTimedState ([data/calc](../../spec-data/calc/)):
+      STATE_GroupClear runs here and only for kinds 6 and 9
+      calc goes to the list as is: the value held for len frames
+
+H4. The elixir (kind 8):                                             [C] (family elix, 200)
+      adds the ITEM's stat 71 to the stat numbered by the item's file index (ItemData +0x28)
+        when that is a valid stat and the value is not 0
+      reads neither stat1 nor calc1                                  ; elx's `experience`, 5 is not read
+
+H5. Blood Golem share, from F1d, G1:                                  [C] (family golem, 300, and 27 + 11 cases of stat3, stat5)
+      for a positive life amount on a player:
+        no pet of type 3 and class 0x122: return v
+        p: i32 ← Skills[MonStats[pet.class][+0x170]][+0x15C]         ; a percent
+        share: i32 ← v × p ÷ 100                                     ; truncating
+        GolemHeal(share)                                             ; boundary; up to the golem's maximum
+      the player keeps v − returned                                  [I]
+
+H6. Keys have no use entry: KeyConsume(player):                      [C] (family key, 300)
+      the first item of type 41 on page 0 in the inventory;  none: return 0
+      quantity − 1 above 0: ends at UnitAddStat(key, 70, −1, 0)
+      else: ends at the removal InvItemConsume
+      ; two callers: the chest (skipped for class 6) and a case of the object mode switch
+```
 
 - H1. [I] A first identify through D1 has `r` = 0, so it falls to D2's codes and returns 0 with nothing used. The second request is `0x27`, which does not clear the marks, so flag 4 from the first request stands.
 - H5. [C] `v = 0` sets the golem to full: `GolemHealShare`'s own branch calls `UnitSetStat(golem, 6, UnitGetMaxHp(golem), 0)` (190 of 190), not `GolemHeal`, which returns 0 with no call for a share ≤ 0; for a share > 0 `GolemHeal` sets `min(i32(life + share), max)` by a signed compare, so a sum past `2³¹ − 1` is stored wrapped, not capped (no stock golem comes near it). Kind 3 tests `v > 0` first; kind 5 has no such test, and reaches the call with `v = 0` only at a maximum of 0, no stock case. The returns after the set are step H5's last line. (family `golem`, 1 200 cases)

@@ -45,7 +45,7 @@ events (quest words written, quest gates) is [quests/progression](../progression
 
 | State | Type | Source |
 |---|---|---|
-| level seed (level `+0x1C4`) | Seed | rng/seeds; drawn by `LevelPointPick` |
+| level seed (level `+0x1C4`) | Seed | [rng/seeds](../../spec-rng/seeds/); drawn by `LevelPointPick` |
 | game seed | Seed | drawn by `SUnitCreate` of every created object |
 | object seed | Seed, `Init(game seed low)` at creation | drawn by `UNIT_AnimInit` for `Sync` 0 rows |
 | player's unit seed (`Unit+0x20`) | Seed | drawn only by the walk command under state 42 (§ H) |
@@ -76,8 +76,8 @@ events (quest words written, quest gates) is [quests/progression](../progression
 |---|---|---|---|
 | the click, the packet, the NPC menu action | input | which travel the player asked for | [I] |
 | `GetTickCount()` at the two gates | input | real time, never game frames | [C] (61 and 122 gate reads) |
-| the collision grid around a search | input (logged) | drlg/collision's grid; the search reads it | [C] (545 searches) |
-| a level or act built on first arrival, a room activated by the lookup | DRLG oracle | its draws are [drlg](../../spec-drlg/overview/)'s and drlg/collision § I's | [I] |
+| the collision grid around a search | input (logged) | [drlg/collision](../../spec-drlg/collision/)'s grid; the search reads it | [C] (545 searches) |
+| a level or act built on first arrival, a room activated by the lookup | DRLG oracle | its draws are [drlg](../../spec-drlg/overview/)'s and [drlg/collision § I](../../spec-drlg/collision/#i-nearwarptestgame-room-x-y-and-its-side-effects)'s | [I] |
 | the town room's population when a portal's town end first updates it | boundary oracle | game-seed draws between the two portal creations | [C] (41 draws in 9 opens) |
 | party membership, hostility, a second player's portal | input | two-client cases | [C] for hostility and for the no-party refusal; [I] for the different-ids compare and the quest-word test |
 
@@ -171,7 +171,7 @@ Step notes:
 - A2. [I] The last fallback, `RangeB(level seed, level+0x08)`, never ran in either run.
 - A3. [C] Types 0 and 11 step the level seed once on a `Position` level when a point matches: type 0 in 22 lookups,
   type 11 in 334, 343 chained pairs of one level's seed (each lookup's exit seed the next one's entry); the type-11
-  case was already drlg/collision § I2's
+  case was already [drlg/collision § I2](../../spec-drlg/collision/#i-nearwarptestgame-room-x-y-and-its-side-effects)'s
   `[C]`.
 - A3. [C] Type 5 with no point of group 1 takes point 0 with no draw: NPC 175's return to level 1, 11 lookups.
 
@@ -291,7 +291,7 @@ Step notes:
   each with `FrameDelta` 200 for mode 1 and 100 for mode 2; the other eleven have `Sync` 1 (`Objects.txt` and its `.bin`
   read alike).
 - C3. [I] **The draw.** `SetMode` → `UNIT_AnimInit` draws `RangeB(object seed, FrameDelta[mode] >> 3)` when the row's
-  `Sync` is 0 (objects § G step G2), so the eleven `Sync` 1
+  `Sync` is 0 ([objects § G](../../spec-objects/overview/#g-creation-sunitcreate-for-an-object) step G2), so the eleven `Sync` 1
   rows never draw, and operating one of the five in mode 0 draws once on its seed, at its `SetMode(object, 1)`; so does
   C2's arrival match.
 - C3. [I] **The change to mode 2 draws nothing.** Object event 1, which C1 and C2 queue, is `ObjEvOperateEnd`:
@@ -444,6 +444,35 @@ sequenceDiagram
   P->>P: PlayerPortalSet field end
 ```
 
+```
+G1. ITEMUSE_TownPortal(player, item):                                [I]
+      player units only;  unit +0xC4 |= 0x40
+      town ← ActTownLevel(act of the player's level)
+      if RoomIsTown(the player's room) or level = 136: refuse
+      PlayerPortalClose(player)                                      ; frees the previous class-59 pair (G3)
+      if PortalObjectCreate(room, x, y, town, &field, class 59, noSearch 0):
+        PlayerPortalSet(player, field)                               ; player data +0x48
+        level 120 only: the summit hook A5Q5_SummitPortalAdd for both ends (quests/progression § Word 39)
+
+G2. PortalObjectCreate(room, x, y, dest, &out, class, noSearch) → bool:   [C] for the draws and their order
+      if a player is given and RoomIsTown(room) and not (class = 60 and dest ∈ {39, 133, 134, 135, 136}): refuse
+      act(dest) must equal act(room's level), else fatal
+      unless noSearch: room ← COLL_FindFreeNear(room, (x, y), other (x, y), 3, 0x3E01, 0xC01, fallback 0, radius 50, step 1)
+      field ← SUnitCreate(object, class, x, y, mode 1)               ; draw 1: game seed; object seed ← Init(game seed low)
+      SetMode(field, 1)                                              ; mode unchanged: no draw
+      partner ← PortalPartnerCreate(field, dest, room's level)       ; G2a
+      flags |= 3 on both;  RoomPinSet(each end's room, 0)
+G2a. PortalPartnerCreate(field, dest, src):                          [C] for the draws and their order; [I] for the level-73 branch
+      (room, x, y) ← ActLevelSpot(act(dest), dest, type 11, size 3)   ; draw 2: dest's level seed (Position)
+      RoomUpdateOne(room)                                            ; first update: population draws on the game seed (oracle)
+      if src = 73 and QUESTS_PortalTownSpot(…):                      ; an Act II quest private byte +0x3C = 1
+        (room, x, y) ← ActLevelSpot(Act II, 40, type 12, size 3), then a step-7 search with mask 0xBE11
+      else: room ← COLL_FindFreeNear(room, (x, y), 3, 0xBE11, radius 50, step 5); if none, ActLevelSpot again
+      partner ← SUnitCreate(object, class of field, x, y, mode 2)    ; draw 3: game seed
+      partner data +4 ← src;  flags |= 3;  SetMode(partner, 2)       ; mode unchanged: no draw
+      link field ↔ partner
+```
+
 Step notes:
 
 - G2. [C] **Three draws, in order:** game seed (the field end's `SUnitCreate`), the town's level seed (`LevelPointPick`
@@ -469,6 +498,32 @@ with no portal created, the player's portal unchanged and no draw on the game, q
 
 
 #### Using a portal
+
+```
+G3. OBJOP_Portal(game, object, operator) (OperateFn 15):             [I]
+      if PlayerIsBusy(operator): refuse
+      if PlayerHostileToAny(game, operator) ≠ 0 and the owner is not the operator: refuse   ; the operator is hostile to someone
+      if GetTickCount() < PlayerTickGet(operator, 0) + 5000: refuse                     ; the operator's own stamp (§ J)
+      if the portal has an owner (≠ −1) who is not the operator:
+        if PartyId(operator) = 0xFFFF: refuse                            ; in no party; 16-bit
+        owner ← GameFindUnit(game, owner id, player)
+        if owner found and PartyId(owner) ≠ PartyId(operator): refuse  ; no owner unit: no compare
+      partner ← PortalPartnerGet(object);  dest ← object data +4
+      if class = 59 and object ≠ the operator's own portal and a partner exists and partner ≠ the operator's own portal:
+        q ← Levels[dest].QuestFlagEx if expansion else Levels[dest].QuestFlag
+        if q > 0 and word q bit 0 of the operator is clear: refuse
+      target ← the partner's room and position, or with no partner ActLevelSpot(act(dest), dest, 0, size 3)
+      object flags |= 5
+      if RoomIsTown(the operator's room): raise quest event 3 (new level, operator)
+      room ← COLL_FindFreeNear(target room, target, size, 0x1C09, fallback 0)
+      if room is null: return 0                                      ; no refusal call
+      UnitTeleport(room, x, y, 0, 0)
+      walk command to (x + 5, y + 5)                                 ; § H
+      if no partner or class = 60: if the object is in mode 1, queue object event 1
+      else if PlayerPortalGet(operator) = partner id:                 ; the owner, through the town end
+        free both ends;  RoomPinSet(their rooms, 1);  summit hook A5Q5_SummitPortalRemove
+      timed state 102 on the operator for 75 frames
+```
 
 Step notes:
 
@@ -634,7 +689,7 @@ I2. PlayerPlaceInAct(player, given = 0):                              [C]
 
 ## Worked example
 
-Seeds are `low:high` in hex; `Step` is rng step 1 (multiplier `0x6AC690C5`).
+Seeds are `low:high` in hex; `Step` is [rng](../../spec-rng/overview/) step 1 (multiplier `0x6AC690C5`).
 
 ### 1. A town portal opened on level 29, Act I
 
@@ -678,5 +733,5 @@ Seeds are `low:high` in hex; `Step` is rng step 1 (multiplier `0x6AC690C5`).
 - Tables: Levels § Travel, Objects § Waypoints and
   portals, Misc,
   LvlWarp.
-- Upstream: rng, rng/seeds, drlg/collision,
-  [drlg/warps](../../spec-drlg/warps/), objects. Downstream: [quests/progression](../progression/).
+- Upstream: [rng](../../spec-rng/overview/), [rng/seeds](../../spec-rng/seeds/), [drlg/collision](../../spec-drlg/collision/),
+  [drlg/warps](../../spec-drlg/warps/), [objects](../../spec-objects/overview/). Downstream: [quests/progression](../progression/).

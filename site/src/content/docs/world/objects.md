@@ -8,7 +8,7 @@ Every [room](../../reference/glossary/) the game activates for the first time ge
 room's map pieces, and a random set chosen from the level's object groups. This page explains how those objects are chosen and placed, the
 dice they roll when they are created (is this chest trapped? locked? which shrine is this?), what happens when a
 player clicks a chest, urn or barrel, and where the chest hands over to the drop tables. It also names the timer
-events and the quest objects. It restates the reviewed objects spec, plus the
+events and the quest objects. It restates the reviewed [objects spec](../../spec-objects/overview/#purpose), plus the
 short part of the [treasure class spec](../../spec-items/tc/#j-object-drops-named-only) that picks a chest's drop
 table. What a shrine, a well or a trap actually *does* to the player is game simulation and is out of scope: the spec
 only names it.
@@ -225,7 +225,7 @@ Two things here matter to a player:
   stream.
 
 **Shrine types.** A shrine row's `Parm0` picks one of the shrine class lists (the Shrines `effectclass`
-column): `Parm0` 1 gives list 2 (in the spec's shrine example it holds codes 2 and 4), `Parm0` 2 gives list 3, and
+column): `Parm0` 1 gives list 2 (in the spec's [shrine example](../../spec-objects/overview/#2-a-shrine-creation-jail-level-1) it holds codes 2 and 4), `Parm0` 2 gives list 3, and
 otherwise one roll gives list 1 with chance 1/10 and list 4 otherwise. A code is then drawn uniformly from that
 list; the `rarity` column is not read. The draw is retried up to 8 times until the code's `LevelMin` is at most the
 level's `Id` (the level number, not a monster level). If all 8 fail, the eighth code is kept anyway: a recorded game
@@ -241,7 +241,7 @@ it drew nothing from the object-region seed. The City of the Damned's spawns, wi
 object-region draws, are now modelled; for the other monster-spawning objects the rolls are still taken from the
 recording. Each pile of the gold-pile dummy is now a modelled item, with its two game-seed steps and its mark on the
 grid and no object-region draw (71 of 71 piles); where a pile lands is read from the code, and that reading placed 69
-of the 71 (objects § H, rows 28 and 46).
+of the 71 ([objects § H](../../spec-objects/overview/#h-draws-at-creation-per-initfn), rows 28 and 46).
 
 ## Leaving and coming back
 
@@ -401,7 +401,7 @@ What the recorded games confirm:
 
 ## A worked example
 
-These are copied from the spec's worked example, taken from recorded
+These are copied from the spec's [worked example](../../spec-objects/overview/#worked-example), taken from recorded
 games and reproduced with no mismatch.
 
 **One room in Cold Plains**.
@@ -442,8 +442,8 @@ resolver draws the chest's own seed and, in this case, makes no item. The chest 
 
 ## What is not known yet
 
-From the spec's open questions and its
-inputs list:
+From the spec's [open questions](../../spec-objects/overview/) and its
+[inputs list](../../spec-objects/overview/#inputs-and-oracles):
 
 - **Never reached in a run, so stated as read from the code:** the crate handler; the class-397 chest table; the Zoo;
   the 10-shrine cap and the well cap; the fixed shrines 574–579 and the 582 quest object; the room-theme handlers.
@@ -466,8 +466,8 @@ inputs list:
 
 ## Where to read more
 
-- The full rules, with exact draw order: objects spec, and its
-  notes for a reimplementer.
+- The full rules, with exact draw order: [objects spec](../../spec-objects/overview/#algorithm), and its
+  [notes for a reimplementer](../../spec-objects/overview/#reimplementation-notes).
 - What happens after the hand-off: [treasure class spec § J](../../spec-items/tc/#j-object-drops-named-only) and the
   [items page](../../items/items/).
 - How rooms and map pieces come to exist: [levels](../levels/). The monster pass that follows the object window:

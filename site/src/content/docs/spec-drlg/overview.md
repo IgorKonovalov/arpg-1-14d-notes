@@ -14,12 +14,12 @@ how a preset's DS1 file is chosen. The maze generator that runs inside step 9 is
 are in [warps.md](../warps/). The outdoor generators that run inside step 7 (the act layouts, the border pass,
 the placements and the file rotation) are specified in [outdoor.md](../outdoor/). The preset-unit drop rolls, which also draw on the
 level seed, are specified in [preset.md](../preset/). What happens when a
-room is activated (its tiles and the k room-seed draws) is in room-tiles.md, and the active room's
-collision grid, its logic regions and the spawn position tests are in collision.md. Which rooms
+room is activated (its tiles and the k room-seed draws) is in [room-tiles.md](../room-tiles/), and the active room's
+collision grid, its logic regions and the spawn position tests are in [collision.md](../collision/). Which rooms
 are active, when a room is released, and how its saved units are restored when it comes back is in
 [lifecycle.md](../lifecycle/).
-Primitives (`Step`, `Range`, `RangeB`, `Init`) are those of rng. The act and level
-seeds are defined in rng/seeds steps 3–5.
+Primitives (`Step`, `Range`, `RangeB`, `Init`) are those of [rng](../../spec-rng/overview/). The act and level
+seeds are defined in [rng/seeds](../../spec-rng/seeds/) steps 3–5.
 
 ## Entry points
 
@@ -33,7 +33,7 @@ seeds are defined in rng/seeds steps 3–5.
 | Outdoor level: create / build | — | [C] |
 | One DRLG room created (one level draw) | `DRLG_RoomCreate` | [C] |
 | Level unloaded (rooms and per-build state freed) | — | [C] |
-| DRLG room activated (tiles, k, active room) | → `DRLG_RoomActivate`, see room-tiles.md | [C] |
+| DRLG room activated (tiles, k, active room) | → `DRLG_RoomActivate`, see [room-tiles.md](../room-tiles/) | [C] |
 
 ## Inputs
 
@@ -50,7 +50,7 @@ seeds are defined in rng/seeds steps 3–5.
 | `LvlPrest.txt:File1` | `File1..6` (`+0x44 + 0x3C·i`): the DS1 of index i |
 | `LvlPrest.txt:SizeX`, `LvlPrest.txt:SizeY` | preset instance size, when both are non-zero (`+0x28`, `+0x2C`) |
 | `LvlPrest.txt:Scan`, `LvlPrest.txt:Pops` | map-scan gate before a preset's rooms are made (`+0x34`, `+0x38`) |
-| `LvlPrest.txt:Dt1Mask` | every preset room's DT1 mask (`+0x1AC`), see room-tiles.md |
+| `LvlPrest.txt:Dt1Mask` | every preset room's DT1 mask (`+0x1AC`), see [room-tiles.md](../room-tiles/) |
 | `LvlMaze.txt:Level`, `LvlMaze.txt:SizeX`, `LvlMaze.txt:SizeY` | the first maze room's size |
 | `LvlSub.txt:Prob0` | `Prob[SubTheme]` of each `SubType` record in the outdoor room roll (`+0x11C`) |
 | `LvlSub.txt:Dt1Mask` | OR-ed into an outdoor room's DT1 mask when its record is picked (`+0x48`) |
@@ -61,15 +61,15 @@ Offsets are byte offsets into the owner.
 
 | State | Type | Owner offset | Source |
 |---|---|---|---|
-| level seed base | `u32` | act `+0x470` | rng/seeds step 3b |
+| level seed base | `u32` | act `+0x470` | [rng/seeds](../../spec-rng/seeds/) step 3b |
 | level seed | `Seed` | level `+0x1C4` | step 1, step 2 |
 | level id, `DrlgType`, level type | `u32` | level `+0x1D0`, —, `+0x1C0` | leveldefs |
 | preset level data: file index | `i32` | level data `+0x04` | step 3 |
 | preset instances | list, prepended | level `+0x1B0` | step 4 |
 | maze file-rotation counters | list of `{Def, Files, c, next}`, 0x10 bytes each | level `+0x1CC` | step 9 |
 | level's rooms | list, prepended (next at room `+0x24`), count `+0x08` | level `+0x10` | step 5 |
-| DRLG room first draw | `u32` | DRLG room `+0x04` | rng/seeds step 5 |
-| DRLG room seed | `Seed` | DRLG room `+0x14` | rng/seeds step 5 |
+| DRLG room first draw | `u32` | DRLG room `+0x04` | [rng/seeds](../../spec-rng/seeds/) step 5 |
+| DRLG room seed | `Seed` | DRLG room `+0x14` | [rng/seeds](../../spec-rng/seeds/) step 5 |
 | DRLG room type | `u32`: 1 outdoor, 2 preset | DRLG room `+0x48` | step 5 |
 | DRLG room DT1 mask | `u32` | DRLG room `+0x50` | steps 6, 8 |
 | preset instance | 0x58 bytes: `+0x04` file index, `+0x08` record, `+0x0C` DS1, `+0x3C` client-objects flag | — | step 4 |
@@ -187,6 +187,123 @@ flowchart TD
 sub-generators of § Sub-generator boundaries (the maze and outdoor windows, oracles of
 the first runs, now modelled) and the preset drop rolls of step 5a.
 
+```
+1. CreateLevel(act, id) → L:                                          [C]
+     Init(L.seed, (u32) (base + id))                                  ; rng/seeds step 4
+     dispatch on DrlgType:
+       1 → MazeLevelCreate:   the lvlmaze row by level id, position   ; no draw
+       2 → PresetLevelCreate:                                         ; step 3
+       3 → OutdoorLevelCreate: allocate the 0x268-byte outdoor record ; no draw
+     prepend L to the act's level list
+
+2. LevelInit(L):                                                      [C]
+     Init(L.seed, (u32) (base + L.id))                                ; again, same start value
+     L.rotations ← empty                                              ; see step note 9
+     dispatch on DrlgType: 1 → MazeLevelBuild (9), 2 → PresetLevelBuild (6), 3 → OutdoorLevelBuild (7)
+     LevelRoomStateRestore(L); LevelWarpPointsBuild(L)                ; no draw; warps.md § E [C]
+
+3. PresetLevelCreate(L):                                              [C]
+     P ← LvlPrestByLevel(L.id)                                        ; fatal if none
+     files: i32 ← P.Files
+     L.data.idx: i32 ← (files ≠ 0) ? RangeB(L.seed, files) : −1       ; level draw iff files ≠ 0
+
+4. PresetInstanceCreate(L, def, rect, seed = L.seed) → ps:            [C]
+     ps.def ← def;  ps.rec ← LvlPrestByDef(def)
+     n: i32 ← ps.rec.Files
+     ps.idx: i32 ← Range(L.seed, n)                                   ; level draw iff n ≥ 1; n ≤ 0 → 0, no draw
+     ps.x, ps.y ← rect.x, rect.y
+     (ps.w, ps.h) ← (SizeX ≠ 0 and SizeY ≠ 0) ? (SizeX, SizeY) : (rect.w, rect.h)
+     ps[+0x3C] ← 1;  prepend ps to L[+0x1B0]
+     The DS1 the instance loads is ps.rec.File(ps.idx + 1).
+
+5. PresetRoomsCreate(L, ps, flags, single):                           [C]
+   5a. PresetMapScan(L, ps):                                          [C]
+         room-flag grid ← flags | the seam bits of the level (warps.md § D)   ; always, no draw
+                                                                      [C]
+         if ps.rec.Scan = 0 and ps.rec.Pops = 0: nothing more
+         else: load File(ps.idx + 1) into ps[+0x0C];
+               PresetUnitDropRolls on L.seed                          ; preset.md steps 2a, 3; step note 5
+               if Scan: warp-slot, waypoint and level-point cells     ; warps.md § D, no draw
+   5b. if single:                                                     ; one room for the whole preset
+         R ← DRLG_RoomCreate(L, 2) over ps's rect                     ; one level draw
+       else:
+         for y0 in 0, 8, 16, … < ps.h:                                ; rows outer
+           for x0 in 0, 8, 16, … < ps.w:                              ; columns inner
+             R ← DRLG_RoomCreate(L, 2) at (ps.x + x0, ps.y + y0),     ; one level draw
+                 size min(8, ps.w − x0) × min(8, ps.h − y0)
+       every R: R[+0x50] ← ps.rec.Dt1Mask; R → ps (R[+0x20] preset room data)
+                                                                      [C]
+       DRLG_RoomCreate itself: rng/seeds step 5 (Step(L.seed); R.seed ← Init(L.seed.low); Step(R.seed); R[+0x04] ← R.seed.low)
+
+6. PresetLevelBuild(L):                                               [C]
+     ps ← PresetInstanceCreate(L, LvlPrestByLevel(L.id).Def, L.rect)  ; step 4: one draw iff Files ≥ 1
+     if L.data.idx = −1: L.data.idx ← ps.idx  else: ps.idx ← L.data.idx
+     PresetRoomsCreate(L, ps, flags 0, single false)
+     if L.id ∈ {40, 103, 109}: act[+0x488](…)                         ; town callback   [C]
+     else if act[+0x454] ≠ 0 and ps.rec.AutoMap ≠ 0:                  [C]
+       LevelInit every linked level not yet built; activate this level's rooms
+
+7. OutdoorLevelBuild(L):                                              [C]
+     cw: i32 ← L.w ÷ 8;  ch: i32 ← L.h ÷ 8                            ; signed, toward zero; four cw × ch cell grids
+     outdoor generator on L.seed: VertexRingBuild, OutVertsToCells, then the act's generator
+       (L.id = 134 → the Act II one, else by act index)               ; outdoor.md § A–L
+     OutdoorRoomsCreate(L)                                            ; step 8
+
+8. OutdoorRoomsCreate(L):                                             [C]
+     mask: u32 ← outdoor room DT1 mask of L's level type (Constants)
+     for cy in 0 ..< ch:                                              ; rows outer
+       for cx in 0 ..< cw:                                            ; columns inner
+         c: u32 ← cell(cx, cy)                                        ; the outdoor generator's output (outdoor.md § B)
+         x: i32 ← L.rect.x + 8·cx;  y: i32 ← L.rect.y + 8·cy          ; cell position [C] (11 516 out rooms)
+         if c & 0x200:                                                ; preset anchor cell
+           def ← grid2(cx, cy)
+           if def ≠ 0:
+             ps ← PresetInstanceCreate(L, def, {x, y, 0, 0})          ; one draw iff Files ≥ 1
+             ps.idx ← (c >> 16) & 0xF                                 ; overwrites the draw
+             PresetRoomsCreate(L, ps, flags = grid0(cx, cy), single false)
+         else if not (c & 0x100):
+           OutRoomCreate(L, (x, y), 8 × 8, mask)                      ; 8a
+         ; c & 0x100 without 0x200: covered by a preset, nothing
+   8a. OutRoomCreate:                                                 [C]
+         R ← DRLG_RoomCreate(L, 1)                                    ; one level draw
+         R[+0x50] ← mask
+         LvlSubRoll(R):                                               ; on R.seed, after R's own creation draws
+           t ← Levels[L.id].SubType;  th ← Levels[L.id].SubTheme
+           pass: u32 ← 0
+           if t = −1 or th = −1: skip the loop                        ; no draw: [C] with both −1 (1636 calls),
+                                                                      ; [I] with only one −1, no stock case (step note 8)
+           rec ← the first LvlSub record with Type = t
+           for i ← 0, 1, …, while records rec+i have Type = t:
+             Step(R.seed)                                             ; room draw, one per record
+             r: u32 ← R.seed.low mod 100                              ; unsigned
+             if (i32) r < LvlSub[rec+i].Prob[th]:                     ; signed compare
+               pass |= 1 << i;  R[+0x50] |= LvlSub[rec+i].Dt1Mask
+           OutRoom +0x64, +0x68, +0x6C ← t, th, pass
+
+9. MazeLevelBuild(L):                                                 [C]
+     R0 ← DRLG_RoomCreate(L, 2)                                       ; one level draw
+     R0.size ← (lvlmaze.SizeX, lvlmaze.SizeY), centred in L.rect; link R0 to L
+     maze generator on L.seed and the maze rooms' seeds               ; maze.md: creates and removes maze rooms
+                                                                      [C]
+     for M in L.rooms, list order (newest first; M.next read before the call):
+       MazeLevelRooms(L, M)                                           ; 9a
+   9a. MazeLevelRooms(L, M):                                          [C]
+         ps ← PresetInstanceCreate(L, M.def, M.rect)                  ; one draw iff Files ≥ 1
+         MazePresetFile(ps, forced = M.idx, L)                        ; 9b
+         PresetRoomsCreate(L, ps, flags 0, single = (M.w ≤ 12 and M.h ≤ 12))
+         unit nodes of M with [+0x0C] = 1 → RoomAdjLink                ; no draw [C] (393 maze builds)
+         RoomFree(M)                                                  ; the level keeps only the preset rooms
+   9b. MazePresetFile(ps, forced, L):                                 [C]
+         if forced ≠ −1: ps.idx ← forced; return
+         b ← MAZE_DEF_BASE[L.levelType], or return (ps.idx kept) if the type has none
+         if b < ps.def < b + 16:                                      ; strict on both sides
+           if L.rotations has no node for ps.def:                     ; first use in this build
+             c: i32 ← RangeB(L.seed, Files)                           ; one level draw (Files ≥ 1)
+             add {ps.def, Files, c} to L.rotations
+           node.c ← (node.c + 1) mod node.Files                       ; signed idiv
+           ps.idx ← node.c
+```
+
 Step notes:
 
 1. The create-time dispatch makes at most one level draw (the preset level's index). [C]
@@ -204,12 +321,12 @@ Step notes:
    rebuilds of an unloaded level object, no level built twice without an unload between) The rebuild repeats the same
    draws, files and rooms: in the owner's Catacombs entry levels 35 and 36 were built three times each
    and level 34 twice, all identical to the model. [C]
-3. `PresetLevelCreate` uses `RangeB`, the second compile of the guarded range (rng
+3. `PresetLevelCreate` uses `RangeB`, the second compile of the guarded range ([rng](../../spec-rng/overview/)
    step 2). With `Files = 0` the index is −1 and no draw is made. [C]
 
 4. **`Files` is the operand, not the number of named files.** `PresetInstanceCreate` always passes
    `LvlPrest +0x40`. A power-of-two operand is reduced with a mask, any other with an unsigned `mod`,
-   which give the same result (rng step note 2). [C]
+   which give the same result ([rng](../../spec-rng/overview/) step note 2). [C]
    (960 instances, each
    loading exactly the predicted file) An index ≥ `Files` arises only from an override: the level's
    index (step 6), an outdoor cell's bits 16–19 (step 8) or a maze cell's forced index (step 9b). In the
@@ -224,7 +341,7 @@ Step notes:
    run replays with every seed asserted: 91 calls (52 in the five scripted logs, 39 in the owner's
    Catacombs log), 2 of which drew (both in Act II), 21 244 checks, 0 mismatches. [C]
  When the map scan has loaded the DS1, the
-   activation-time DS1 load skips its own rolls on the room seed (room-tiles.md step 1,
+   activation-time DS1 load skips its own rolls on the room seed ([room-tiles.md](../room-tiles/) step 1,
    [preset.md](../preset/) step 2b). [C] The 8 × 8 split gives the Act I town (56 × 40) 35 rooms
    and a 24 × 24 preset 9, created rows outer, columns inner. [C]
 
@@ -276,7 +393,7 @@ Step notes:
   position, writes the link value into the index of preset levels 1 and 40, and writes level 27's index
   from one act-seed draw while it handles level 6 when Black Marsh ends on side 1 or 3. Then `DRLG_ActCreate` creates the act's town level and
   calls `LevelInit` on it. Acts I, II, IV and V are reproduced (196 link builds);
-  Act III's jungle layout steps the act seed itself and is [outdoor.md § J](../outdoor/#j-act-iii), reproduced. See also rng/seeds step 3d.
+  Act III's jungle layout steps the act seed itself and is [outdoor.md § J](../outdoor/#j-act-iii), reproduced. See also [rng/seeds](../../spec-rng/seeds/) step 3d.
 
 
 ## Outputs
@@ -285,11 +402,12 @@ For each built level: its DRLG rooms, linked at level `+0x10` (newest first), ea
 
 ## Worked example
 
-`base = 015B2E77` (rng/seeds worked example). Level 8 is `DrlgType` 1, level type 3, so `MAZE_DEF_BASE` is `0x34` and defs 53–67 rotate.
+`base = 015B2E77` ([rng/seeds](../../spec-rng/seeds/) worked example). Level 8 is `DrlgType` 1, level type 3, so `MAZE_DEF_BASE` is `0x34` and defs 53–67 rotate.
 
 | Step | Operation | Level seed after | Result |
 |---|---|---|---|
 | 2 | `Init(base + 8)` | `015B2E7F:0000029A` | |
+| 9 | first maze room: `DRLG_RoomCreate` | `E18C3A55:0090CE8A` | room `+0x04 = C176B603` |
 | 9 | maze generator ([maze.md](../maze/#worked-example), example 1) | `334AA35A:02E00A8C` | list: def 98 at (1500, 1024), def 83 at (1524, 1000), def 58 at (1500, 1000), all 24 × 24, forced index −1 |
 | 9a, 4 | def 98, `Files 1`: `Range(1)` | `12CE5ECE:1564B05F` | idx 0 (a draw even though n = 1) |
 | 9b | 98 is outside (52, 68): kept | | `Act1\Caves\CaveNSpec.ds1` |
@@ -300,7 +418,7 @@ For each built level: its DRLG rooms, linked at level `+0x10` (newest first), ea
 | 9a, 4 | def 58, `Files 2`: `Range(2)` | `35E895EF:42FA8C7C` | idx 1, then overridden |
 | 9b | 58 is inside (52, 68), first use: `RangeB(2)` | `80265D67:167C1E75` | c = 1, then (1 + 1) mod 2 = 0 → idx 0, `Act1\Caves\CaveSE.ds1` |
 
-The room with `+0x04 = 8E258975` is the worked example of room-tiles.md,
+The room with `+0x04 = 8E258975` is the worked example of [room-tiles.md](../room-tiles/#worked-example),
 which takes it from creation to its active-room seed. The file the generator chose for it
 (`CaveWPre2.ds1`) is the one whose grids the room-tile run reproduces.
 
@@ -327,6 +445,6 @@ which takes it from creation to its active-room seed. The file the generator cho
 
 - [maze.md](../maze/) and [warps.md](../warps/): the maze generator, the act links and the warp points.
 - [outdoor.md](../outdoor/): the outdoor generators.
-- rng/seeds: act, level and room seeds; rng: primitives.
+- [rng/seeds](../../spec-rng/seeds/): act, level and room seeds; [rng](../../spec-rng/overview/): primitives.
 - Tables: Levels, LvlPrest, LvlMaze,
   LvlSub, LvlTypes.

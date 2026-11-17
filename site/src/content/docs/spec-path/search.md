@@ -77,16 +77,16 @@ The context `ctx` and the record `path` are [overview § Runtime state](../overv
 
 ### Constants
 
-| Name | Value | Anchor | Tag |
-|---|---|---|---|
-| straight step, diagonal step | 2, 3 | — | [C] (controls `cost`) |
-| `h` | `2 max( | dx | , | dy | ) + min( | dx | , | dy | )` | — | [C] (controls `h`, the same runs) |
-| type 1 switch | `dx² + dy² ≤ 324` | — | [C] (control `le325` 18 cases) |
-| type 1 pool | 200 nodes | — | [C] (control `pool`) |
-| search store | 900 nodes, 10 000 tries a pass, 50 000 cells | — | [C] (controls `nodes`, `passes`, families `grid`, `over`) |
-| type 15 minimum limit under a target unit | 40 | — | [C] (control `lim40`) |
-| random walk step | 2 subtiles | — | [C] (control `step1`) |
-| spiral | `r += 0x2580`, `a += 16`, 77 points | — | [C] (the structure reproduces all 260 stock type-14 plans; steps `0x2500`, `0x2600` and angles 15, 17 each fail all 260; it agrees under the emulator's rounding too, control `swap`) |
+| Name | Value | Tag |
+| --- | --- | --- |
+| straight step, diagonal step | 2, 3 | [C] (controls `cost`) |
+| `h` | `2 max(\|dx\|, \|dy\|) + min(\|dx\|, \|dy\|)` | [C] (controls `h`, the same runs) |
+| type 1 switch | `dx² + dy² ≤ 324` | [C] (control `le325` 18 cases) |
+| type 1 pool | 200 nodes | [C] (control `pool`) |
+| search store | 900 nodes, 10 000 tries a pass, 50 000 cells | [C] (controls `nodes`, `passes`, families `grid`, `over`) |
+| type 15 minimum limit under a target unit | 40 | [C] (control `lim40`) |
+| random walk step | 2 subtiles | [C] (control `step1`) |
+| spiral | `r += 0x2580`, `a += 16`, 77 points | [C] (the structure reproduces all 260 stock type-14 plans; steps `0x2500`, `0x2600` and angles 15, 17 each fail all 260; it agrees under the emulator's rounding too, control `swap`) |
 
 ## Algorithm
 
@@ -102,7 +102,7 @@ Blocked(hint, x, y, pattern, mask) ← COLL_PatternTestBool(hint, x, y, pattern,
   any other:       blocked
 ```
 
-- A1. [C] The cells and masks are drlg/collision §§ D, E. The room is a hint for every step of a plan, so a cell in a room outside that room's near list is "no room" and blocked, however large the search's rectangle.
+- A1. [C] The cells and masks are [drlg/collision §§ D, E](../../spec-drlg/collision/#e-collisiontest-by-size). The room is a hint for every step of a plan, so a cell in a room outside that room's near list is "no room" and blocked, however large the search's rectangle.
 - A1. [C] The grid is the live one, with the unit's own marks already off: [overview § F1](../overview/#f1-the-planners-take-the-live-grid).
 
 #### A2. Directions
@@ -780,4 +780,4 @@ The draws of a type-10 plan, with its entry, each point and its exit seed from a
 ## Evidence
 
 - Tools (the models, kept): runs §§ G and H as written against the models.
-- Specs: [the overview](../overview/), drlg/collision, [anim/movement](../../spec-anim/movement/), rng.
+- Specs: [the overview](../overview/), [drlg/collision](../../spec-drlg/collision/), [anim/movement](../../spec-anim/movement/), [rng](../../spec-rng/overview/).

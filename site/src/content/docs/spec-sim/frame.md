@@ -52,7 +52,7 @@ No excel table is read by `GameTick`'s own code, the queue or the walks; each ev
 | State | Type | Source |
 | --- | --- | --- |
 | frame counter | `i32`, only grows by one per tick | § B |
-| game seed | `Seed` | rng/seeds |
+| game seed | `Seed` | [rng/seeds](../../spec-rng/seeds/) |
 | event control | `EventCtl`, 0xA20 bytes, § D | game create |
 | acts | 5 pointers | § G, § H |
 | clients | list, next `+0x4A8`, newest first; count `+0x8C` | § H3 |
@@ -640,7 +640,7 @@ I1. QUESTS_TimersRun(game):                                       [C] (all of I1
 | 1 | `ActsClockPass` | none (564 functions) | `EquipReqRefresh` per client's player on a clock change, through it `PlayerSetSkill` → `AuraSelect` → `SKILLS_SrvDo`, when a wanted skill differs from the current one and is usable (G1e); which events leave that state is not read | [items/sockets-runewords](../../spec-items/sockets-runewords/), [skills/dispatch](../../spec-skills/dispatch/) | [C] its own code, none by direct reach with `EquipReqRefresh` the stop met (a second walker 441 functions); [I] the route through it |
 | 2 | `GameFpsStats` | none (5 functions) | none | — | [C] |
 | 3 | `NewRoomsUpdate` | none | the wanderer tick, the population, the restore (2 draws per restored item); level-point lookups | room's own; a neighbour's room seed; game; level; object region | [C] its own code, and the wanderer tick, the population and the restore reach draws; [I] the per-item count, the level-point lookups and the seeds |
-| 4 to 13 | the ten walks | none (8 functions, the 10 callback calls unfollowed) | each event's function, [anim/timing § N](../../spec-anim/timing/#n-draws-and-seeds-per-event-kind), monsters/ai § A, [skills/dispatch § P](../../spec-skills/dispatch/#p-draws-and-seeds-per-event-kind) | the unit's; another unit's (J2 kind 5); game; local | [C] its own code; [I] the seeds |
+| 4 to 13 | the ten walks | none (8 functions, the 10 callback calls unfollowed) | each event's function, [anim/timing § N](../../spec-anim/timing/#n-draws-and-seeds-per-event-kind), [monsters/ai § A](../../spec-monster-ai/overview/#a-the-event-kinds-and-their-seeds), [skills/dispatch § P](../../spec-skills/dispatch/#p-draws-and-seeds-per-event-kind) | the unit's; another unit's (J2 kind 5); game; local | [C] its own code; [I] the seeds |
 | any | a queue call | none (563 functions) but E4 | a monster's kind 2 under state 54 | the kill's or hit's | [C] (the one route, after `unit+0 = 1`, kind 2 and state 54) |
 | 14 | `ClientsRoomSync` | none (1 180 functions with `LevelInit`, `AutosaveTick`, `UninterruptibleEnd` stopped) | room activations, level builds, `DRLG_PresetUnitDropRolls` through enter 3; **the saves' seed is not read** | room's own, level's; never the game seed by direct reach with the saves stopped | [C] its own code, none with the named stops (a second walker 883 functions), `LevelInit` and `AutosaveTick` reaching 47 and 68 alone; [I] the routes through the entries and the seeds |
 | 15 | `ActUnitsFrameReset` | none (614 functions) | `UnitFree` for an inventory item with item flag 1 | the free's | [C] its own code, none by direct reach with `UnitFree` the stop met (a second walker 491 functions); [I] the item-flag-1 condition |
@@ -762,7 +762,7 @@ K2. For each window, reader rev 2 keeps each chained seed's value:   [I] (all of
 | Trigger | Sites hit in the seven windows with `XS` | Counted windows | Spec | Tag |
 |---|---|---:|---|---|
 | kill | `TC_ResolveDrops`; `ITEMS_DropRollQuality` | 122 | [items/tc § D](../../spec-items/tc/#d-the-resolver--tc_resolvedrops), [items/quality](../../spec-items/quality/) | [C] the sites, 124 steps in events holding a `KD`; [I] the count on a chained seed |
-| room | `RoomWandererTick`, `MonSpawnTry`, `SpawnPosPick`, `MonRegionPickClass`, `SpawnTypeRoll`, `RoomObjectsPopulate`, the object placement and `OBJPOP_` handlers | 847 | [lifecycle § I](../../spec-drlg/lifecycle/#i-the-wanderer-tick), monsters/spawn § H, objects § E, § F | [C] the listed functions only, 1 720 steps with a walk open; [I] the count on a chained seed |
+| room | `RoomWandererTick`, `MonSpawnTry`, `SpawnPosPick`, `MonRegionPickClass`, `SpawnTypeRoll`, `RoomObjectsPopulate`, the object placement and `OBJPOP_` handlers | 847 | [lifecycle § I](../../spec-drlg/lifecycle/#i-the-wanderer-tick), [monsters/spawn § H](../../spec-monsters/spawn/#h-placement-spawnpospick-and-monspawntry), [objects § E](../../spec-objects/overview/#e-the-populatefn-handlers), [§ F](../../spec-objects/overview/#f-placement-and-the-position-tests) | [C] the listed functions only, 1 720 steps with a walk open; [I] the count on a chained seed |
 | owner | `MonCritDouble` with a missile event open, 3 hits, and 2 more on a monster's own seed in its own attack; `COMBAT_ToHitRoll` stepped 19 times, each with the monster's own event open (4 and 22 over the nine windows with `XS`); `COMBAT_ApplyStun` none | 3 | [combat/to-hit](../../spec-combat/to-hit/), [combat/overview](../../spec-combat/overview/) | [C] the sites; [I] the chained reading |
 | defender | `COMBAT_DefenceRoll`, `COMBAT_DurabilityLoss`, `ITEMS_DurabilityLossRoll`, 2 each, all in 5511 #1; `COMBAT_ApplyCold`, `GetHitRoll`, `HitClassPick`, `COMBAT_ApplyDamage`: none | 8 | [combat/to-hit § C](../../spec-combat/to-hit/#c-the-hit-test-and-the-defence-rolls), [items/economy § H](../../spec-items/economy/#h-wear-durability-quantity-charges-replenish) | [C] |
 | `killev` | `UModPartyDeadDeath` sites: **none hit** | 0 | [items/quality](../../spec-items/quality/) | [I] |
@@ -811,11 +811,17 @@ K2. For each window, reader rev 2 keeps each chained seed's value:   [I] (all of
 
 - The order of a game's frame: the rank of each event and the order inside each list. [C] ranks 1, 3, 4, 6–9, 14 and 17–20 (§ B1,
   § D1); [I] ranks 2, 5, 10–13, 15 and 16
+- The game state after the frame, and the queued packets, flushed after it. [C] Besides them, one direct send: `GameTick` → `ClientsRoomSync`
+  → `AutosaveTick` → two unnamed calls, the last of which sends a one-byte packet `0xB0` through the transmit routine at once,
+  not through the queue, per client when `AutosaveTick`'s save conditions hold and a global dword is non-zero; `GameTick`'s
+  direct-call graph does not reach `ClientFlushPackets`. [I] What sets that dword, so whether single player takes
+  that branch, is not read, and nothing else leaves the frame: 751 indirect calls of the graph are not followed.
+
 - For the [chain](../../spec-chain/overview/): the activation-order record, § H5, as an input. [I]
 
 ## Worked example
 
-Frame 1961 of window 5503 #1, the first counted shared-seed pair, a test vector for the queue, the game-seed hand-off and a missile's seed. Seeds are `low:high`. Step is rng's. Values below are as logged, and each step is the LCG of the one before.
+Frame 1961 of window 5503 #1, the first counted shared-seed pair, a test vector for the queue, the game-seed hand-off and a missile's seed. Seeds are `low:high`. Step is [rng](../../spec-rng/overview/)'s. Values below are as logged, and each step is the LCG of the one before.
 
 ```mermaid
 sequenceDiagram
@@ -858,4 +864,4 @@ sequenceDiagram
 
 ## Evidence
 
-- Specs the frame composes: [anim/timing § H](../../spec-anim/timing/#h-the-event-queue-and-the-frame-order), [drlg/lifecycle](../../spec-drlg/lifecycle/), monsters/ai, [skills/dispatch § P](../../spec-skills/dispatch/#p-draws-and-seeds-per-event-kind), [skills/missiles](../../spec-skills/missiles/), [combat/overview](../../spec-combat/overview/), [items/tc](../../spec-items/tc/), [chain](../../spec-chain/overview/).
+- Specs the frame composes: [anim/timing § H](../../spec-anim/timing/#h-the-event-queue-and-the-frame-order), [drlg/lifecycle](../../spec-drlg/lifecycle/), [monsters/ai](../../spec-monster-ai/overview/), [skills/dispatch § P](../../spec-skills/dispatch/#p-draws-and-seeds-per-event-kind), [skills/missiles](../../spec-skills/missiles/), [combat/overview](../../spec-combat/overview/), [items/tc](../../spec-items/tc/), [chain](../../spec-chain/overview/).

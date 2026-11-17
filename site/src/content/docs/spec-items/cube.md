@@ -15,7 +15,7 @@ produced, every item in the cube is destroyed and the outputs are placed in the 
 the match, the output construction per kind, the crafted builder (quality 8), the creation-side quality roll that
 the cube's quality-0 records reach, and the order of every draw on the game seed, the unit seeds and the item seeds.
 
-Names of functions and fields are ours. "Game seed" is `Game+0xD0`, "unit seed" an item unit's `Unit+0x20`, "item seed" the item data's `ItemData+0x04`; the primitives `Step` and `Range` are those of rng. The cube is the player's inventory page 3. "Creation record" is the 0x84-byte `ItemCreateRec` that `ItemCreate` takes.
+Names of functions and fields are ours. "Game seed" is `Game+0xD0`, "unit seed" an item unit's `Unit+0x20`, "item seed" the item data's `ItemData+0x04`; the primitives `Step` and `Range` are those of [rng](../../spec-rng/overview/#algorithm). The cube is the player's inventory page 3. "Creation record" is the 0x84-byte `ItemCreateRec` that `ItemCreate` takes.
 
 ```mermaid
 flowchart TD
@@ -105,7 +105,7 @@ What a reimplementation needs from them:
 | `game.gameType`, `game.ladder` | `Game+0x6A` (3 in single player), `Game+0x74` | `Game+0x6A`, `Game+0x74` |
 | `game.difficulty` | u8 `Game+0x6D` | `Game+0x6D` |
 | `game.itemVersion` | the version the game gives a new item (≥ 100 expansion) | `Game+0x78` |
-| `game.seed` | Seed at `Game+0xD0` | rng/seeds |
+| `game.seed` | Seed at `Game+0xD0` | [rng/seeds](../../spec-rng/seeds/) |
 | `game.uniqueMade` | the made-uniques set at `Game+0x1B24` | `Game+0x1B24`, [items/uniques-sets](../uniques-sets/) |
 | game quest record | `Game+0x10F4` → `+0x0C` (the game's own quest words) | — |
 | player | class (`Unit+0x04`), stat 12 (level), quest record of the current difficulty, room | — |
@@ -997,7 +997,7 @@ cube 49; the fault logged on row 83 only)
   Misc, ItemTypes, ItemStatCost,
   ItemRatio, Experience, MagicPrefix,
   MagicSuffix, Properties.
-- Upstream specs: rng, rng/seeds, [items/quality](../quality/),
+- Upstream specs: [rng](../../spec-rng/overview/), [rng/seeds](../../spec-rng/seeds/), [items/quality](../quality/),
   [items/uniques-sets](../uniques-sets/), [items/affixes](../affixes/), [items/properties](../properties/),
   [items/sockets-runewords](../sockets-runewords/). Downstream: [drlg/outdoor](../../spec-drlg/outdoor/) (level 39 needs the
   cow portal; level 134 cannot be reached), [save/d2s](../../spec-save/d2s/) (the cube page).

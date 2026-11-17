@@ -12,7 +12,7 @@ output is everything the server builds from them: each level's layout and rooms,
 with its packs, special monsters and creation stats, the revisit re-creations, and, from a dying unit's seed, every
 item it drops down to its last property. It adds no mechanic of its own. Each step is specified in the spec it links,
 and this page states only the order, the seeds that cross from one spec to the next, and the run that checked the
-composition with no oracle inside it. Primitives (`Step`, `Range`, `Init`) are those of rng.
+composition with no oracle inside it. Primitives (`Step`, `Range`, `Init`) are those of [rng](../../spec-rng/overview/).
 
 ```mermaid
 flowchart LR
@@ -40,9 +40,9 @@ flowchart LR
 | A monster dies | `MONSTER_DropItems` → `TC_ResolveDrops` | [C] |
 | A player operates a chest | `OBJ_OperateDispatch` | [C] |
 
-The first four rows are the entry points of rng/seeds, [drlg/overview](../../spec-drlg/overview/),
-drlg/room-tiles and [drlg/lifecycle](../../spec-drlg/lifecycle/), and the last two those of
-[items/tc](../../spec-items/tc/) and objects § J.
+The first four rows are the entry points of [rng/seeds](../../spec-rng/seeds/), [drlg/overview](../../spec-drlg/overview/),
+[drlg/room-tiles](../../spec-drlg/room-tiles/) and [drlg/lifecycle](../../spec-drlg/lifecycle/), and the last two those of
+[items/tc](../../spec-items/tc/) and [objects § J](../../spec-objects/overview/#j-operate-chests-and-containers-up-to-the-drop).
 [C]
 
 ## Inputs
@@ -94,14 +94,14 @@ A **retired** oracle is a callee that an earlier reproduction took from the log 
 | 2 | `ITEMS_RollStaffMods` | modelled, the default since | [items/affixes § I](../../spec-items/affixes/#i-staff-mods--items_rollstaffmods) | [C] |
 | 3 | the builders under a failed unique or set | modelled | [items/affixes](../../spec-items/affixes/) after [items/uniques-sets § E](../../spec-items/uniques-sets/#e-failure-durability-and-the-fallback-chain) | [C] |
 | 5 | the drop quality roll | modelled | [items/quality](../../spec-items/quality/) | [C] |
-| 6 | `TC_ResolveDrops` at an object's drop | modelled | [items/tc § J](../../spec-items/tc/#j-object-drops-named-only), objects § J | [C] |
-| 7 | the gold drop of `InitFn` 28 | modelled in its seeds and marks; the spot read, predicted for 69 of 71 | objects § H row 28 | [C] the seeds and marks; [I] the spot |
-| 14 | the unit seed after `SUnitCreate` | modelled | monsters/spawn § J, [monsters/pool § D](../../spec-monsters/pool/#d-appearance-sets-monvariantroll), [monsters/stats § B](../../spec-monsters/stats/#b-monstatsinit-in-order) | [C] |
-| 15, 16 | the presets window and its preset monsters | modelled | objects § I, monsters/spawn § H | [C] |
-| 17 | `InitFn` 46 (City of the Damned) | modelled; the other monster-creating `InitFn`s stay seed oracles | objects § H row 46 | [C] |
+| 6 | `TC_ResolveDrops` at an object's drop | modelled | [items/tc § J](../../spec-items/tc/#j-object-drops-named-only), [objects § J](../../spec-objects/overview/#j-operate-chests-and-containers-up-to-the-drop) | [C] |
+| 7 | the gold drop of `InitFn` 28 | modelled in its seeds and marks; the spot read, predicted for 69 of 71 | [objects § H](../../spec-objects/overview/#h-draws-at-creation-per-initfn) row 28 | [C] the seeds and marks; [I] the spot |
+| 14 | the unit seed after `SUnitCreate` | modelled | [monsters/spawn § J](../../spec-monsters/spawn/#j-creation-and-the-unit-seed), [monsters/pool § D](../../spec-monsters/pool/#d-appearance-sets-monvariantroll), [monsters/stats § B](../../spec-monsters/stats/#b-monstatsinit-in-order) | [C] |
+| 15, 16 | the presets window and its preset monsters | modelled | [objects § I](../../spec-objects/overview/#i-ds1-preset-objects-and-the-pseudo-objects), [monsters/spawn § H](../../spec-monsters/spawn/#h-placement-spawnpospick-and-monspawntry) | [C] |
+| 17 | `InitFn` 46 (City of the Damned) | modelled; the other monster-creating `InitFn`s stay seed oracles | [objects § H](../../spec-objects/overview/#h-draws-at-creation-per-initfn) row 46 | [C] |
 | 21 | another room's seed in a pass | chain state | that room's seed (§ D6) | [C] |
-| 22 | `Orient89Unit`'s units | the presets window's | drlg/room-tiles step 11, then § D2 | [C] |
-| 26–31 | position predicates, maze and outdoor windows, preset drop rolls, special mods, tile placement | — | drlg/collision, [drlg/maze](../../spec-drlg/maze/), [drlg/outdoor](../../spec-drlg/outdoor/), [drlg/preset](../../spec-drlg/preset/), [monsters/special](../../spec-monsters/special/) | [C] |
+| 22 | `Orient89Unit`'s units | the presets window's | [drlg/room-tiles](../../spec-drlg/room-tiles/#algorithm) step 11, then § D2 | [C] |
+| 26–31 | position predicates, maze and outdoor windows, preset drop rolls, special mods, tile placement | — | [drlg/collision](../../spec-drlg/collision/), [drlg/maze](../../spec-drlg/maze/), [drlg/outdoor](../../spec-drlg/outdoor/), [drlg/preset](../../spec-drlg/preset/), [monsters/special](../../spec-monsters/special/) | [C] |
 
 **Remaining oracles inside the chain**, taken from the log and counted, with the reason. The 2 189 populations the run counts as oracle-free hold no seed taken from the log in their window or pass; the value inputs of oracles 19 and 20 below are read in every one of them, and a window holding any other row of this table does not count. [C] (review ruling 2)
 
@@ -204,7 +204,7 @@ Step notes:
 
 - A. [C] reproduces, from `-seed N` alone, the game seed, the four game-creation draws, the act
   bases and their own draws and every level's seed; on `-seed 12345` it prints the
-  rng/seeds worked example.
+  [rng/seeds worked example](../../spec-rng/seeds/#worked-example).
 - B. [C] A level's seed does not depend on the order in which levels are built: it is a sum, not a draw. The run built
   176 (level, difficulty, game type) with every generator kind (DrlgType 1: 65, 2: 36, 3: 75) and every act of each
   game type in each difficulty.
@@ -248,16 +248,16 @@ before it leave, with no input between. [C]
 
 | Step | Entry | Seed in | Arguments | State read | Spec | Tag |
 |---|---|---|---|---|---|---|
-| A | game creation | `Init(N)` | difficulty, game type | the tables | rng/seeds, [monsters/pool § A](../../spec-monsters/pool/#a-the-region-seed-monregionsinit), objects § A | [C] |
+| A | game creation | `Init(N)` | difficulty, game type | the tables | [rng/seeds](../../spec-rng/seeds/#algorithm), [monsters/pool § A](../../spec-monsters/pool/#a-the-region-seed-monregionsinit), [objects § A](../../spec-objects/overview/#a-the-object-region-seed-and-level-records-game-creation) | [C] |
 | B | `DRLG_LevelCreate` | `Init(levelSeedBase + levelId)` | level id | Levels, LvlPrest, LvlMaze, LvlSub and the DS1 files | [drlg/overview](../../spec-drlg/overview/#algorithm) | [C] |
-| C | `DRLG_RoomActivate` | the DRLG room's seed | the room | the near rooms already active (input order), the DT1 tiles | drlg/room-tiles, drlg/collision § A | [C] |
+| C | `DRLG_RoomActivate` | the DRLG room's seed | the room | the near rooms already active (input order), the DT1 tiles | [drlg/room-tiles](../../spec-drlg/room-tiles/#algorithm), [drlg/collision § A](../../spec-drlg/collision/#a-the-grid-build-at-activation) | [C] |
 | D1 | `RoomWandererTick` | the active room seed | the room | the region's wanderer count, the room's client list | [drlg/lifecycle § I](../../spec-drlg/lifecycle/#i-the-wanderer-tick) | [C] |
-| D2–D4 | the window `RW1` → `RW4` | room seed, game seed and `O`: chain | the room, its preset units | the grid, quest state (inputs), the gate's DRLG parts (oracle 19) | objects § B | [C] |
-| D5 | `RoomPopulate` | room seed and game seed: chain | the room | the level's region, the grid snapshot (oracle 20), the logic boxes, the warp points | monsters/spawn § A | [C] |
-| E | `SUnitCreate` type 1 | game seed: chain | class, cell, mode, request flags | the region entry, MonStats, MonStats2, MonLvl, MonProp, MonEquip | monsters/spawn § J, [monsters/stats](../../spec-monsters/stats/#b-monstatsinit-in-order) | [C] |
+| D2–D4 | the window `RW1` → `RW4` | room seed, game seed and `O`: chain | the room, its preset units | the grid, quest state (inputs), the gate's DRLG parts (oracle 19) | [objects § B](../../spec-objects/overview/#b-the-window-in-the-room-driver-and-the-revisit) | [C] |
+| D5 | `RoomPopulate` | room seed and game seed: chain | the room | the level's region, the grid snapshot (oracle 20), the logic boxes, the warp points | [monsters/spawn § A](../../spec-monsters/spawn/#a-when-the-pass-runs-and-the-room-seed-before-it) | [C] |
+| E | `SUnitCreate` type 1 | game seed: chain | class, cell, mode, request flags | the region entry, MonStats, MonStats2, MonLvl, MonProp, MonEquip | [monsters/spawn § J](../../spec-monsters/spawn/#j-creation-and-the-unit-seed), [monsters/stats](../../spec-monsters/stats/#b-monstatsinit-in-order) | [C] |
 | F | `RoomInactiveUnitsRestore` | room seed and game seed: chain | the room's records | the records' class, id, cell and state (oracle 25) | [drlg/lifecycle § H](../../spec-drlg/lifecycle/#h-the-restore) | [C] |
 | G | `TC_ResolveDrops` | the dying unit's seed (input) | TC, item level, the killer | magic find (input), player count | [items/tc § D](../../spec-items/tc/#d-the-resolver--tc_resolvedrops) | [C] |
-| G2 | item creation | the game seed at the drop (input) | base, quality, item level | the base tables | rng/seeds step 7a, [items/uniques-sets § A](../../spec-items/uniques-sets/#a-the-item-seed-at-entry) | [C] |
+| G2 | item creation | the game seed at the drop (input) | base, quality, item level | the base tables | [rng/seeds](../../spec-rng/seeds/#algorithm) step 7a, [items/uniques-sets § A](../../spec-items/uniques-sets/#a-the-item-seed-at-entry) | [C] |
 | H | `ItemCreateByQuality` | `{start, 666}` | the creation record | the item tables | [items/uniques-sets](../../spec-items/uniques-sets/), [items/affixes](../../spec-items/affixes/), [items/properties](../../spec-items/properties/) | [C] |
 
 ## Outputs
@@ -350,9 +350,9 @@ The next drop of the log (line 11928) starts from the game seed `A15D299B:15EB20
 
 ## Evidence
 
-- The composed specs: rng/seeds, [drlg/overview](../../spec-drlg/overview/),
-  drlg/room-tiles, [drlg/lifecycle](../../spec-drlg/lifecycle/), drlg/collision,
-  objects, [monsters/pool](../../spec-monsters/pool/), monsters/spawn,
+- The composed specs: [rng/seeds](../../spec-rng/seeds/), [drlg/overview](../../spec-drlg/overview/),
+  [drlg/room-tiles](../../spec-drlg/room-tiles/), [drlg/lifecycle](../../spec-drlg/lifecycle/), [drlg/collision](../../spec-drlg/collision/),
+  [objects](../../spec-objects/overview/), [monsters/pool](../../spec-monsters/pool/), [monsters/spawn](../../spec-monsters/spawn/),
   [monsters/special](../../spec-monsters/special/), [monsters/stats](../../spec-monsters/stats/), [items/tc](../../spec-items/tc/),
   [items/quality](../../spec-items/quality/), [items/uniques-sets](../../spec-items/uniques-sets/), [items/affixes](../../spec-items/affixes/),
   [items/properties](../../spec-items/properties/).

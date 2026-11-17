@@ -315,7 +315,7 @@ line, and the tests run again at its end, are read from the code.
   object; a monster and a missile were not.
 - **The line** between the two must be clear for a pickup in place. The code that shortens and tests the line was
   **emulated** (600 cases) as far as the collision test itself, whose result belongs to the
-  collision page of the specs and is a reading there; a player's collision mask was declared, not read from a game, so whether a player's line test ever takes the code's other branch is open.
+  [collision page of the specs](../../spec-drlg/collision/) and is a reading there; a player's collision mask was declared, not read from a game, so whether a player's line test ever takes the code's other branch is open.
   The two tests run again when the walk ends.
 - **The order a pickup tries.** Gold; an auto-stack into a tome, a stack or a quiver; then an auto-equip location if
   the item names one (for example an arrow quiver to a hand that holds a bow); the belt for a beltable item; the

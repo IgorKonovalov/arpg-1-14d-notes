@@ -63,7 +63,7 @@ dialogue line the client reports) is an input; what the server does with it is s
 | quest objects | 37 main-table + 4 NPC-introduction objects (ids 37–40) | [C] 41, ids 0 to 40, in each of the 54 logged games' first object list; ids 37 to 40 carry word 42 and acts I, II, III and V; [I] their NPC-introduction role (§ Act I, Act II, Act III and Act V rows) |
 | record words | 48 per record; words 0–41 under the loader rule, 42–47 copied | [C] |
 | timer cadence | every 20th frame (`frame mod 20 = 0`) | [C] (the pass adds 1 to the tick and has one caller; logged tick = frame // 20 at frames 567 to 7 500, runs on frame mod 20 = 0) |
-| LCG multiplier | `0x6AC690C5` (rng step 1) | [C] |
+| LCG multiplier | `0x6AC690C5` ([rng](../../spec-rng/overview/) step 1) | [C] |
 
 ### Inputs and oracles
 
@@ -72,7 +72,7 @@ dialogue line the client reports) is an input; what the server does with it is s
 | the trigger: a kill, an operate, a level change, a packet | input | game simulation decides when it happens | [I] |
 | the client's dialogue message id (packet `0x31`) | input | the client picks the line from the message index the server sent at e0 | [C] (41 talk steps predicted from the logged message) |
 | party membership, the players' rooms and near lists, held items | input | read by credit passes and item tests | [I] |
-| units and items a quest creates (spawns, objects, portals, rewards, hirelings) | oracle | they draw on their own seeds: monsters/spawn, objects, [items/quest-drops](../../spec-items/quest-drops/), [quests/travel § G](../travel/#g-town-portals) | [C] (13 dispatches whose game-seed change is a created unit) |
+| units and items a quest creates (spawns, objects, portals, rewards, hirelings) | oracle | they draw on their own seeds: [monsters/spawn](../../spec-monsters/spawn/), [objects](../../spec-objects/overview/), [items/quest-drops](../../spec-items/quest-drops/), [quests/travel § G](../travel/#g-town-portals) | [C] (13 dispatches whose game-seed change is a created unit) |
 | the log state bytes `+0x0B`/`+0x0C` where they gate no bit | oracle | presentation of the quest log | [I] |
 | `GetTickCount()` in Diablo's end timer | input | real time | [I] |
 
@@ -650,6 +650,16 @@ stateDiagram-v2
 ##### Word 29: NPC 266's talk (quest objects 25 and 30)
 
 No record bit is written: the two objects are dialogue selectors whose one handler draws on the player's unit seed.
+
+```
+W29. NpcTalk266(event) — the e0 handler A1Q29_NpcTalk, run once for each of quest objects 25 and 30:   [C] for the draws; [I] for the branch test
+       if event.npc class ≠ 266: return
+       if G w1 b13 clear and this quest object is active and the player's w1 b0, b13 and b1 are clear:
+         msg ← Range(player.unitSeed, 2)                              ; draw: 1 Step
+       else:
+         Step(player.unitSeed);  msg ← player.unitSeed.low mod 3 + 2   ; draw: 1 Step (inline)
+       QUESTS_SetNpcMessage(266, msg)                                 ; presentation
+```
 
 - W29. [C] **Two draws per talk.** The dispatch runs the handler once for each object, and each run steps the player's
   unit seed once: 23 talks, 22 chained pairs (each talk's exit seed the next one's entry).
@@ -1396,6 +1406,15 @@ stateDiagram-v2
 - [I] Baal's death also calls `MissileCreateAt(0, 1, 625, x, y)` (missile `baalfx control`, W4c); its do-function is
   not read.
 
+```
+W40. ZooInit — InitFn 79 (object 567), once per game (private +0xA0):   [I]
+       cls: i32 ← 0
+       for t in 0 ..< 10:
+         c ← RandLoHi(questSeed, 1, nMonStats)                        ; one draw each
+         if MonStats[c].zoo: cls ← c;  break
+       private +0xA4 ← cls;  the message to every player
+```
+
 - [I] Every Baal credit, and the first join of a player with b0 or b15, raises the client's status progression to at least
   `5d + 5`. Baal's gold draws on the quest seed. The consumer of the Zoo's
   class beyond its message is not traced.
@@ -1449,12 +1468,12 @@ The quest state that the reviewed creation specs take as an input, and the code 
 | Spec | Reader | State read | Tag |
 |---|---|---|---|
 | [items/quest-drops](../../spec-items/quest-drops/) | the quest TC switch (B6) | the killer's `TCQuestId` word bits 15, 1 and `TCQuestCP`, read before the boss's script writes | [C] (in the 18 logged quest-TC groups the reads precede the boss's credit writes, 10 credited; in the 7 credited Andariel kills the b1 read gave 0 and the credit then set b1; `MONSTER_DropItems`) |
-| objects | `InitFn` 49/50 (Hratli), 52 (NPC 297), 43 (Dark Wanderer), 55 (Diablo's start point), 69 (Nihlathak), 79 (the Zoo), 44 (hellgate 342), the cairn stones' init (Tristram portal) | G w16 b13, G w22 b13, quest private state | [C] |
-| monsters/spawn | the Chaos Sanctuary gate | quest 23's private `+0x13` (word 26) | [I] |
+| [objects](../../spec-objects/overview/) | `InitFn` 49/50 (Hratli), 52 (NPC 297), 43 (Dark Wanderer), 55 (Diablo's start point), 69 (Nihlathak), 79 (the Zoo), 44 (hellgate 342), the cairn stones' init (Tristram portal) | G w16 b13, G w22 b13, quest private state | [C] |
+| [monsters/spawn](../../spec-monsters/spawn/) | the Chaos Sanctuary gate | quest 23's private `+0x13` (word 26) | [I] |
 | [monsters/special](../../spec-monsters/special/) | superunique quest hooks, the forced death list | the hook lists (§ B) | [C] (`QUESTS_HookMonster` has 32 calls in 11 functions, three tools agreeing; the forced list as B4; `QUESTS_HookMonster`) |
-| rng/seeds | act `+0x094` | the true tomb: word 14's level-change step, the join's tomb index, `OBJINIT_Portal`'s lair pair; act `+0x484` (maze only), `+0x474` (Kurast gates only) and the level-27 bit are read by no quest code | [C] |
+| [rng/seeds](../../spec-rng/seeds/) | act `+0x094` | the true tomb: word 14's level-change step, the join's tomb index, `OBJINIT_Portal`'s lair pair; act `+0x484` (maze only), `+0x474` (Kurast gates only) and the level-27 bit are read by no quest code | [C] |
 | [items/cube](../../spec-items/cube/) | the cow portal | w26 b0 (classic) or w40 b0 (expansion), G w4 b11 | [C] for the expansion side: G w4 b11 with the opener's w40 b0 set in both logged openings; [I] for w26 b0 in a classic game and the refusal |
-| drlg/collision | the Arcane Sanctuary waypoint | no quest bit gates level 74 or portal 298 | [C] (no record reader in `A2Q4_ArcanePortalInit` or `OBJINIT_Waypoint` and their callees to depth 2) |
+| [drlg/collision](../../spec-drlg/collision/) | the Arcane Sanctuary waypoint | no quest bit gates level 74 or portal 298 | [C] (no record reader in `A2Q4_ArcanePortalInit` or `OBJINIT_Waypoint` and their callees to depth 2) |
 | [save/d2s](../../spec-save/d2s/) | the quest record of difficulty *d* | `+0x10 + 4·d`; the loader rule A3 | [C] |
 
 ## Outputs
@@ -1470,7 +1489,7 @@ The quest state that the reviewed creation specs take as an input, and the code 
 
 ## Worked example
 
-Seeds are `low:high` in hex; `Step` is rng step 1.
+Seeds are `low:high` in hex; `Step` is [rng](../../spec-rng/overview/) step 1.
 
 ### 1. Two talks to NPC 331 (session x-lut)
 

@@ -6,9 +6,9 @@ sidebar:
 
 ## Purpose
 
-What an AI event does once the tick reaches it: how the target is found, how a command becomes a
+What an AI event does once [the tick](../overview/#b-the-tick) reaches it: how the target is found, how a command becomes a
 mode, a skill and a path request, how a minion keeps to its leader, and what each of the 18 tier AIs decides, with its
-draws in order. How far each statement is evidenced is README § G and § H; the
+draws in order. How far each statement is evidenced is [README § G and § H](../overview/#how-far-this-is-evidenced); the
 sentence past the first boundary is **H1** there, quoted once and referred to below.
 
 ## Entry points
@@ -299,7 +299,7 @@ B12. Toward(t, max, ring) = MonAiWalkTowardUnit → MonAiMoveToUnitDist(t, 2, ma
 
 ### C. Idle and delay
 
-`Idle(n)`, `Delay(n)` are README § C. [C] The next AI event at `T + n` (README C2, C3). [I] Their form at n ≤ 0, none logged
+`Idle(n)`, `Delay(n)` are [README § C](../overview/#c-when-the-next-ai-event-comes). [C] The next AI event at `T + n` (README C2, C3). [I] Their form at n ≤ 0, none logged
 
 ### D. The path request
 
@@ -407,8 +407,8 @@ flowchart TD
 
 ### T. The tier AIs
 
-Each entry is the think function as pseudocode, with its draw order and its evidence. Every entry's block is a code reading, `[I]`, and its first boundary is `[C]` per README § G. "The map" in a `[C]` line below is the map from the think's inputs to its first callee or return, each emulated case's boundary, and nothing after it. Where a row is under
-sentence H1, "H1 holds" means the sentence for the decisions and logs in that table, and no more.
+Each entry is the think function as pseudocode, with its draw order and its evidence. Every entry's block is a code reading, `[I]`, and its first boundary is `[C]` per [README § G](../overview/#g-the-first-boundary). "The map" in a `[C]` line below is the map from the think's inputs to its first callee or return, each emulated case's boundary, and nothing after it. Where a row is under
+sentence H1, "H1 holds" means [the sentence](../overview/#h-past-the-first-boundary) for the decisions and logs in that table, and no more.
 All 18 rows have no `init`; all have row kind 1 except 61 and 67 (kind 0), so the think runs only with a target but for those two.
 Only rows 29 and 61 have an `alt`. [C]
 

@@ -430,7 +430,7 @@ H2. ITEMS_DetachFromOwner(owner, force, clamp):                         [I] (ITE
 H3. ItemReqCheck(item, unit) → bool:                                   [C] for strength, dexterity, identified and ethereal
       str: i32 ← reqstr + MulDiv(reqstr, stat 91 item_req_percent, 100)    ; record +0x10A
       dex: i32 ← reqdex + MulDiv(reqdex, stat 91, 100)                     ; record +0x10C
-      if item is ethereal: str ← str − 10; dex ← dex − 10
+      if item is ethereal (flag bit 22): str ← str − 10; dex ← dex − 10
       pass iff full strength ≥ 1 and ≥ str, full dexterity ≥ 1 and ≥ dex,
                unit level ≥ the item's level requirement, item identified (0x10),
                a type-18 base has stat 70 > 0, and the class matches
@@ -478,6 +478,11 @@ is called) and the level requirement's quality-default path, each of these tests
 - H5. [I] **Broken.** `ItemBreak` sets `0x100`, unlinks an equipped item, sets durability (72) to 0 and
   updates its set with the item excluded; `ItemRepairBroken` clears it and re-runs H4. No broken item
   was reached.
+- H6. [C] Sockets change only the item's own lists,
+  which reach the wearer through the item's cache (A4): the fillers' lists hang under their item's list (8 124 nodes),
+  none under the unit list. `ITEMS_MakeEthereal` sets flag bit 22 on its argument
+  and writes that argument's stats only (21..24, 159, 160 for a type-45 base, else 31). [I] That ethereal touches only the
+  item's own lists across the flag's other users (19 pushes of the bit-22 value in 12 functions, not read).
 - H7. [C] **An item's per-level (op 4/5) value is not refreshed when the wearer levels up.** After the Paladin's
   level-ups, the item lists with an op-4 source (`item_armor_perlevel` on Stormshield) kept the value of their last
   link (94 entries), equal to the evaluation at the wearer's previous level: nothing propagates a stat of the linked

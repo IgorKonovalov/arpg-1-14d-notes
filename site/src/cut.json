@@ -26,6 +26,10 @@
       "label": "Reference"
     },
     {
+      "slug": "spec-rng",
+      "label": "Spec: Randomness"
+    },
+    {
       "slug": "spec-data",
       "label": "Spec: Game data"
     },
@@ -40,6 +44,10 @@
     {
       "slug": "spec-monster-ai",
       "label": "Spec: Monster AI"
+    },
+    {
+      "slug": "spec-objects",
+      "label": "Spec: Objects"
     },
     {
       "slug": "spec-items",

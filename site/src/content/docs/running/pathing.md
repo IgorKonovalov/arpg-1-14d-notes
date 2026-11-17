@@ -9,7 +9,7 @@ the plan, takes that record, checks the request, takes the unit's own marks off 
 calls the type's planner, puts the marks back and aims the path at the first point it got. This page explains that
 routine, the planners behind it, the grid they read and the few draws they make. It restates the
 [path overview](../../spec-path/overview/#purpose) and the [path search](../../spec-path/search/#purpose), and for corpses
-collision § F5.
+[collision § F5](../../spec-drlg/collision/#f5-corpse-marks-by-copy-of-the-grid).
 
 Who asks for a plan and why is each caller's. The per-frame
 step along the points is [animation and timing](../animation/#the-step). What the grid's cells mean is
@@ -68,7 +68,7 @@ otherwise.
    (0, 0). The target equals the start. The target is more than 100 subtiles away on an axis, where 100 itself passes. The unit's
    room is missing, or the room at the target. The town test fails and the caller did not force it.
 5. **The unit's own marks come off.** A dead player (mode 0 or 17) or a dead monster (mode 0 or 12) leaves its cells alone
-   here (collision § F5, read from the code).
+   here ([collision § F5](../../spec-drlg/collision/#f5-corpse-marks-by-copy-of-the-grid), read from the code).
 6. **The target's marks come off** when the path's flags ask for it and the target's size is not 0.
 7. **The free step** runs when the path's flags ask for it and the target is blocked.
 8. **The planner runs**, unless the free step failed. A planner may move the target, not the start: a changed start is a
@@ -117,7 +117,7 @@ the call is not compared.
 A path record holds two masks, and they are not interchangeable: the **test mask**, the bits a planner and the step
 refuse, and the **mark mask**, the bits the unit writes into the grid. Players mark `0x80`,
 monsters `0x100`; a missile marks nothing at creation and `0x40` when its `Collision` column is not 0. The marks are
-confirmed at collision § F. The path module stores each mask only through its own setter and at
+confirmed at [collision § F](../../spec-drlg/collision/#f-unit-marks). The path module stores each mask only through its own setter and at
 creation, and the mark calls take the mark mask while the plan reads the test mask (checked by a second reading).
 
 **The test masks are seen in the game** for players and monsters:
@@ -410,7 +410,7 @@ raises nothing either: each rule below rests on its own bit or line.
 | The `0x200` bit | Its source is unknown: 92 597 cells differ on that run and no logged unit holds them | No plan depends on them on these logs, and no move mask read holds it, though a spawn mask does (read from the code) |
 
 The operations behind the target, the act change and the landing are at
-collision § F6, and the rows above at
+[collision § F6](../../spec-drlg/collision/#f6-marks-around-a-plan-an-act-change-and-a-reserved-landing), and the rows above at
 [overview § F4](../../spec-path/overview/#f4-each-grid-rule-at-its-tag).
 
 ## Corpses
@@ -554,7 +554,7 @@ From the specs' open questions:
 ## Where to read more
 
 - The specs: [path overview](../../spec-path/overview/#reimplementation-notes) and [path search](../../spec-path/search/#reimplementation-notes),
-  whose *Reimplementation notes* list the traps, and the collision grid for the marks.
+  whose *Reimplementation notes* list the traps, and [the collision grid](../../spec-drlg/collision/#f-unit-marks) for the marks.
 - The [glossary](../../reference/glossary/) for D2 terms.
 - Related wiki pages: [animation and timing](../animation/#movement) (the step along the points, speeds, knockback's length),
   [levels](../../world/levels/) (rooms and the collision grid), [skills and missiles](../../characters/skills/) (the skills and missiles that ask for a plan and the

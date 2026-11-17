@@ -65,7 +65,7 @@ stateDiagram-v2
 | state bit-sets | two sets of `ceil(nStates / 32)` dwords at the unit list's `+0x58`: on, and changed (for the client) | `UNIT_SetStateBit` |
 | a state's list | `StatList` with the state at `+0x14`, end frame `+0x18`, skill `+0x1C`, level `+0x20`, remove callback `+0x38` | `StatList+0x18` |
 | the apply request | `{source, target, skill, level, duration, stat, value, state (+0x1C), remove callback, …}` | `TimedStateReq+0x1C` |
-| unit seed | `Unit+0x20` | rng/seeds; in the run drawn only by a damaging aura's run, once per drawing run; Holy Freeze's step of each unit hit is read only (§ H) |
+| unit seed | `Unit+0x20` | [rng/seeds](../../spec-rng/seeds/); in the run drawn only by a damaging aura's run, once per drawing run; Holy Freeze's step of each unit hit is read only (§ H) |
 
 ### Inputs and oracles
 
@@ -397,6 +397,35 @@ Step notes:
 
 § G is inferred but for the effect table G2, the stamina shrine's stat 28 and remove callback, and the shrine lists' curse flag, which the step notes confirm: the stats run operated 7 shrines and 5 wells, the first shortfalls run 3 shrines (codes 14 twice, 6 once) and no well, and the second shortfalls run 6 shrines (codes 11 once, 12 three times, two recharges on a full player) and no well, every one predicted: 21 against the plan's 50 operates and the 20 that the draw-freedom check asks per kind. The count is final as a slot-time ruling, not a stock-data limit: one explore-and-operate session (`sor-shrines2`) listed one shrine, about one operate in 12 minutes, and `palc-wells2` was not run, so a well's cure was not tried in that phase (review, 2026-10-21).
 
+```
+G1. OBJOP_Shrine(object, player):                                      [I]
+      if the shrine is used: return
+      set mode 1
+      run g_ShrineEffects[Code].fn (SHRINE_Refill when none)
+      if reset ≠ 0: queue object event 5 at frame + reset × 1200 + 1   ; re-arm
+G2. the table g_ShrineEffects, {fn, stat, state} by Shrines Code:      [C]
+      6 armour → 171 skill_armor_percent, 128     7 combat → —, 129       8 fire → 39, 131
+      9 cold → 43, 132                           10 lightning → 41, 130   11 poison → 45, 133
+      12 skill → (11, not read), 134             13 recharge → 27, 135    14 stamina → 162, 136
+      15 experience → 85, 137                    0–5 and 16–23: no state
+G3. SHRINE_TimedStat: SHRINE_ApplyState(duration = Duration in frames, value, stat, state)     [I]
+      value ← SHRINE_StatValue(stat): Arg0 itself for 11, 27, 39, 41, 43, 45, 85, 171;
+              19 a to-hit figure from the right skill; 21 the weapon's damage (value oracles);
+              otherwise stat × Arg0 ÷ 100 of the player
+G4. SHRINE_Combat: state 129 with 25 damagepercent = Arg1, then 19 tohit = SHRINE_StatValue(19)   [I]
+    SHRINE_Stamina: stamina ← max; state 136 with 162 = stat 162 × Arg0 ÷ 100, stat 10 = twice that,
+                    28 staminarecoverybonus = 1000; its own remove callback         [I]; [C] stat 28 = 1000 and the callback (G2's step note)
+    SHRINE_Skill: state 134 with stat 11 = 0, then a skill refresh                               [I]
+G5. recharge shrines (unsigned arithmetic):                            [I]
+      1 refill: life and mana to max;  2: life to max;  3: mana to max
+      4: h ← ⌊Arg0 · ⌊life ÷ 256⌋ ÷ 100⌋ points; life −h; mana + ⌊Arg1 · h · 256 ÷ 100⌋
+      5: m ← ⌊Arg0 · mana ÷ 100⌋; mana −m; life + ⌊Arg1 · m ÷ 100⌋
+G6. a well (OperateFn 22), with charges left (object data +0x04):   [I]
+      life (when Parm3 bit 1), mana (bit 0) and stamina each + Parm1 · max >> 8, capped at the max
+      free the poison (2) and freeze (1) lists
+      if anything changed: one charge used; re-arm at frame + 1 + Parm0
+```
+
 Step notes:
 
 - G2. [C] **The effect table.** `g_ShrineEffects` gives codes 6..15 as G2, and no other code a state.
@@ -495,6 +524,6 @@ with `manarecovery` 0 and no state 85.
 - Tables: States, Skills § Passive and aura columns,
   Shrines § Effects, Objects,
   CharStats, ItemStatCost.
-- Upstream: [stats/aggregate](../aggregate/), rng, [data/calc](../../spec-data/calc/),
-  [combat/delivery](../../spec-combat/delivery/) (the appliers). Downstream: objects (the operates),
+- Upstream: [stats/aggregate](../aggregate/), [rng](../../spec-rng/overview/), [data/calc](../../spec-data/calc/),
+  [combat/delivery](../../spec-combat/delivery/) (the appliers). Downstream: [objects](../../spec-objects/overview/) (the operates),
   [combat](../../spec-combat/overview/) (the stats states carry).

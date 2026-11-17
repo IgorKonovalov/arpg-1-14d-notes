@@ -10,7 +10,7 @@ MonStats, TreasureClassEx, Weapons and about eighty more), in three string table
 shown on screen, and in small compiled formulas that some table cells carry instead of a plain number. This page explains how the game finds and loads
 those files, how a record is addressed, how one table points at another, how a stored number becomes a name on
 screen, and how a formula is run. It restates four specs: the [data overview](../../spec-data/overview/),
-[excel tables](../../spec-data/excel/), string tables and
+[excel tables](../../spec-data/excel/), [string tables](../../spec-data/strings/) and
 [calc formulas](../../spec-data/calc/). The loading happens once, at program start, before any game exists, and it
 draws no random number; formulas are evaluated later, when the game needs a value, and only a formula's `rand` can
 draw (below).
@@ -252,7 +252,7 @@ Name columns hold stored string indices: MonStats `NameStr`, SuperUniques `Name`
 [superuniques](../../reference/glossary/)), the UniquePrefix name words and Weapons `namestr` are examples. Showing one of those names is an index lookup.
 
 [Rare names](../../reference/glossary/) take a slightly different path
-(strings § D, *Rare names*). The `.bin` stores no index for
+([strings § D](../../spec-data/strings/#d-key--index--strtable_getbykey), *Rare names*). The `.bin` stores no index for
 them. A run that hovered four rare items confirms the load-time lookup and the two shown indices; the fallbacks for
 a 0 index and a missing record are read from the code. When the rare-name tables are loaded, each record's `name` key is looked up and the index kept. When the
 client shows a rare item, it takes the item's two rare-name ids, finds each record and shows the text of each stored
@@ -341,7 +341,7 @@ shipped `.bin` files):
 4. TreasureClassEx record 0 is `Gold`, Picks 1, `Item1` = `gld` (three characters, so tried as an item code
    first); its runtime index is 161.
 
-**A key lookup**, copied from the strings worked example, as logged in
+**A key lookup**, copied from the [strings worked example](../../spec-data/strings/#worked-example), as logged in
 a recorded game. Looking up the key `of Amianthus`:
 
 | Step | Table | Home slot | Nodes examined | Result |
@@ -377,7 +377,7 @@ level 4 takes the else-branch, 2 + 4 ÷ 3 = 3, also logged as 3.
 ## What is not known yet
 
 From the open questions of [excel](../../spec-data/excel/),
-strings and [calc](../../spec-data/calc/):
+[strings](../../spec-data/strings/) and [calc](../../spec-data/calc/):
 
 - The place of the two optional archives in the search order is read from the code only; the install has neither.
 - Whether anything reads two MonStats padding bytes during a game is open; nothing writes them between the load and
@@ -393,7 +393,7 @@ strings and [calc](../../spec-data/calc/):
 ## Where to read more
 
 - The specs: [data overview](../../spec-data/overview/#files), [excel tables](../../spec-data/excel/#algorithm),
-  string tables, [calc formulas](../../spec-data/calc/#algorithm).
+  [string tables](../../spec-data/strings/#algorithm), [calc formulas](../../spec-data/calc/#algorithm).
 - The [glossary](../../reference/glossary/) for TC index, item index, string index and key, and calc formula.
 - Related wiki pages: [randomness](../randomness/) for `rand` and seeds; [items](../../items/items/), [monsters](../../world/monsters/)
   and [levels](../../world/levels/) for what the game does with these tables.

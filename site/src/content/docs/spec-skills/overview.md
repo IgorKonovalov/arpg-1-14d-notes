@@ -32,7 +32,7 @@ flowchart LR
 | [dispatch.md](../dispatch/) | the request, the checks, the start and do functions, costs, delay, periodic and aura skills, item skills and casts, the skill packet, progressive charges, the stat-event handlers, summons, monster skill use, ammunition and wear, the tier-A start and do functions |
 | [missiles.md](../missiles/) | creation, the damage block, the missile's seed, the frame pass and the do function, motion, collision, the hit and its packet, the function tables, the tier-A missile functions, the re-seed sites, the end of life |
 
-Names are ours. Primitives (`Step`, `Range`, `RangeB`, `RangePow2`, `Init`) are rng's; a calc is [data/calc](../../spec-data/calc/)'s. `MulDiv` is [monsters/stats § A](../../spec-monsters/stats/#a-muldiv-and-monlvlstats)'s. Divisions are signed and truncate toward zero unless stated; life, mana and damage are in 1/256 points.
+Names are ours. Primitives (`Step`, `Range`, `RangeB`, `RangePow2`, `Init`) are [rng](../../spec-rng/overview/)'s; a calc is [data/calc](../../spec-data/calc/)'s. `MulDiv` is [monsters/stats § A](../../spec-monsters/stats/#a-muldiv-and-monlvlstats)'s. Divisions are signed and truncate toward zero unless stated; life, mana and damage are in 1/256 points.
 
 ## Entry points
 
@@ -62,7 +62,7 @@ Names are ours. Primitives (`Step`, `Range`, `RangeB`, `RangePow2`, `Init`) are 
 
 | State | Type | Source |
 |---|---|---|
-| unit seeds | `Unit+0x20` of the caster, the target, each missile, each summon | rng/seeds |
+| unit seeds | `Unit+0x20` of the caster, the target, each missile, each summon | [rng/seeds](../../spec-rng/seeds/) |
 | game seed | `game+0xD0`: every missile and summon creation steps it | — |
 | the action-done bit | `Unit+0xC4` bit 6 | [dispatch § E](../dispatch/#e-the-do-frame-and-skills_srvdo) |
 
@@ -126,7 +126,7 @@ Names are ours. Primitives (`Step`, `Range`, `RangeB`, `RangePow2`, `Init`) are 
 
 ## Outputs
 
-Queued combat hits and missile packets for [combat](../../spec-combat/overview/), timed states for [stats/states](../../spec-stats/states/), summoned monsters for monsters/spawn and [monsters/stats](../../spec-monsters/stats/), `0x40` cell marks for drlg/collision, ammunition and durability changes for [items/economy](../../spec-items/economy/). [C] the hits, missiles, timed states and summons inside the events; ammunition: 130 `PLAYER_UseAmmo` calls from the skill missile creation each take one off the thrown weapon; the server's `0x40` cell writers are `MissileCreate` (a `Collision` row's path mark mask), mdo 3 and mdo 5, and `MISSILE_HitUnit` and mdo 31 unmark it (static). [I] the durability changes
+Queued combat hits and missile packets for [combat](../../spec-combat/overview/), timed states for [stats/states](../../spec-stats/states/), summoned monsters for [monsters/spawn](../../spec-monsters/spawn/) and [monsters/stats](../../spec-monsters/stats/), `0x40` cell marks for [drlg/collision](../../spec-drlg/collision/), ammunition and durability changes for [items/economy](../../spec-items/economy/). [C] the hits, missiles, timed states and summons inside the events; ammunition: 130 `PLAYER_UseAmmo` calls from the skill missile creation each take one off the thrown weapon; the server's `0x40` cell writers are `MissileCreate` (a `Collision` row's path mark mask), mdo 3 and mdo 5, and `MISSILE_HitUnit` and mdo 31 unmark it (static). [I] the durability changes
 
 ## Worked example
 

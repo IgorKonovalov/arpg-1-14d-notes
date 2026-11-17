@@ -8,7 +8,7 @@ This page explains how the game decides which monsters exist. It covers which cl
 a room gets filled the first time it becomes active, which of those monsters become champions, uniques or
 [superuniques](../../reference/glossary/), and what level, hit points, defence and experience each one is created with. It restates the
 reviewed monster specs: the overview in [monsters](../../spec-monsters/overview/#data-flow), the level pools
-in [pool](../../spec-monsters/pool/#purpose), room population in spawn,
+in [pool](../../spec-monsters/pool/#purpose), room population in [spawn](../../spec-monsters/spawn/#purpose),
 special monsters in [special](../../spec-monsters/special/#purpose) and stats in
 [stats](../../spec-monsters/stats/#purpose). The specs carry the exact arithmetic and [draw](../../reference/glossary/) order; this page tells
 the story. Where something is read from the code but not yet seen in a test run, or is still unknown, the page
@@ -574,7 +574,7 @@ are written to one place and read from another. The attack itself is on the [com
 
 ### A room in Dark Wood
 
-Copied from spawn § Worked example: `-seed 1`, expansion hell, level 5
+Copied from [spawn § Worked example](../../spec-monsters/spawn/#worked-example): `-seed 1`, expansion hell, level 5
 *Dark Wood*, one room of a recorded game.
 
 The region holds three classes: `fallen2` (rarity 2), `cr_lancer2` (1) and `quillrat2` (2), rarity sum 5. Density
@@ -630,7 +630,7 @@ row 81 gives hit points 5722, defence 1581 and experience 45759. The class's hel
 ## What is not known yet
 
 Each spec's *Open questions* has the full list: [pool](../../spec-monsters/pool/),
-spawn, [special](../../spec-monsters/special/),
+[spawn](../../spec-monsters/spawn/), [special](../../spec-monsters/special/),
 [stats](../../spec-monsters/stats/). The ones that bear on this page:
 
 - **Pools:** a creation in a level with no record (the fallback level 1) has no stock case. Natural nightmare and
@@ -662,7 +662,7 @@ spawn, [special](../../spec-monsters/special/),
 ## Where to read more
 
 - The specs: [monsters overview](../../spec-monsters/overview/#data-flow),
-  [pool](../../spec-monsters/pool/#reimplementation-notes), spawn,
+  [pool](../../spec-monsters/pool/#reimplementation-notes), [spawn](../../spec-monsters/spawn/#reimplementation-notes),
   [special](../../spec-monsters/special/#reimplementation-notes), [stats](../../spec-monsters/stats/#reimplementation-notes).
   Each *Reimplementation notes* section lists the traps for someone rebuilding the system.
 - The [glossary](../../reference/glossary/) for D2 terms.
