@@ -1,0 +1,95 @@
+{
+ "schematic_only": "schematic-only/1",
+ "steps": [
+  {
+   "text": "The game has two roots: the map seed, which builds acts, levels and rooms, and the game seed, which seeds the units.",
+   "calc": [
+    "N = 12648430 (illustrative), an override of the seed.",
+    "map seed = N = 12648430; game seed = Init(N) = {00c0ffee:0000029a} (low:high).",
+    "Under an override the two start from the same number; they stay two separate seeds."
+   ]
+  },
+  {
+   "text": "Act I: Init on the map seed, one step, and the low word is the level seed base, 2727269568.",
+   "calc": [
+    "Init(act seed, map seed): {00c0ffee:0000029a} (low:high).",
+    "Step once: act seed = {a28ed4c0:00507fab}; level seed base = its low word = 2727269568."
+   ]
+  },
+  {
+   "text": "Act II: Init on the map seed, one step, and the low word is the level seed base, 2727269568.",
+   "calc": [
+    "Init(act seed, map seed): {00c0ffee:0000029a} (low:high).",
+    "Step once: act seed = {a28ed4c0:00507fab}; level seed base = its low word = 2727269568.",
+    "Tomb pairs: 1 pair(s) of steps, low word mod 7 each, until the two differ; tombs = 70 and 69 (a + 66, b + 66).",
+    "Act seed after these draws = {a8640fd4:33e2d05a} (low:high). Later link-builder draws are not shown."
+   ]
+  },
+  {
+   "text": "Act III: Init on the map seed, one step, and the low word is the level seed base, 2727269568.",
+   "calc": [
+    "Init(act seed, map seed): {00c0ffee:0000029a} (low:high).",
+    "Step once: act seed = {a28ed4c0:00507fab}; level seed base = its low word = 2727269568.",
+    "One more step; the Kurast gate bit = low word and 1 = 1.",
+    "Act seed after these draws = {7c66376b:43cd3a7d} (low:high). Later link-builder draws are not shown."
+   ]
+  },
+  {
+   "text": "Act IV: Init on the map seed, one step, and the low word is the level seed base, 2727269568.",
+   "calc": [
+    "Init(act seed, map seed): {00c0ffee:0000029a} (low:high).",
+    "Step once: act seed = {a28ed4c0:00507fab}; level seed base = its low word = 2727269568."
+   ]
+  },
+  {
+   "text": "Act V: Init on the map seed, one step, and the low word is the level seed base, 2727269568.",
+   "calc": [
+    "Init(act seed, map seed): {00c0ffee:0000029a} (low:high).",
+    "Step once: act seed = {a28ed4c0:00507fab}; level seed base = its low word = 2727269568."
+   ]
+  },
+  {
+   "text": "Level seeds: Init on the act's base plus the level id, a sum with no draw.",
+   "calc": [
+    "ACT I level seed base = 2727269568.",
+    "Level 1: Init(2727269568 + 1) = Init(2727269569) = {a28ed4c1:0000029a} (low:high), no draw.",
+    "Level 2: Init(2727269568 + 2) = Init(2727269570) = {a28ed4c2:0000029a} (low:high), no draw.",
+    "Level 3: Init(2727269568 + 3) = Init(2727269571) = {a28ed4c3:0000029a} (low:high), no draw."
+   ]
+  },
+  {
+   "text": "Level 1, room 1: one draw on the level seed, then the room's own seed starts from it and steps once.",
+   "calc": [
+    "Level seed before the draw: {a28ed4c1:0000029a} (low:high).",
+    "Step the level seed once: {e6dc4b1f:43cd3a7d} (low:high); the draw is its low word, 3873196831.",
+    "Init(room seed, 3873196831), then one step: room seed = {81c14175:604a480a} (low:high).",
+    "The room keeps its first value 2176926069 as its starting point."
+   ]
+  },
+  {
+   "text": "Level 1, room 2: one draw on the level seed, then the room's own seed starts from it and steps once.",
+   "calc": [
+    "Level seed before the draw: {e6dc4b1f:43cd3a7d} (low:high).",
+    "Step the level seed once: {c58e7958:604a480a} (low:high); the draw is its low word, 3314448728.",
+    "Init(room seed, 3314448728), then one step: room seed = {74f4e352:52663a28} (low:high).",
+    "The room keeps its first value 1962206034 as its starting point."
+   ]
+  },
+  {
+   "text": "Level 1, room 3: one draw on the level seed, then the room's own seed starts from it and steps once.",
+   "calc": [
+    "Level seed before the draw: {c58e7958:604a480a} (low:high).",
+    "Step the level seed once: {d53f28c2:52663a28} (low:high); the draw is its low word, 3577686210.",
+    "Init(room seed, 3577686210), then one step: room seed = {7a937fe4:58f18e51} (low:high).",
+    "The room keeps its first value 2056486884 as its starting point."
+   ]
+  },
+  {
+   "text": "The whole chain from N: acts from the map seed, levels by a sum, rooms by one draw each in creation order.",
+   "calc": [
+    "map seed N = 12648430; level seed base of ACT I = 2727269568.",
+    "level 1 seed = {a28ed4c1:0000029a}; room 1 to 3 seeds follow in creation order."
+   ]
+  }
+ ]
+}

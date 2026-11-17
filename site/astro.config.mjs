@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 import rehypeMermaid from 'rehype-mermaid';
+import rehypeWidgets from './src/rehype-widgets.mjs';
 
 // The repository's name as spelled, in slashes. GitHub serves a project site under it, so the
 // workflow sets SITE_BASE once and gives it to the build and to the link check. A local build
@@ -68,13 +69,14 @@ function failOnEmptyPages() {
   };
 }
 
-// The builder writes an illustration's GIF as a root-absolute image target, /illustrations/<id>/<file>
-// (it cannot know the base). This step prefixes the base to every <img> source of that shape.
+// The builder writes an illustration's GIF, and a widget's fallback picture, as a root-absolute image target,
+// /illustrations/<id>/<file> or /widgets/<id>/fallback.png (it cannot know the base). This step prefixes the base to
+// every <img> source of those shapes.
 function rehypeIllustrationBase() {
   const prefix = BASE.replace(/\/$/, '');
   const walk = (n) => {
     if (n.type === 'element' && n.tagName === 'img' && typeof n.properties?.src === 'string' &&
-        n.properties.src.startsWith('/illustrations/')) {
+        /^\/(illustrations|widgets)\//.test(n.properties.src)) {
       n.properties.src = prefix + n.properties.src;
     }
     for (const c of n.children ?? []) walk(c);
@@ -82,12 +84,23 @@ function rehypeIllustrationBase() {
   return (tree) => walk(tree);
 }
 
+// The page policy for scripted widgets: the browser itself refuses any request a page script might make,
+// any frame, plug-in, form target and <base>. Everything not named is refused (default-src 'none'). Scripts come only
+// from this site; the inline ones are Starlight's own (theme switch, mobile menu). Search still works: Pagefind runs in
+// a Web Worker from this site (worker-src 'self'), and a worker's requests and its WebAssembly follow the worker's own
+// policy, not this page's (checked in a browser; never set worker-src 'none').
+const CSP = "default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; worker-src 'self'; manifest-src 'self'; frame-src 'none'; object-src 'none'; form-action 'none'; base-uri 'none'";
+
 export default defineConfig({
   site: 'https://igorkonovalov.github.io',
   base: BASE,
   markdown: {
     // img-svg draws each fence to an SVG at build time; a fence that does not parse fails the build.
-    rehypePlugins: [[rehypeMermaid, { strategy: 'img-svg', dark: true }], rehypeIllustrationBase],
+    rehypePlugins: [
+      [rehypeMermaid, { strategy: 'img-svg', dark: true }],
+      rehypeIllustrationBase,
+      [rehypeWidgets, { base: BASE, publicDir: path.join(HERE, 'public') }],
+    ],
   },
   integrations: [
     starlight({
@@ -95,6 +108,7 @@ export default defineConfig({
       description: 'Plain-language notes on how the game works, written for reimplementers.',
       customCss: ['./src/styles/site.css'],
       components: { Footer: './src/components/Footer.astro' },
+      head: [{ tag: 'meta', attrs: { 'http-equiv': 'Content-Security-Policy', content: CSP } }],
       social: [{ icon: 'github', label: 'GitHub', href: REPO_URL }],
       sidebar: sidebar(),
     }),

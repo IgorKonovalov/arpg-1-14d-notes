@@ -1,0 +1,98 @@
+{
+ "schematic_only": "schematic-only/1",
+ "steps": [
+  {
+   "text": "A toy record of 14 frames, speed 256, start frame 0, event byte 1 on frame 7, with faster cast 20: the rate is 299.",
+   "calc": [
+    "timing J1: B = (k * s) / (k + s) with k = 120 and s = 20 gives 17.",
+    "timing J2: X = 117, r = speed * X / 100 = 256 * 117 / 100 = 299.",
+    "timing E1: length L = 256 F = 3584, S = 0, so the position starts at 0 and gains 299 per step."
+   ]
+  },
+  {
+   "text": "Step 1, for game frame T + 1: position 299, frame 1.",
+   "calc": [
+    "timing E1: step k = 1, t = T + 1: position = 256 S + k r = 0 + 1 * 299 = 299 < L = 3584.",
+    "timing E1: frames 0 to 1 are scanned."
+   ]
+  },
+  {
+   "text": "Step 2, for game frame T + 2: position 598, frame 2.",
+   "calc": [
+    "timing E1: step k = 2, t = T + 2: position = 256 S + k r = 0 + 2 * 299 = 598 < L = 3584.",
+    "timing E1: frames 2 to 2 are scanned."
+   ]
+  },
+  {
+   "text": "Step 3, for game frame T + 3: position 897, frame 3.",
+   "calc": [
+    "timing E1: step k = 3, t = T + 3: position = 256 S + k r = 0 + 3 * 299 = 897 < L = 3584.",
+    "timing E1: frames 3 to 3 are scanned."
+   ]
+  },
+  {
+   "text": "Step 4, for game frame T + 4: position 1196, frame 4.",
+   "calc": [
+    "timing E1: step k = 4, t = T + 4: position = 256 S + k r = 0 + 4 * 299 = 1196 < L = 3584.",
+    "timing E1: frames 4 to 4 are scanned."
+   ]
+  },
+  {
+   "text": "Step 5, for game frame T + 5: position 1495, frame 5.",
+   "calc": [
+    "timing E1: step k = 5, t = T + 5: position = 256 S + k r = 0 + 5 * 299 = 1495 < L = 3584.",
+    "timing E1: frames 5 to 5 are scanned."
+   ]
+  },
+  {
+   "text": "Step 6, for game frame T + 6: position 1794, frame 7, the event is queued.",
+   "calc": [
+    "timing E1: step k = 6, t = T + 6: position = 256 S + k r = 0 + 6 * 299 = 1794 < L = 3584.",
+    "timing E1: frames 6 to 7 are scanned.",
+    "timing E1: event byte 1 on frame 7: UnitQueueEvent(kind 0, frame T + 6, a 1, b 0)."
+   ]
+  },
+  {
+   "text": "Step 7, for game frame T + 7: position 2093, frame 8.",
+   "calc": [
+    "timing E1: step k = 7, t = T + 7: position = 256 S + k r = 0 + 7 * 299 = 2093 < L = 3584.",
+    "timing E1: frames 8 to 8 are scanned."
+   ]
+  },
+  {
+   "text": "Step 8, for game frame T + 8: position 2392, frame 9.",
+   "calc": [
+    "timing E1: step k = 8, t = T + 8: position = 256 S + k r = 0 + 8 * 299 = 2392 < L = 3584.",
+    "timing E1: frames 9 to 9 are scanned."
+   ]
+  },
+  {
+   "text": "Step 9, for game frame T + 9: position 2691, frame 10.",
+   "calc": [
+    "timing E1: step k = 9, t = T + 9: position = 256 S + k r = 0 + 9 * 299 = 2691 < L = 3584.",
+    "timing E1: frames 10 to 10 are scanned."
+   ]
+  },
+  {
+   "text": "Step 10, for game frame T + 10: position 2990, frame 11.",
+   "calc": [
+    "timing E1: step k = 10, t = T + 10: position = 256 S + k r = 0 + 10 * 299 = 2990 < L = 3584.",
+    "timing E1: frames 11 to 11 are scanned."
+   ]
+  },
+  {
+   "text": "Step 11, for game frame T + 11: position 3289, frame 12.",
+   "calc": [
+    "timing E1: step k = 11, t = T + 11: position = 256 S + k r = 0 + 11 * 299 = 3289 < L = 3584.",
+    "timing E1: frames 12 to 12 are scanned."
+   ]
+  },
+  {
+   "text": "The mode ends at T + 12, the event at T + 6.",
+   "calc": [
+    "timing E2: n = max(2, ceil(256 (F - S) / r)) = max(2, ceil(3584 / 299)) = 12.",
+    "timing E1: queued = kind 0 at T + 6; kind 1 at T + 12."
+   ]
+  }
+ ]
+}

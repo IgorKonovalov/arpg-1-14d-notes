@@ -1,0 +1,35 @@
+<!doctype html><!-- schematic-only/1: schematic-only page, our own graphics -->
+<title>special monster roll animation</title>
+<style>body{background:#111;color:#ddd;font:14px sans-serif;margin:0;padding:12px;text-align:center}
+img{max-width:100%;height:auto;image-rendering:pixelated;background:#000}button{font-size:16px;margin:4px;padding:4px 12px}
+#cap{max-width:900px;margin:8px auto;min-height:2em;font-weight:bold}#s{width:60%}
+#calc{max-width:900px;margin:0 auto;text-align:left;font:13px/1.5 monospace;background:#1b1b22;padding:8px 14px;
+border-radius:6px}#calc li{margin:2px 0}#help{max-width:900px;margin:8px auto;text-align:left;font-size:13px;color:#aaa}
+#help summary{cursor:pointer;color:#ddd}</style>
+<img id=f width=960 height=500 alt="frame"><div>
+<button id=p>prev</button><button id=pl>play</button><button id=n>next</button>
+<input id=s type=range min=0 value=0></div><div id=cap></div>
+<div id=calc><b>Calculations for this step</b><ol id=cl></ol></div>
+<details id=help><summary>How to read this</summary><ul>
+<li>Top: the mods of the unit so far, in the order they are written. A champion gets one mod and no more; a unique gets 1 + difficulty of them.</li>
+<li>Champion chance: a draw from 0 to 99 below the chance of the first MonUMod row (20) makes a champion, and then no draw is made for the unique group.</li>
+<li>A pick: the rows with a weight of the pick's kind are tested against the class and version; the ones left are the candidates, one draw from 0 to the total picks the first whose running weight passes it.</li>
+<li>Only the winner's weight is shown, not the table. Every value is computed by our model for the illustrative inputs given, not observed in the game.</li></ul></details>
+<script>
+var caps=[{"text": "A special monster roll for class zombie1 in hell: a champion or a unique, then the weighted mod picks.", "calc": ["special.md A1: SpecialModsRoll(unit, allowChampion = 1) on the unit seed {00c0ffee, 666} (illustrative).", "class zombie1 (MonStats row 5), hell, expansion game; the unit has no mods yet.", "A1: a champion costs one pick, a unique costs Range(1) and 1 + difficulty picks = 3."]}, {"text": "The champion draw is 68, not below 20: a unique.", "calc": ["A1: r = Range(unit.seed, 100) = 68 (draw 1).", "A1: (i32) r >= c = MonUMod[0].constants = 20: not a champion."]}, {"text": "A unique: one more draw, Range(1), then 3 picks.", "calc": ["A1: n = Range(unit.seed, 1) + 1 + difficulty = 0 + 1 + 2 = 3 (draw 2).", "A1: have = the unit's mods so far = none; each pick is UniqueModPick (B2), one draw each."]}, {"text": "Unique pick 1: 12 candidates, total 72, draw 60, so stoneskin.", "calc": ["B2: 13 rows carry a weight of this kind; 12 are candidates after ModEligible (class, version, fPick) and the mods the unit has.", "B2: total = 72; x = Range(unit.seed, 72) = 60; seed = {a8640fd4:33e2d05a}.", "B2: the first candidate whose running weight exceeds x is row 28, stoneskin (weight 6)."]}, {"text": "Unique pick 2: 11 candidates, total 66, draw 6, so fast.", "calc": ["B2: 13 rows carry a weight of this kind; 11 are candidates after ModEligible (class, version, fPick) and the mods the unit has.", "B2: total = 66; x = Range(unit.seed, 66) = 6; seed = {17c23e7e:463c0b2c}.", "B2: the first candidate whose running weight exceeds x is row 6, fast (weight 6)."]}, {"text": "Unique pick 3: 10 candidates, total 60, draw 50, so spectralhit.", "calc": ["B2: 13 rows carry a weight of this kind; 10 are candidates after ModEligible (class, version, fPick) and the mods the unit has.", "B2: total = 60; x = Range(unit.seed, 60) = 50; seed = {53510222:09e8db8c}.", "B2: the first candidate whose running weight exceeds x is row 27, spectralhit (weight 6)."]}, {"text": "The mod list: stoneskin, fast, spectralhit; the unit seed stepped 5 times.", "calc": ["mods = 28 stoneskin, 6 fast, 27 spectralhit.", "steps of the unit seed = 5 (A1: the champion draw, then Range(1) and one per pick).", "unit seed after = {53510222:09e8db8c}."]}],i=0,t=null,f=document.getElementById('f'),s=document.getElementById('s');
+s.max=caps.length-1;
+function show(k){i=Math.max(0,Math.min(caps.length-1,k));f.setAttribute('src','frame-'+('000'+i).slice(-3)+'.png');
+s.value=i;document.getElementById('cap').textContent=(i+1)+'/'+caps.length+'  '+caps[i].text;
+var cl=document.getElementById('cl');cl.innerHTML='';caps[i].calc.forEach(function(c){var li=document.createElement('li');
+li.textContent=c;cl.appendChild(li);});}
+function stop(){if(t){clearInterval(t);t=null;document.getElementById('pl').textContent='play';}}
+document.getElementById('p').onclick=function(){stop();show(i-1)};
+document.getElementById('n').onclick=function(){stop();show(i+1)};
+document.getElementById('pl').onclick=function(){if(t){stop();return;}
+ if(i>=caps.length-1)show(0);document.getElementById('pl').textContent='pause';
+ t=setInterval(function(){if(i>=caps.length-1)stop();else show(i+1)},900)};
+s.oninput=function(){stop();show(+s.value)};
+document.onkeydown=function(e){if(e.key=='ArrowRight'){stop();show(i+1)}else if(e.key=='ArrowLeft'){stop();show(i-1)}
+ else if(e.key==' '){e.preventDefault();document.getElementById('pl').click()}};
+show(0);
+</script>

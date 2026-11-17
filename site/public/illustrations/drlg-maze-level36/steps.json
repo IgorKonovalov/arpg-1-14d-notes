@@ -56,7 +56,7 @@
    ]
   },
   {
-   "text": "Room 6 placed west of room 5. Fixed Def and file index (locked).",
+   "text": "Room 6 placed west of room 5.",
    "calc": [
     "RNG draws in this step: 46 (level seed and room seeds together); 73 so far.",
     "Pick a parent: level draw lo = 0x8cd86bba; lo % 5 = 4; position 4 of the 5-room list (newest first) is room 1.",
@@ -105,7 +105,7 @@
    ]
   },
   {
-   "text": "Room 7 placed east of room 4. Fixed Def and file index (locked).",
+   "text": "Room 7 placed east of room 4.",
    "calc": [
     "RNG draws in this step: 4 (level seed and room seeds together); 77 so far.",
     "Pick a parent: level draw lo = 0x9f5ea750; lo % 6 = 2; position 2 of the 6-room list (newest first) is room 4.",
@@ -152,7 +152,7 @@
    ]
   },
   {
-   "text": "Room 11 placed south of room 10. Fixed Def and file index (locked).",
+   "text": "Room 11 placed south of room 10.",
    "calc": [
     "RNG draws in this step: 12 (level seed and room seeds together); 108 so far.",
     "Pick a parent: level draw lo = 0x4450eebd; lo % 10 = 5; position 5 of the 10-room list (newest first) is room 5.",
@@ -248,7 +248,7 @@
    ]
   },
   {
-   "text": "Room 16 placed east of room 12. Fixed Def and file index (locked).",
+   "text": "Room 16 placed east of room 12.",
    "calc": [
     "RNG draws in this step: 13 (level seed and room seeds together); 163 so far.",
     "Pick a parent: level draw lo = 0xd738bc59; lo % 15 = 8; position 8 of the 15-room list (newest first) is room 7.",
@@ -279,7 +279,7 @@
    ]
   },
   {
-   "text": "Room 16: special-room table entry sets Def 270, forced file index none.",
+   "text": "Room 16: a special room is attached to it, so its Def is recomputed from its open sides: Def 270. It stays free.",
    "calc": [
     "RNG draws in this step: 0 (level seed and room seeds together); 166 so far.",
     "Special room: the level's special-room table (entry chosen by a rotating index from one level draw) names a Def; the first free room with that Def takes the special Def and file, or a new room is attached for it."

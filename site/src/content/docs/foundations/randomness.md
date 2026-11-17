@@ -64,6 +64,12 @@ as what each one computes.
 
 The "return 0 without drawing for n below 1" guard is not everywhere. Many call sites copy the step inline, and an inlined draw with a fixed modulus (such as a `mod 7`) has no guard; neither has RangePow2. So when a table-driven count can be zero, whether the game still draws depends on the call site. That much is confirmed: RangePow2 under the emulator steps the seed with n = 0 where Range does not, and the act's inlined `mod 7` draws in play with no guard. Which form each other site uses is stated call site by call site in the subsystem specs. One more helper, "power-of-two range plus a base", is also in the program: what it computes is confirmed under the emulator, but by the code nothing calls it, and no spec depends on it. Eight other pieces of code holding inlined draws have no caller either, by the same reading.
 
+![Animation: rng-seed-12345](/illustrations/rng-seed-12345/rng.gif)
+
+[Step through rng-seed-12345](../../illustrations/rng-seed-12345/index.html)
+
+The generator on the seed 12345 with a range of 100, eight draws in a row. Init sets the low word to the seed and the high word to 666. A draw with a range of at least one steps the seed once: the low word times the multiplier plus the high word is one 64-bit number, its low 32 bits are the new low word and its high 32 bits the new high word, and the draw is the new low word mod the range (RNG core § Algorithm). The first draw is 87 and the first new seed is the one the randomness page's worked example shows. Seed: illustrative, an input of our own. Every value shown is computed by our model, not observed in the game.
+
 ## Two roots: the map seed and the game seed
 
 When a game is created, the game picks its two roots
@@ -153,6 +159,12 @@ followed a check that found it clear). The DRLG room keeps that flag when its ac
 unloaded) and gives it back on the next activation, so a room is never populated twice. Another bit of the same flag
 value marks the rooms of the client act copy. Both are confirmed in a run.
 
+![Animation: rng-seed-tree-c0ffee](/illustrations/rng-seed-tree-c0ffee/seedtree.gif)
+
+[Step through rng-seed-tree-c0ffee](../../illustrations/rng-seed-tree-c0ffee/index.html)
+
+The seed tree for an illustrative seed N given as an override. The map seed is then N and builds the world; the game seed starts from N too, a separate seed that seeds the units (seeds § step 1). Each act's seed starts from the map seed, steps once, and keeps that low word as the level seed base, the same for all five acts; Act II then draws pairs of numbers mod 7 until they differ to name its tombs, and Act III takes one more draw and keeps its lowest bit (§ step 3). A level's seed is the base plus the level id, a sum with no draw, so the order levels are built in does not matter (§ step 4). Each room takes one draw on its level's seed, starts its own seed from the result and steps once, so the order a level creates its rooms in does matter (§ step 5). Not shown: the act link builder's later draws on the act seed, room activation, and the units. Seed: illustrative, an input of our own. Every value shown is computed by our model, not observed in the game.
+
 ## Units: the game seed, in call order
 
 Every unit the server creates, except players, takes one draw from the game seed and is initialised with it. This holds for monsters too: **server monsters are seeded
@@ -229,6 +241,12 @@ the game's own functions bit for bit. Hex unless noted.
 | 5 | Range(s, 7) | 3 | `606EEEF7` | `3A1E6C8A` |
 
 Step 1 in full: `3039 × 6AC690C5 + 29A` = `0000141D 015B2E77` (hex), and `015B2E77 mod 100` = 87.
+
+![Widget fallback: rng-stepper](/widgets/rng-stepper/fallback.png)
+
+The generator to try by hand. The reader types a seed (an unsigned 32-bit number), a range n and a number of draws from 1 to 12, or picks one of a few illustrative seeds; the table then lists Init(seed), which sets the low word to the seed and the high word to 666, and each Range(n) draw in turn with its result and the low and high words after it, in hex. A draw steps the seed once and returns the new low word mod n; a range below 1 returns 0 and leaves the seed alone (RNG core § Algorithm). With the seed 12345 and the range 100 the first draw is step 1 of the worked example above. The picture is the first frame of the generator's animation on the same seed, from the section on the generator; without JavaScript it stands in for the table. Computed by our model of the rule, not observed in the game; the starting values are illustrative.
+
+[Try it: change the inputs (needs JavaScript)](/widgets/rng-stepper/widget.js)
 
 **The seed tree for `-seed 12345`.** Copied from the
 seed tree worked example, logged in a recorded game and reproduced from N

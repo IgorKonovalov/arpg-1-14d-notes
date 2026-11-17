@@ -1,0 +1,35 @@
+<!doctype html><!-- schematic-only/1: schematic-only page, our own graphics -->
+<title>random number generator animation</title>
+<style>body{background:#111;color:#ddd;font:14px sans-serif;margin:0;padding:12px;text-align:center}
+img{max-width:100%;height:auto;image-rendering:pixelated;background:#000}button{font-size:16px;margin:4px;padding:4px 12px}
+#cap{max-width:900px;margin:8px auto;min-height:2em;font-weight:bold}#s{width:60%}
+#calc{max-width:900px;margin:0 auto;text-align:left;font:13px/1.5 monospace;background:#1b1b22;padding:8px 14px;
+border-radius:6px}#calc li{margin:2px 0}#help{max-width:900px;margin:8px auto;text-align:left;font-size:13px;color:#aaa}
+#help summary{cursor:pointer;color:#ddd}</style>
+<img id=f width=960 height=500 alt="frame"><div>
+<button id=p>prev</button><button id=pl>play</button><button id=n>next</button>
+<input id=s type=range min=0 value=0></div><div id=cap></div>
+<div id=calc><b>Calculations for this step</b><ol id=cl></ol></div>
+<details id=help><summary>How to read this</summary><ul>
+<li>Top row: the seed's two words before the draw, the multiplier, and the 64-bit result low x multiplier + high; its upper half becomes the new high word and its lower half the new low word.</li>
+<li>Middle: the draw is the new low word mod n (here n is the range); that remainder is the number the game uses.</li>
+<li>Bottom: the numbers drawn so far, newest highlighted. A range below 1 would draw nothing and leave the seed alone; it is not shown.</li>
+<li>Every value is computed by our model of the generator for the illustrative seed given, not observed in the game.</li></ul></details>
+<script>
+var caps=[{"text": "Init: the seed starts as two 32-bit words, the low word set to N and the high word to 666.", "calc": ["N = 12345 (illustrative), range n = 100, 8 draws.", "low word = N = 12345, high word = 666.", "seed = {00003039:0000029a} (low:high)."]}, {"text": "Draw 1: the seed steps once and the draw is the new low word mod 100, here 87.", "calc": ["step: low x 0x6AC690C5 + high, one 64-bit number: 12345 x 1791398085 + 666 = 22114809359991.", "new low = its bits 0 to 31 = 22752887; new high = its bits 32 to 63 = 5149.", "seed = {015b2e77:0000141d} (low:high).", "draw = new low mod n = 22752887 mod 100 = 87."]}, {"text": "Draw 2: the seed steps once and the draw is the new low word mod 100, here 64.", "calc": ["step: low x 0x6AC690C5 + high, one 64-bit number: 22752887 x 1791398085 + 5149 = 40759478200026544.", "new low = its bits 0 to 31 = 2337785264; new high = its bits 32 to 63 = 9490055.", "seed = {8b57c5b0:0090ce87} (low:high).", "draw = new low mod n = 2337785264 mod 100 = 64."]}, {"text": "Draw 3: the seed steps once and the draw is the new low word mod 100, here 71.", "calc": ["step: low x 0x6AC690C5 + high, one 64-bit number: 2337785264 x 1791398085 + 9490055 = 4187904045080309495.", "new low = its bits 0 to 31 = 1617882871; new high = its bits 32 to 63 = 975072394.", "seed = {606eeef7:3a1e6c8a} (low:high).", "draw = new low mod n = 1617882871 mod 100 = 71."]}, {"text": "Draw 4: the seed steps once and the draw is the new low word mod 100, here 25.", "calc": ["step: low x 0x6AC690C5 + high, one 64-bit number: 1617882871 x 1791398085 + 975072394 = 2898272277838774429.", "new low = its bits 0 to 31 = 4008788125; new high = its bits 32 to 63 = 674806599.", "seed = {eef1409d:2838bb47} (low:high).", "draw = new low mod n = 4008788125 mod 100 = 25."]}, {"text": "Draw 5: the seed steps once and the draw is the new low word mod 100, here 68.", "calc": ["step: low x 0x6AC690C5 + high, one 64-bit number: 4008788125 x 1791398085 + 674806599 = 7181335370970547224.", "new low = its bits 0 to 31 = 3081094168; new high = its bits 32 to 63 = 1672034936.", "seed = {b7a5c418:63a93a78} (low:high).", "draw = new low mod n = 3081094168 mod 100 = 68."]}, {"text": "Draw 6: the seed steps once and the draw is the new low word mod 100, here 80.", "calc": ["step: low x 0x6AC690C5 + high, one 64-bit number: 3081094168 x 1791398085 + 1672034936 = 5519466193931903216.", "new low = its bits 0 to 31 = 2400624880; new high = its bits 32 to 63 = 1285100866.", "seed = {8f16a0f0:4c991542} (low:high).", "draw = new low mod n = 2400624880 mod 100 = 80."]}, {"text": "Draw 7: the seed steps once and the draw is the new low word mod 100, here 38.", "calc": ["step: low x 0x6AC690C5 + high, one 64-bit number: 2400624880 x 1791398085 + 1285100866 = 4300474814120455666.", "new low = its bits 0 to 31 = 4247383538; new high = its bits 32 to 63 = 1001282318.", "seed = {fd29edf2:3bae5b0e} (low:high).", "draw = new low mod n = 4247383538 mod 100 = 38."]}, {"text": "Draw 8: the seed steps once and the draw is the new low word mod 100, here 96.", "calc": ["step: low x 0x6AC690C5 + high, one 64-bit number: 4247383538 x 1791398085 + 1001282318 = 7608754737235007048.", "new low = its bits 0 to 31 = 3757479496; new high = its bits 32 to 63 = 1771551262.", "seed = {dff69648:6997ba1e} (low:high).", "draw = new low mod n = 3757479496 mod 100 = 96."]}, {"text": "The 8 draws in order. The same seed and range give the same numbers every time.", "calc": ["draws = 87, 64, 71, 25, 68, 80, 38, 96.", "final seed = {dff69648:6997ba1e} (low:high)."]}],i=0,t=null,f=document.getElementById('f'),s=document.getElementById('s');
+s.max=caps.length-1;
+function show(k){i=Math.max(0,Math.min(caps.length-1,k));f.setAttribute('src','frame-'+('000'+i).slice(-3)+'.png');
+s.value=i;document.getElementById('cap').textContent=(i+1)+'/'+caps.length+'  '+caps[i].text;
+var cl=document.getElementById('cl');cl.innerHTML='';caps[i].calc.forEach(function(c){var li=document.createElement('li');
+li.textContent=c;cl.appendChild(li);});}
+function stop(){if(t){clearInterval(t);t=null;document.getElementById('pl').textContent='play';}}
+document.getElementById('p').onclick=function(){stop();show(i-1)};
+document.getElementById('n').onclick=function(){stop();show(i+1)};
+document.getElementById('pl').onclick=function(){if(t){stop();return;}
+ if(i>=caps.length-1)show(0);document.getElementById('pl').textContent='pause';
+ t=setInterval(function(){if(i>=caps.length-1)stop();else show(i+1)},900)};
+s.oninput=function(){stop();show(+s.value)};
+document.onkeydown=function(e){if(e.key=='ArrowRight'){stop();show(i+1)}else if(e.key=='ArrowLeft'){stop();show(i-1)}
+ else if(e.key==' '){e.preventDefault();document.getElementById('pl').click()}};
+show(0);
+</script>

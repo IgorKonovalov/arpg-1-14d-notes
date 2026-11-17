@@ -1,0 +1,59 @@
+{
+ "schematic_only": "schematic-only/1",
+ "steps": [
+  {
+   "text": "A special monster roll for class zombie1 in hell: a champion or a unique, then the weighted mod picks.",
+   "calc": [
+    "special.md A1: SpecialModsRoll(unit, allowChampion = 1) on the unit seed {00c0ffee, 666} (illustrative).",
+    "class zombie1 (MonStats row 5), hell, expansion game; the unit has no mods yet.",
+    "A1: a champion costs one pick, a unique costs Range(1) and 1 + difficulty picks = 3."
+   ]
+  },
+  {
+   "text": "The champion draw is 68, not below 20: a unique.",
+   "calc": [
+    "A1: r = Range(unit.seed, 100) = 68 (draw 1).",
+    "A1: (i32) r >= c = MonUMod[0].constants = 20: not a champion."
+   ]
+  },
+  {
+   "text": "A unique: one more draw, Range(1), then 3 picks.",
+   "calc": [
+    "A1: n = Range(unit.seed, 1) + 1 + difficulty = 0 + 1 + 2 = 3 (draw 2).",
+    "A1: have = the unit's mods so far = none; each pick is UniqueModPick (B2), one draw each."
+   ]
+  },
+  {
+   "text": "Unique pick 1: 12 candidates, total 72, draw 60, so stoneskin.",
+   "calc": [
+    "B2: 13 rows carry a weight of this kind; 12 are candidates after ModEligible (class, version, fPick) and the mods the unit has.",
+    "B2: total = 72; x = Range(unit.seed, 72) = 60; seed = {a8640fd4:33e2d05a}.",
+    "B2: the first candidate whose running weight exceeds x is row 28, stoneskin (weight 6)."
+   ]
+  },
+  {
+   "text": "Unique pick 2: 11 candidates, total 66, draw 6, so fast.",
+   "calc": [
+    "B2: 13 rows carry a weight of this kind; 11 are candidates after ModEligible (class, version, fPick) and the mods the unit has.",
+    "B2: total = 66; x = Range(unit.seed, 66) = 6; seed = {17c23e7e:463c0b2c}.",
+    "B2: the first candidate whose running weight exceeds x is row 6, fast (weight 6)."
+   ]
+  },
+  {
+   "text": "Unique pick 3: 10 candidates, total 60, draw 50, so spectralhit.",
+   "calc": [
+    "B2: 13 rows carry a weight of this kind; 10 are candidates after ModEligible (class, version, fPick) and the mods the unit has.",
+    "B2: total = 60; x = Range(unit.seed, 60) = 50; seed = {53510222:09e8db8c}.",
+    "B2: the first candidate whose running weight exceeds x is row 27, spectralhit (weight 6)."
+   ]
+  },
+  {
+   "text": "The mod list: stoneskin, fast, spectralhit; the unit seed stepped 5 times.",
+   "calc": [
+    "mods = 28 stoneskin, 6 fast, 27 spectralhit.",
+    "steps of the unit seed = 5 (A1: the champion draw, then Range(1) and one per pick).",
+    "unit seed after = {53510222:09e8db8c}."
+   ]
+  }
+ ]
+}

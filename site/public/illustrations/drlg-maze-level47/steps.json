@@ -1,0 +1,368 @@
+{
+ "schematic_only": "schematic-only/1",
+ "steps": [
+  {
+   "text": "First room, 12 by 12 tiles (lvlmaze SizeX by SizeY), at the origin. The level seed gives the room its own seed.",
+   "calc": [
+    "RNG draws in this step: 2 (level seed and room seeds together); 2 so far.",
+    "Setup (illustrative, like the seed): one draw on a helper seed made from the input gives room 1 its seed, which is advanced once. The level seed is the input itself."
+   ]
+  },
+  {
+   "text": "Room 2 placed north of room 1.",
+   "calc": [
+    "RNG draws in this step: 2 (level seed and room seeds together); 4 so far.",
+    "Start shape (spec E): a ring of rooms is grown first; it closes with a door link.",
+    "Def of room 1 from its open sides (north): base 301 + side mask 8 (west 1, east 2, south 4, north 8) = Def 309.",
+    "Def of room 2 from its open sides (south): base 301 + side mask 4 (west 1, east 2, south 4, north 8) = Def 305."
+   ]
+  },
+  {
+   "text": "Room 3 placed west of room 2.",
+   "calc": [
+    "RNG draws in this step: 2 (level seed and room seeds together); 6 so far.",
+    "Def of room 2 from its open sides (south, west): base 301 + side mask 5 (west 1, east 2, south 4, north 8) = Def 306.",
+    "Def of room 3 from its open sides (east): base 301 + side mask 2 (west 1, east 2, south 4, north 8) = Def 303.",
+    "Def of room 1 from its open sides (north, west): base 301 + side mask 9 (west 1, east 2, south 4, north 8) = Def 310."
+   ]
+  },
+  {
+   "text": "Room 4 placed south of room 3.",
+   "calc": [
+    "RNG draws in this step: 3 (level seed and room seeds together); 9 so far.",
+    "Merge roll with neighbour room 1: its seed draw lo % 1000 = 179, < Merge 500: a door is opened.",
+    "Def of room 3 from its open sides (east, south): base 301 + side mask 6 (west 1, east 2, south 4, north 8) = Def 307.",
+    "Def of room 4 from its open sides (east, north): base 301 + side mask 10 (west 1, east 2, south 4, north 8) = Def 311.",
+    "Def of room 4 from its open sides (east, north): base 301 + side mask 10 (west 1, east 2, south 4, north 8) = Def 311.",
+    "Def of room 1 from its open sides (north, west): base 301 + side mask 9 (west 1, east 2, south 4, north 8) = Def 310."
+   ]
+  },
+  {
+   "text": "Rooms 4 and 1 joined by a merge link (merge roll lo % 1000 < Merge).",
+   "calc": [
+    "RNG draws in this step: 0 (level seed and room seeds together); 9 so far.",
+    "Shown separately; the roll is in the previous step."
+   ]
+  },
+  {
+   "text": "Room 5 placed east of room 2.",
+   "calc": [
+    "RNG draws in this step: 8 (level seed and room seeds together); 17 so far.",
+    "Growth phase starts: grow until the level has 6 rooms (LvlMaze Rooms, normal difficulty); it has 14.",
+    "Pick a parent: level draw lo = 0x17c23e7e; lo & 3 = 2; position 2 of the 4-room list (newest first) is room 2.",
+    "Pick a side: room 2's own seed draw lo = 0x5ef441bf; lo & 3 = 3 = south.",
+    "A new room (level draw for its seed, 2 draws) would sit south of room 2 but overlaps a room already there: it is dropped, the draws stay spent; pick again.",
+    "Pick a parent: level draw lo = 0x72be9fb6; lo & 3 = 2; position 2 of the 4-room list (newest first) is room 2.",
+    "Pick a side: room 2's own seed draw lo = 0x9a6d461e; lo & 3 = 2 = east.",
+    "Def of room 2 from its open sides (east, south, west): base 301 + side mask 7 (west 1, east 2, south 4, north 8) = Def 308.",
+    "Def of room 5 from its open sides (west): base 301 + side mask 1 (west 1, east 2, south 4, north 8) = Def 302."
+   ]
+  },
+  {
+   "text": "Room 6 placed south of room 1.",
+   "calc": [
+    "RNG draws in this step: 16 (level seed and room seeds together); 33 so far.",
+    "Pick a parent: level draw lo = 0x489e3ebd; lo % 5 = 1; position 1 of the 5-room list (newest first) is room 4.",
+    "Pick a side: room 4's own seed draw lo = 0x2f8cad61; lo & 3 = 1 = north.",
+    "A new room (level draw for its seed, 2 draws) would sit north of room 4 but overlaps a room already there: it is dropped, the draws stay spent; pick again.",
+    "Pick a parent: level draw lo = 0x79072dc9; lo % 5 = 4; position 4 of the 5-room list (newest first) is room 1.",
+    "Pick a side: room 1's own seed draw lo = 0x728856c1; lo & 3 = 1 = north.",
+    "A new room (level draw for its seed, 2 draws) would sit north of room 1 but overlaps a room already there: it is dropped, the draws stay spent; pick again.",
+    "Pick a parent: level draw lo = 0xd4cde8f1; lo % 5 = 0; position 0 of the 5-room list (newest first) is room 5.",
+    "Pick a side: room 5's own seed draw lo = 0xb024d5d0; lo & 3 = 0 = west.",
+    "A new room (level draw for its seed, 2 draws) would sit west of room 5 but overlaps a room already there: it is dropped, the draws stay spent; pick again.",
+    "Pick a parent: level draw lo = 0x8cd86bba; lo % 5 = 4; position 4 of the 5-room list (newest first) is room 1.",
+    "Pick a side: room 1's own seed draw lo = 0x031ab727; lo & 3 = 3 = south.",
+    "Def of room 1 from its open sides (north, south, west): base 301 + side mask 13 (west 1, east 2, south 4, north 8) = Def 314.",
+    "Def of room 6 from its open sides (north): base 301 + side mask 8 (west 1, east 2, south 4, north 8) = Def 309."
+   ]
+  },
+  {
+   "text": "Room 7 placed north of room 5.",
+   "calc": [
+    "RNG draws in this step: 6 (level seed and room seeds together); 39 so far.",
+    "Def of a dropped trial room from its open sides (south): base 301 + side mask 4 (west 1, east 2, south 4, north 8) = Def 305.",
+    "Def of room 5 from its open sides (north, west): base 301 + side mask 9 (west 1, east 2, south 4, north 8) = Def 310.",
+    "Def of room 7 from its open sides (south): base 301 + side mask 4 (west 1, east 2, south 4, north 8) = Def 305."
+   ]
+  },
+  {
+   "text": "Room 8 placed north of room 7.",
+   "calc": [
+    "RNG draws in this step: 2 (level seed and room seeds together); 41 so far.",
+    "Def of room 7 from its open sides (north, south): base 301 + side mask 12 (west 1, east 2, south 4, north 8) = Def 313.",
+    "Def of room 8 from its open sides (south): base 301 + side mask 4 (west 1, east 2, south 4, north 8) = Def 305."
+   ]
+  },
+  {
+   "text": "Room 9 placed west of room 8. Fixed Def and file index (locked).",
+   "calc": [
+    "RNG draws in this step: 2 (level seed and room seeds together); 43 so far.",
+    "Def of room 8 from its open sides (south, west): base 301 + side mask 5 (west 1, east 2, south 4, north 8) = Def 306."
+   ]
+  },
+  {
+   "text": "Room 10 placed east of room 8.",
+   "calc": [
+    "RNG draws in this step: 4 (level seed and room seeds together); 47 so far.",
+    "Def of a dropped trial room from its open sides (west): base 301 + side mask 1 (west 1, east 2, south 4, north 8) = Def 302.",
+    "Def of room 8 from its open sides (east, south, west): base 301 + side mask 7 (west 1, east 2, south 4, north 8) = Def 308.",
+    "Def of room 10 from its open sides (west): base 301 + side mask 1 (west 1, east 2, south 4, north 8) = Def 302."
+   ]
+  },
+  {
+   "text": "Room 11 placed east of room 10.",
+   "calc": [
+    "RNG draws in this step: 2 (level seed and room seeds together); 49 so far.",
+    "Def of room 10 from its open sides (east, west): base 301 + side mask 3 (west 1, east 2, south 4, north 8) = Def 304.",
+    "Def of room 11 from its open sides (west): base 301 + side mask 1 (west 1, east 2, south 4, north 8) = Def 302."
+   ]
+  },
+  {
+   "text": "Room 12 placed south of room 11. Fixed Def and file index (locked).",
+   "calc": [
+    "RNG draws in this step: 2 (level seed and room seeds together); 51 so far.",
+    "Def of room 11 from its open sides (south, west): base 301 + side mask 5 (west 1, east 2, south 4, north 8) = Def 306."
+   ]
+  },
+  {
+   "text": "Room 13 placed south of room 12.",
+   "calc": [
+    "RNG draws in this step: 2 (level seed and room seeds together); 53 so far.",
+    "Def of room 13 from its open sides (north): base 301 + side mask 8 (west 1, east 2, south 4, north 8) = Def 309."
+   ]
+  },
+  {
+   "text": "Room 14 placed east of room 13. Fixed Def and file index (locked).",
+   "calc": [
+    "RNG draws in this step: 2 (level seed and room seeds together); 55 so far.",
+    "Def of room 13 from its open sides (east, north): base 301 + side mask 10 (west 1, east 2, south 4, north 8) = Def 311."
+   ]
+  },
+  {
+   "text": "Room 13: a special room is attached to it, so its Def is recomputed from its open sides: Def 311. It stays free.",
+   "calc": [
+    "RNG draws in this step: 0 (level seed and room seeds together); 55 so far.",
+    "Special room: the level's special-room table (entry chosen by a rotating index from one level draw) names a Def; the first free room with that Def takes the special Def and file, or a new room is attached for it."
+   ]
+  },
+  {
+   "text": "Room 13: theme step sets Def 326, forced file index none.",
+   "calc": [
+    "RNG draws in this step: 31 (level seed and room seeds together); 86 so far.",
+    "Themes: one level draw picks a start in a 15-entry list, 15 pairs of level draws shuffle it, then free rooms whose Def matches an entry get the themed Def (+15)."
+   ]
+  },
+  {
+   "text": "Room 8: theme step sets Def 323, forced file index none.",
+   "calc": [
+    "RNG draws in this step: 0 (level seed and room seeds together); 86 so far."
+   ]
+  },
+  {
+   "text": "Room 7: theme step sets Def 328, forced file index none.",
+   "calc": [
+    "RNG draws in this step: 0 (level seed and room seeds together); 86 so far."
+   ]
+  },
+  {
+   "text": "Room 14 (converted 1 of 14, newest first): Def 337 (Act 2 - Sewer Next W), preset file SewWDown.ds1 (level-seed draw, File1).",
+   "calc": [
+    "RNG draws in this step: 3 (2 level draws, and 1 first steps of new rooms' own seeds, one per room DRLG_RoomCreate makes); 89 so far.",
+    "Conversion (the DRLG overview spec, step 9): after the generator, each maze room in the level's room list, newest first, becomes a preset instance (9a), gets its file index (9b), and creates its real rooms (step 5).",
+    "Def 337 is the room's LvlPrest row (Act 2 - Sewer Next W); its File1..6 columns list the preset maps (DS1) it may use.",
+    "9a, step 4 PresetInstanceCreate: Files 1, one level draw Range(L.seed, 1): lo 0x70868375 mod 1 = 0.",
+    "9b MazePresetFile: Def 337 is outside the rotation range (301, 317); the drawn index stays.",
+    "The instance loads File1 of LvlPrest Def 337: Act2/Sewer/SewWDown.ds1.",
+    "5a map scan (Scan 1, Pops 0): the DS1 is loaded and its keep/drop rolls run on the level seed, 0 draws (preset.md steps 2a, 3).",
+    "5b PresetRoomsCreate: one room (the maze room is 12 x 12, at most 12 x 12); one level draw per room (DRLG_RoomCreate).",
+    "The full mode draws that DS1's floor and wall cells, looked up in the level type's tile files (DT1); the schematic mode draws the room as a box.",
+    "This preset holds a warp: wall cells of orientation 10/11 with slot 2, so Levels Vis2 = 48 (Sewers Level 2); marked in cyan on the final frame (warps.md, warp slot cell)."
+   ]
+  },
+  {
+   "text": "Room 13 (converted 2 of 14, newest first): Def 326 (Act 2 - Sewer Theme NE), preset file SewNETheme.ds1 (level-seed draw, File1).",
+   "calc": [
+    "RNG draws in this step: 3 (2 level draws, and 1 first steps of new rooms' own seeds, one per room DRLG_RoomCreate makes); 92 so far.",
+    "Conversion (the DRLG overview spec, step 9): after the generator, each maze room in the level's room list, newest first, becomes a preset instance (9a), gets its file index (9b), and creates its real rooms (step 5).",
+    "Def 326 is the room's LvlPrest row (Act 2 - Sewer Theme NE); its File1..6 columns list the preset maps (DS1) it may use.",
+    "9a, step 4 PresetInstanceCreate: Files 1, one level draw Range(L.seed, 1): lo 0xb4d61799 mod 1 = 0.",
+    "9b MazePresetFile: Def 326 is outside the rotation range (301, 317); the drawn index stays.",
+    "The instance loads File1 of LvlPrest Def 326: Act2/Sewer/SewNETheme.ds1.",
+    "5b PresetRoomsCreate: one room (the maze room is 12 x 12, at most 12 x 12); one level draw per room (DRLG_RoomCreate).",
+    "The full mode draws that DS1's floor and wall cells, looked up in the level type's tile files (DT1); the schematic mode draws the room as a box."
+   ]
+  },
+  {
+   "text": "Room 12 (converted 3 of 14, newest first): Def 336 (Act 2 - Sewer Prev NS), preset file SewNSDock.ds1 (forced index 0, File1).",
+   "calc": [
+    "RNG draws in this step: 3 (2 level draws, and 1 first steps of new rooms' own seeds, one per room DRLG_RoomCreate makes); 95 so far.",
+    "Conversion (the DRLG overview spec, step 9): after the generator, each maze room in the level's room list, newest first, becomes a preset instance (9a), gets its file index (9b), and creates its real rooms (step 5).",
+    "Def 336 is the room's LvlPrest row (Act 2 - Sewer Prev NS); its File1..6 columns list the preset maps (DS1) it may use.",
+    "9a, step 4 PresetInstanceCreate: Files 2, one level draw Range(L.seed, 2): lo 0x96ab0491 mod 2 = 1.",
+    "9b MazePresetFile: forced index 0 replaces it (the drawn value is spent).",
+    "The instance loads File1 of LvlPrest Def 336: Act2/Sewer/SewNSDock.ds1.",
+    "5a map scan (Scan 1, Pops 0): the DS1 is loaded and its keep/drop rolls run on the level seed, 0 draws (preset.md steps 2a, 3).",
+    "5b PresetRoomsCreate: one room (the maze room is 12 x 12, at most 12 x 12); one level draw per room (DRLG_RoomCreate).",
+    "The full mode draws that DS1's floor and wall cells, looked up in the level type's tile files (DT1); the schematic mode draws the room as a box.",
+    "This preset holds a warp: wall cells of orientation 10/11 with slot 1, so Levels Vis1 = 40 (Lut Gholein); marked in cyan on the final frame (warps.md, warp slot cell)."
+   ]
+  },
+  {
+   "text": "Room 11 (converted 4 of 14, newest first): Def 306 (Act 2 - Sewer SW), preset file SewSW.ds1 (rotation, File1).",
+   "calc": [
+    "RNG draws in this step: 4 (3 level draws, and 1 first steps of new rooms' own seeds, one per room DRLG_RoomCreate makes); 99 so far.",
+    "Conversion (the DRLG overview spec, step 9): after the generator, each maze room in the level's room list, newest first, becomes a preset instance (9a), gets its file index (9b), and creates its real rooms (step 5).",
+    "Def 306 is the room's LvlPrest row (Act 2 - Sewer SW); its File1..6 columns list the preset maps (DS1) it may use.",
+    "9a, step 4 PresetInstanceCreate: Files 2, one level draw Range(L.seed, 2): lo 0xef4f4395 mod 2 = 1.",
+    "9b MazePresetFile: Def 306 is in the rotation range (301, 317); first use of Def 306 in this build: one level draw RangeB(L.seed, 2): lo 0x16edcb6d mod 2 = 1; the counter advances (1 + 1) mod 2 = 0 and replaces the drawn index.",
+    "The instance loads File1 of LvlPrest Def 306: Act2/Sewer/SewSW.ds1.",
+    "5b PresetRoomsCreate: one room (the maze room is 12 x 12, at most 12 x 12); one level draw per room (DRLG_RoomCreate).",
+    "The full mode draws that DS1's floor and wall cells, looked up in the level type's tile files (DT1); the schematic mode draws the room as a box."
+   ]
+  },
+  {
+   "text": "Room 10 (converted 5 of 14, newest first): Def 304 (Act 2 - Sewer EW), preset file SewEW2.ds1 (rotation, File2).",
+   "calc": [
+    "RNG draws in this step: 4 (3 level draws, and 1 first steps of new rooms' own seeds, one per room DRLG_RoomCreate makes); 103 so far.",
+    "Conversion (the DRLG overview spec, step 9): after the generator, each maze room in the level's room list, newest first, becomes a preset instance (9a), gets its file index (9b), and creates its real rooms (step 5).",
+    "Def 304 is the room's LvlPrest row (Act 2 - Sewer EW); its File1..6 columns list the preset maps (DS1) it may use.",
+    "9a, step 4 PresetInstanceCreate: Files 2, one level draw Range(L.seed, 2): lo 0xa1af589e mod 2 = 0.",
+    "9b MazePresetFile: Def 304 is in the rotation range (301, 317); first use of Def 304 in this build: one level draw RangeB(L.seed, 2): lo 0x20274d3a mod 2 = 0; the counter advances (0 + 1) mod 2 = 1 and replaces the drawn index.",
+    "The instance loads File2 of LvlPrest Def 304: Act2/Sewer/SewEW2.ds1.",
+    "5b PresetRoomsCreate: one room (the maze room is 12 x 12, at most 12 x 12); one level draw per room (DRLG_RoomCreate).",
+    "The full mode draws that DS1's floor and wall cells, looked up in the level type's tile files (DT1); the schematic mode draws the room as a box."
+   ]
+  },
+  {
+   "text": "Room 9 (converted 6 of 14, newest first): Def 333 (Act 2 - Sewer Prev E), preset file SewEUp.ds1 (forced index 0, File1).",
+   "calc": [
+    "RNG draws in this step: 3 (2 level draws, and 1 first steps of new rooms' own seeds, one per room DRLG_RoomCreate makes); 106 so far.",
+    "Conversion (the DRLG overview spec, step 9): after the generator, each maze room in the level's room list, newest first, becomes a preset instance (9a), gets its file index (9b), and creates its real rooms (step 5).",
+    "Def 333 is the room's LvlPrest row (Act 2 - Sewer Prev E); its File1..6 columns list the preset maps (DS1) it may use.",
+    "9a, step 4 PresetInstanceCreate: Files 1, one level draw Range(L.seed, 1): lo 0x2a6a2633 mod 1 = 0.",
+    "9b MazePresetFile: forced index 0 replaces it (the drawn value is spent).",
+    "The instance loads File1 of LvlPrest Def 333: Act2/Sewer/SewEUp.ds1.",
+    "5a map scan (Scan 1, Pops 0): the DS1 is loaded and its keep/drop rolls run on the level seed, 0 draws (preset.md steps 2a, 3).",
+    "5b PresetRoomsCreate: one room (the maze room is 12 x 12, at most 12 x 12); one level draw per room (DRLG_RoomCreate).",
+    "The full mode draws that DS1's floor and wall cells, looked up in the level type's tile files (DT1); the schematic mode draws the room as a box.",
+    "This preset holds a warp: wall cells of orientation 10/11 with slot 0, so Levels Vis0 = 40 (Lut Gholein); marked in cyan on the final frame (warps.md, warp slot cell)."
+   ]
+  },
+  {
+   "text": "Room 8 (converted 7 of 14, newest first): Def 323 (Act 2 - Sewer Theme SEW), preset file SewSEWTheme.ds1 (level-seed draw, File1).",
+   "calc": [
+    "RNG draws in this step: 3 (2 level draws, and 1 first steps of new rooms' own seeds, one per room DRLG_RoomCreate makes); 109 so far.",
+    "Conversion (the DRLG overview spec, step 9): after the generator, each maze room in the level's room list, newest first, becomes a preset instance (9a), gets its file index (9b), and creates its real rooms (step 5).",
+    "Def 323 is the room's LvlPrest row (Act 2 - Sewer Theme SEW); its File1..6 columns list the preset maps (DS1) it may use.",
+    "9a, step 4 PresetInstanceCreate: Files 1, one level draw Range(L.seed, 1): lo 0x1e28664a mod 1 = 0.",
+    "9b MazePresetFile: Def 323 is outside the rotation range (301, 317); the drawn index stays.",
+    "The instance loads File1 of LvlPrest Def 323: Act2/Sewer/SewSEWTheme.ds1.",
+    "5b PresetRoomsCreate: one room (the maze room is 12 x 12, at most 12 x 12); one level draw per room (DRLG_RoomCreate).",
+    "The full mode draws that DS1's floor and wall cells, looked up in the level type's tile files (DT1); the schematic mode draws the room as a box."
+   ]
+  },
+  {
+   "text": "Room 7 (converted 8 of 14, newest first): Def 328 (Act 2 - Sewer Theme NS), preset file SewNSTheme.ds1 (level-seed draw, File1).",
+   "calc": [
+    "RNG draws in this step: 3 (2 level draws, and 1 first steps of new rooms' own seeds, one per room DRLG_RoomCreate makes); 112 so far.",
+    "Conversion (the DRLG overview spec, step 9): after the generator, each maze room in the level's room list, newest first, becomes a preset instance (9a), gets its file index (9b), and creates its real rooms (step 5).",
+    "Def 328 is the room's LvlPrest row (Act 2 - Sewer Theme NS); its File1..6 columns list the preset maps (DS1) it may use.",
+    "9a, step 4 PresetInstanceCreate: Files 1, one level draw Range(L.seed, 1): lo 0x1c051f24 mod 1 = 0.",
+    "9b MazePresetFile: Def 328 is outside the rotation range (301, 317); the drawn index stays.",
+    "The instance loads File1 of LvlPrest Def 328: Act2/Sewer/SewNSTheme.ds1.",
+    "5b PresetRoomsCreate: one room (the maze room is 12 x 12, at most 12 x 12); one level draw per room (DRLG_RoomCreate).",
+    "The full mode draws that DS1's floor and wall cells, looked up in the level type's tile files (DT1); the schematic mode draws the room as a box."
+   ]
+  },
+  {
+   "text": "Room 6 (converted 9 of 14, newest first): Def 309 (Act 2 - Sewer N), preset file SewN2.ds1 (rotation, File2).",
+   "calc": [
+    "RNG draws in this step: 4 (3 level draws, and 1 first steps of new rooms' own seeds, one per room DRLG_RoomCreate makes); 116 so far.",
+    "Conversion (the DRLG overview spec, step 9): after the generator, each maze room in the level's room list, newest first, becomes a preset instance (9a), gets its file index (9b), and creates its real rooms (step 5).",
+    "Def 309 is the room's LvlPrest row (Act 2 - Sewer N); its File1..6 columns list the preset maps (DS1) it may use.",
+    "9a, step 4 PresetInstanceCreate: Files 2, one level draw Range(L.seed, 2): lo 0x925bc61b mod 2 = 1.",
+    "9b MazePresetFile: Def 309 is in the rotation range (301, 317); first use of Def 309 in this build: one level draw RangeB(L.seed, 2): lo 0xfacde626 mod 2 = 0; the counter advances (0 + 1) mod 2 = 1 and replaces the drawn index.",
+    "The instance loads File2 of LvlPrest Def 309: Act2/Sewer/SewN2.ds1.",
+    "5b PresetRoomsCreate: one room (the maze room is 12 x 12, at most 12 x 12); one level draw per room (DRLG_RoomCreate).",
+    "The full mode draws that DS1's floor and wall cells, looked up in the level type's tile files (DT1); the schematic mode draws the room as a box."
+   ]
+  },
+  {
+   "text": "Room 5 (converted 10 of 14, newest first): Def 310 (Act 2 - Sewer NW), preset file SewNW.ds1 (rotation, File1).",
+   "calc": [
+    "RNG draws in this step: 4 (3 level draws, and 1 first steps of new rooms' own seeds, one per room DRLG_RoomCreate makes); 120 so far.",
+    "Conversion (the DRLG overview spec, step 9): after the generator, each maze room in the level's room list, newest first, becomes a preset instance (9a), gets its file index (9b), and creates its real rooms (step 5).",
+    "Def 310 is the room's LvlPrest row (Act 2 - Sewer NW); its File1..6 columns list the preset maps (DS1) it may use.",
+    "9a, step 4 PresetInstanceCreate: Files 2, one level draw Range(L.seed, 2): lo 0x0939d274 mod 2 = 0.",
+    "9b MazePresetFile: Def 310 is in the rotation range (301, 317); first use of Def 310 in this build: one level draw RangeB(L.seed, 2): lo 0xc2d2b889 mod 2 = 1; the counter advances (1 + 1) mod 2 = 0 and replaces the drawn index.",
+    "The instance loads File1 of LvlPrest Def 310: Act2/Sewer/SewNW.ds1.",
+    "5b PresetRoomsCreate: one room (the maze room is 12 x 12, at most 12 x 12); one level draw per room (DRLG_RoomCreate).",
+    "The full mode draws that DS1's floor and wall cells, looked up in the level type's tile files (DT1); the schematic mode draws the room as a box."
+   ]
+  },
+  {
+   "text": "Room 4 (converted 11 of 14, newest first): Def 311 (Act 2 - Sewer NE), preset file SewNE2.ds1 (rotation, File2).",
+   "calc": [
+    "RNG draws in this step: 4 (3 level draws, and 1 first steps of new rooms' own seeds, one per room DRLG_RoomCreate makes); 124 so far.",
+    "Conversion (the DRLG overview spec, step 9): after the generator, each maze room in the level's room list, newest first, becomes a preset instance (9a), gets its file index (9b), and creates its real rooms (step 5).",
+    "Def 311 is the room's LvlPrest row (Act 2 - Sewer NE); its File1..6 columns list the preset maps (DS1) it may use.",
+    "9a, step 4 PresetInstanceCreate: Files 2, one level draw Range(L.seed, 2): lo 0x60e5a2d4 mod 2 = 0.",
+    "9b MazePresetFile: Def 311 is in the rotation range (301, 317); first use of Def 311 in this build: one level draw RangeB(L.seed, 2): lo 0xd69ba5ca mod 2 = 0; the counter advances (0 + 1) mod 2 = 1 and replaces the drawn index.",
+    "The instance loads File2 of LvlPrest Def 311: Act2/Sewer/SewNE2.ds1.",
+    "5b PresetRoomsCreate: one room (the maze room is 12 x 12, at most 12 x 12); one level draw per room (DRLG_RoomCreate).",
+    "The full mode draws that DS1's floor and wall cells, looked up in the level type's tile files (DT1); the schematic mode draws the room as a box."
+   ]
+  },
+  {
+   "text": "Room 3 (converted 12 of 14, newest first): Def 307 (Act 2 - Sewer SE), preset file SewSE.ds1 (rotation, File1).",
+   "calc": [
+    "RNG draws in this step: 4 (3 level draws, and 1 first steps of new rooms' own seeds, one per room DRLG_RoomCreate makes); 128 so far.",
+    "Conversion (the DRLG overview spec, step 9): after the generator, each maze room in the level's room list, newest first, becomes a preset instance (9a), gets its file index (9b), and creates its real rooms (step 5).",
+    "Def 307 is the room's LvlPrest row (Act 2 - Sewer SE); its File1..6 columns list the preset maps (DS1) it may use.",
+    "9a, step 4 PresetInstanceCreate: Files 2, one level draw Range(L.seed, 2): lo 0x5065a77d mod 2 = 1.",
+    "9b MazePresetFile: Def 307 is in the rotation range (301, 317); first use of Def 307 in this build: one level draw RangeB(L.seed, 2): lo 0xa690746f mod 2 = 1; the counter advances (1 + 1) mod 2 = 0 and replaces the drawn index.",
+    "The instance loads File1 of LvlPrest Def 307: Act2/Sewer/SewSE.ds1.",
+    "5b PresetRoomsCreate: one room (the maze room is 12 x 12, at most 12 x 12); one level draw per room (DRLG_RoomCreate).",
+    "The full mode draws that DS1's floor and wall cells, looked up in the level type's tile files (DT1); the schematic mode draws the room as a box."
+   ]
+  },
+  {
+   "text": "Room 2 (converted 13 of 14, newest first): Def 308 (Act 2 - Sewer SEW), preset file SewSEW.ds1 (rotation, File1).",
+   "calc": [
+    "RNG draws in this step: 4 (3 level draws, and 1 first steps of new rooms' own seeds, one per room DRLG_RoomCreate makes); 132 so far.",
+    "Conversion (the DRLG overview spec, step 9): after the generator, each maze room in the level's room list, newest first, becomes a preset instance (9a), gets its file index (9b), and creates its real rooms (step 5).",
+    "Def 308 is the room's LvlPrest row (Act 2 - Sewer SEW); its File1..6 columns list the preset maps (DS1) it may use.",
+    "9a, step 4 PresetInstanceCreate: Files 2, one level draw Range(L.seed, 2): lo 0x572846a8 mod 2 = 0.",
+    "9b MazePresetFile: Def 308 is in the rotation range (301, 317); first use of Def 308 in this build: one level draw RangeB(L.seed, 2): lo 0x2d6c0acf mod 2 = 1; the counter advances (1 + 1) mod 2 = 0 and replaces the drawn index.",
+    "The instance loads File1 of LvlPrest Def 308: Act2/Sewer/SewSEW.ds1.",
+    "5b PresetRoomsCreate: one room (the maze room is 12 x 12, at most 12 x 12); one level draw per room (DRLG_RoomCreate).",
+    "The full mode draws that DS1's floor and wall cells, looked up in the level type's tile files (DT1); the schematic mode draws the room as a box."
+   ]
+  },
+  {
+   "text": "Room 1 (converted 14 of 14, newest first): Def 314 (Act 2 - Sewer NSW), preset file SewNSW2.ds1 (rotation, File2).",
+   "calc": [
+    "RNG draws in this step: 4 (3 level draws, and 1 first steps of new rooms' own seeds, one per room DRLG_RoomCreate makes); 136 so far.",
+    "Conversion (the DRLG overview spec, step 9): after the generator, each maze room in the level's room list, newest first, becomes a preset instance (9a), gets its file index (9b), and creates its real rooms (step 5).",
+    "Def 314 is the room's LvlPrest row (Act 2 - Sewer NSW); its File1..6 columns list the preset maps (DS1) it may use.",
+    "9a, step 4 PresetInstanceCreate: Files 2, one level draw Range(L.seed, 2): lo 0x52d6326a mod 2 = 0.",
+    "9b MazePresetFile: Def 314 is in the rotation range (301, 317); first use of Def 314 in this build: one level draw RangeB(L.seed, 2): lo 0x818ebf3a mod 2 = 0; the counter advances (0 + 1) mod 2 = 1 and replaces the drawn index.",
+    "The instance loads File2 of LvlPrest Def 314: Act2/Sewer/SewNSW2.ds1.",
+    "5b PresetRoomsCreate: one room (the maze room is 12 x 12, at most 12 x 12); one level draw per room (DRLG_RoomCreate).",
+    "The full mode draws that DS1's floor and wall cells, looked up in the level type's tile files (DT1); the schematic mode draws the room as a box."
+   ]
+  },
+  {
+   "text": "Final composite: 14 rooms after 136 RNG draws (86 in the generator, 50 in the conversion). Drawn relative to the layout's corner; the game then moves the whole level to its place in the act (not drawn, shape unchanged).",
+   "calc": [
+    "Warp (cyan mark): room 9, DS1 wall cells of orientation 10/11 with slot 0, so Levels Vis0 = 40 (Lut Gholein) (warps.md, warp slot cell). Entry is by level order: the lower id is taken as the way in. The act's link lists can override Vis at run time (warps.md \u00a7 C); not modelled here.",
+    "Warp (cyan mark): room 12, DS1 wall cells of orientation 10/11 with slot 1, so Levels Vis1 = 40 (Lut Gholein) (warps.md, warp slot cell). Entry is by level order: the lower id is taken as the way in. The act's link lists can override Vis at run time (warps.md \u00a7 C); not modelled here.",
+    "Warp (cyan mark): room 14, DS1 wall cells of orientation 10/11 with slot 2, so Levels Vis2 = 48 (Sewers Level 2) (warps.md, warp slot cell). Exit is by level order: the lower id is taken as the way in. The act's link lists can override Vis at run time (warps.md \u00a7 C); not modelled here.",
+    "Placement shift (maze.md G1): growth never looks at where the level sits in the act; rooms grow freely around the first room, so coordinates can go negative.",
+    "At the end the game takes the bounding box of all rooms (x0, y0) and adds (level.x - x0, level.y - y0) to every room, so the box's top-left corner lands on the level's origin in the act map.",
+    "It is one translation for all rooms: shape, doors and Defs do not change. This picture is already drawn relative to the box corner, so the shifted level would look the same."
+   ]
+  }
+ ]
+}

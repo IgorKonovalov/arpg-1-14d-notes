@@ -115,6 +115,12 @@ built before it. The run built 176 combinations of level, difficulty and game ty
 every act of each game type in each difficulty. The level's generator (preset, maze or outdoor) then runs on that seed,
 and each room it creates takes one draw.
 
+![Animation: rng-seed-tree-c0ffee-build](/illustrations/rng-seed-tree-c0ffee-build/seedtree.gif)
+
+[Step through rng-seed-tree-c0ffee-build](../../illustrations/rng-seed-tree-c0ffee-build/index.html)
+
+The seed tree for an illustrative seed N given as an override. The map seed is then N and builds the world; the game seed starts from N too, a separate seed that seeds the units (seeds § step 1). Each act's seed starts from the map seed, steps once, and keeps that low word as the level seed base, the same for all five acts; Act II then draws pairs of numbers mod 7 until they differ to name its tombs, and Act III takes one more draw and keeps its lowest bit (§ step 3). A level's seed is the base plus the level id, a sum with no draw, so the order levels are built in does not matter (§ step 4). Each room takes one draw on its level's seed, starts its own seed from the result and steps once, so the order a level creates its rooms in does matter (§ step 5). Not shown: the act link builder's later draws on the act seed, room activation, and the units. Seed: illustrative, an input of our own. Every value shown is computed by our model, not observed in the game.
+
 ### C. A room activates
 
 ([chain § Algorithm](../../spec-chain/overview/#algorithm) C, [levels](../../world/levels/#room-tiles-and-the-k-draws))

@@ -187,6 +187,12 @@ monster's player-count cap applies only to monster drops, not to chests (confirm
 lowered *n*. Read from the code only: three or more players, the cap at 8, and the chat parser taking `/players` only in
 four client modes.
 
+![Animation: items-tc-andariel-hell-8players](/illustrations/items-tc-andariel-hell-8players/tc.gif)
+
+[Step through items-tc-andariel-hell-8players](../../illustrations/items-tc-andariel-hell-8players/index.html)
+
+The same monster, difficulty, magic find and seed as the one-player drop, with a lone player and the game set to eight players. The counted players are n = 1 + (8 − 1) ÷ 2 = 4, so each pick of a TC with NoDrop is scaled before it is drawn: the stack row shows the table's NoDrop and the scaled one as ND 19->0 for Andariel's own TC, computed in floating point from the TC's NoDrop and total weight (TC § F). With NoDrop 0 the draw's range is the total alone, so no pick of that TC can be a NoDrop: in this walk two picks are NoDrop with one player and none with eight, and this drop reaches the monster drop's limit of six items (TC § D, § E, § H). Not modelled and not shown: the quest drop, gold amounts, base stats, the ethereal and socket rolls, automagic, and the properties' values. Seed: illustrative, an input of our own. Every value shown is computed by our model, not observed in the game.
+
 ## The quality roll and magic find
 
 For an ordinary item the quality roll returns a [quality code](../../reference/glossary/): 1 low, 2 normal, 3 superior, 4 magic,
@@ -234,6 +240,12 @@ set, rare and magic tests computes a number *c*:
 So a test wins with a chance of about 128 in *c*. The superior and the normal tests work the same way but with no
 magic find, no minimum and no ratio word. Losing the normal test is the only way to get a low-quality item. Always-magic types still run the unique and set
 tests, and the rare test if their type allows rare, with their draws, before they become magic.
+
+![Animation: items-quality-lsd-mf200](/illustrations/items-quality-lsd-mf200/quality.gif)
+
+[Step through items-quality-lsd-mf200](../../illustrations/items-quality-lsd-mf200/index.html)
+
+The quality roll of one base item, code lsd, at item level 28 for a killer with magic find 200, with all four ratio words 0. The tests run in order, unique, set, rare, magic, and the first win ends the roll. Each test has a chance c: a base term from the item's ItemRatio row, (row value − d ÷ divisor) × 128, where d is the item level minus the base's quality level; magic find divides it, c × 100 ÷ F, where above magic find 10 F is diminished for the unique, set and rare tests (constants 250, 500 and 600) and is plain magic find + 100 for the magic test; then the row's minimum raises a lower c to it, and the ratio word takes off its share (§ C, § D). One draw from 0 to c − 1 wins below 128, and a c below 1 wins with no draw. Here the unique, set and rare draws are lost and the magic draw, 15, wins, so the superior and normal tests, which use the base term alone (§ E), are not reached; the resolver's next draw continues on the same seed. Not shown: the early returns, and the ItemRatio row's choice beyond its number. Seed: illustrative, an input of our own. Every value shown is computed by our model, not observed in the game.
 
 **[Magic find](../../reference/glossary/) (MF)** is the killer's MF plus its owner's: a summon's kill counts the summoner's MF,
 and a [mercenary](../../reference/glossary/)'s kill counts its own plus its player's, as does a Hydra's. These are confirmed in

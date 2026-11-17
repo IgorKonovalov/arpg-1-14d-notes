@@ -1,0 +1,35 @@
+<!doctype html><!-- schematic-only/1: schematic-only page, our own graphics -->
+<title>animation schedule animation</title>
+<style>body{background:#111;color:#ddd;font:14px sans-serif;margin:0;padding:12px;text-align:center}
+img{max-width:100%;height:auto;image-rendering:pixelated;background:#000}button{font-size:16px;margin:4px;padding:4px 12px}
+#cap{max-width:900px;margin:8px auto;min-height:2em;font-weight:bold}#s{width:60%}
+#calc{max-width:900px;margin:0 auto;text-align:left;font:13px/1.5 monospace;background:#1b1b22;padding:8px 14px;
+border-radius:6px}#calc li{margin:2px 0}#help{max-width:900px;margin:8px auto;text-align:left;font-size:13px;color:#aaa}
+#help summary{cursor:pointer;color:#ddd}</style>
+<img id=f width=960 height=500 alt="frame"><div>
+<button id=p>prev</button><button id=pl>play</button><button id=n>next</button>
+<input id=s type=range min=0 value=0></div><div id=cap></div>
+<div id=calc><b>Calculations for this step</b><ol id=cl></ol></div>
+<details id=help><summary>How to read this</summary><ul>
+<li>Top row: the game frames after the mode starts at T. The scan runs once, when the mode starts, and takes one step for each game frame ahead; the end fires one frame after the last step.</li>
+<li>Middle row: the animation's own frames. The marker is the position in 1/256 of a frame, it advances by the rate r each step; a frame event queues on the step whose position has passed its frame.</li>
+<li>The rate comes from the record's speed and a speed bonus; the length of the mode is the record's 256 F divided by r, rounded up, and at least 2.</li>
+<li>The record is a toy given by its numbers, not a table row. Every value is computed by our model for the numbers given, not observed in the game.</li></ul></details>
+<script>
+var caps=[{"text": "A toy record of 14 frames, speed 256, start frame 0, event byte 1 on frame 7, with faster cast 20: the rate is 299.", "calc": ["timing J1: B = (k * s) / (k + s) with k = 120 and s = 20 gives 17.", "timing J2: X = 117, r = speed * X / 100 = 256 * 117 / 100 = 299.", "timing E1: length L = 256 F = 3584, S = 0, so the position starts at 0 and gains 299 per step."]}, {"text": "Step 1, for game frame T + 1: position 299, frame 1.", "calc": ["timing E1: step k = 1, t = T + 1: position = 256 S + k r = 0 + 1 * 299 = 299 < L = 3584.", "timing E1: frames 0 to 1 are scanned."]}, {"text": "Step 2, for game frame T + 2: position 598, frame 2.", "calc": ["timing E1: step k = 2, t = T + 2: position = 256 S + k r = 0 + 2 * 299 = 598 < L = 3584.", "timing E1: frames 2 to 2 are scanned."]}, {"text": "Step 3, for game frame T + 3: position 897, frame 3.", "calc": ["timing E1: step k = 3, t = T + 3: position = 256 S + k r = 0 + 3 * 299 = 897 < L = 3584.", "timing E1: frames 3 to 3 are scanned."]}, {"text": "Step 4, for game frame T + 4: position 1196, frame 4.", "calc": ["timing E1: step k = 4, t = T + 4: position = 256 S + k r = 0 + 4 * 299 = 1196 < L = 3584.", "timing E1: frames 4 to 4 are scanned."]}, {"text": "Step 5, for game frame T + 5: position 1495, frame 5.", "calc": ["timing E1: step k = 5, t = T + 5: position = 256 S + k r = 0 + 5 * 299 = 1495 < L = 3584.", "timing E1: frames 5 to 5 are scanned."]}, {"text": "Step 6, for game frame T + 6: position 1794, frame 7, the event is queued.", "calc": ["timing E1: step k = 6, t = T + 6: position = 256 S + k r = 0 + 6 * 299 = 1794 < L = 3584.", "timing E1: frames 6 to 7 are scanned.", "timing E1: event byte 1 on frame 7: UnitQueueEvent(kind 0, frame T + 6, a 1, b 0)."]}, {"text": "Step 7, for game frame T + 7: position 2093, frame 8.", "calc": ["timing E1: step k = 7, t = T + 7: position = 256 S + k r = 0 + 7 * 299 = 2093 < L = 3584.", "timing E1: frames 8 to 8 are scanned."]}, {"text": "Step 8, for game frame T + 8: position 2392, frame 9.", "calc": ["timing E1: step k = 8, t = T + 8: position = 256 S + k r = 0 + 8 * 299 = 2392 < L = 3584.", "timing E1: frames 9 to 9 are scanned."]}, {"text": "Step 9, for game frame T + 9: position 2691, frame 10.", "calc": ["timing E1: step k = 9, t = T + 9: position = 256 S + k r = 0 + 9 * 299 = 2691 < L = 3584.", "timing E1: frames 10 to 10 are scanned."]}, {"text": "Step 10, for game frame T + 10: position 2990, frame 11.", "calc": ["timing E1: step k = 10, t = T + 10: position = 256 S + k r = 0 + 10 * 299 = 2990 < L = 3584.", "timing E1: frames 11 to 11 are scanned."]}, {"text": "Step 11, for game frame T + 11: position 3289, frame 12.", "calc": ["timing E1: step k = 11, t = T + 11: position = 256 S + k r = 0 + 11 * 299 = 3289 < L = 3584.", "timing E1: frames 12 to 12 are scanned."]}, {"text": "The mode ends at T + 12, the event at T + 6.", "calc": ["timing E2: n = max(2, ceil(256 (F - S) / r)) = max(2, ceil(3584 / 299)) = 12.", "timing E1: queued = kind 0 at T + 6; kind 1 at T + 12."]}],i=0,t=null,f=document.getElementById('f'),s=document.getElementById('s');
+s.max=caps.length-1;
+function show(k){i=Math.max(0,Math.min(caps.length-1,k));f.setAttribute('src','frame-'+('000'+i).slice(-3)+'.png');
+s.value=i;document.getElementById('cap').textContent=(i+1)+'/'+caps.length+'  '+caps[i].text;
+var cl=document.getElementById('cl');cl.innerHTML='';caps[i].calc.forEach(function(c){var li=document.createElement('li');
+li.textContent=c;cl.appendChild(li);});}
+function stop(){if(t){clearInterval(t);t=null;document.getElementById('pl').textContent='play';}}
+document.getElementById('p').onclick=function(){stop();show(i-1)};
+document.getElementById('n').onclick=function(){stop();show(i+1)};
+document.getElementById('pl').onclick=function(){if(t){stop();return;}
+ if(i>=caps.length-1)show(0);document.getElementById('pl').textContent='pause';
+ t=setInterval(function(){if(i>=caps.length-1)stop();else show(i+1)},900)};
+s.oninput=function(){stop();show(+s.value)};
+document.onkeydown=function(e){if(e.key=='ArrowRight'){stop();show(i+1)}else if(e.key=='ArrowLeft'){stop();show(i-1)}
+ else if(e.key==' '){e.preventDefault();document.getElementById('pl').click()}};
+show(0);
+</script>

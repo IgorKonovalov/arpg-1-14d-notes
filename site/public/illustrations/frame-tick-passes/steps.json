@@ -1,0 +1,139 @@
+{
+ "schematic_only": "schematic-only/1",
+ "steps": [
+  {
+   "text": "One server tick at counter 1320: the drain, then the counter goes up and ranks 1 to 20 run in order.",
+   "calc": [
+    "frame.md B1: GameTick raises game.frame to 1320 before its first pass; the passes run in rank order.",
+    "frame.md B1: rank 21 is everything between tick N and tick N + 1, the drain first of all.",
+    "frame.md: this illustration draws the spec's pass list; it is not computed by a model of the tick."
+   ]
+  },
+  {
+   "text": "The drain runs between ticks: the three queues in order, packets applied before the next tick.",
+   "calc": [
+    "frame.md C1: queue 0 (system), queue 1 (in-game packets of every client), queue 2 (host control), each FIFO.",
+    "frame.md C4: messages are applied between frames, never inside GameTick; the handlers' draws are each subsystem's spec.",
+    "frame.md J: rank 21's seeds are as each handler's spec names them."
+   ]
+  },
+  {
+   "text": "Rank 1, ActsClockPass.",
+   "calc": [
+    "frame.md B1: rank 1 ActsClockPass.",
+    "frame.md J: draws: none of its own; a clock change can reach a skill change that draws; seeds: the skill's, by its spec (no draw of its own is confirmed)."
+   ]
+  },
+  {
+   "text": "Rank 2, GameFpsStats.",
+   "calc": [
+    "frame.md B1: rank 2 GameFpsStats.",
+    "frame.md J: draws: none; seeds: none (confirmed)."
+   ]
+  },
+  {
+   "text": "Rank 3, NewRoomsUpdate.",
+   "calc": [
+    "frame.md B1: rank 3 NewRoomsUpdate.",
+    "frame.md J: draws: the wanderer tick, the population, the restore of saved items; seeds: the room's own, a neighbour's, the game's, the level's, the object region's (the routes are confirmed, the seeds inferred)."
+   ]
+  },
+  {
+   "text": "Ranks 4 and 5: the missiles' every-frame events, then the slot events of this frame.",
+   "calc": [
+    "frame.md D1: rank 4 MissileEventsRun(mode 0, ctl.everyHead); rank 5 MissileEventsRun(mode 1, ctl.slotHead[curSlot]).",
+    "frame.md D1: curSlot = game.frame % 64 = 1320 % 64 = 40.",
+    "frame.md J: the walks have no draw of their own; each event's function and its spec name the seeds."
+   ]
+  },
+  {
+   "text": "Ranks 6 and 7: the players' every-frame events, then the slot events of this frame.",
+   "calc": [
+    "frame.md D1: rank 6 PlayerEventsRun(mode 0, ctl.everyHead); rank 7 PlayerEventsRun(mode 1, ctl.slotHead[curSlot]).",
+    "frame.md D1: curSlot = game.frame % 64 = 1320 % 64 = 40.",
+    "frame.md J: the walks have no draw of their own; each event's function and its spec name the seeds."
+   ]
+  },
+  {
+   "text": "Ranks 8 and 9: the monsters' every-frame events, then the slot events of this frame.",
+   "calc": [
+    "frame.md D1: rank 8 MonEventsRun(mode 0, ctl.everyHead); rank 9 MonEventsRun(mode 1, ctl.slotHead[curSlot]).",
+    "frame.md D1: curSlot = game.frame % 64 = 1320 % 64 = 40.",
+    "frame.md J: the walks have no draw of their own; each event's function and its spec name the seeds."
+   ]
+  },
+  {
+   "text": "Ranks 10 and 11: the objects' every-frame events, then the slot events of this frame.",
+   "calc": [
+    "frame.md D1: rank 10 ObjEventsRun(mode 0, ctl.everyHead); rank 11 ObjEventsRun(mode 1, ctl.slotHead[curSlot]).",
+    "frame.md D1: curSlot = game.frame % 64 = 1320 % 64 = 40.",
+    "frame.md J: the walks have no draw of their own; each event's function and its spec name the seeds."
+   ]
+  },
+  {
+   "text": "Ranks 12 and 13: the items' every-frame events, then the slot events of this frame.",
+   "calc": [
+    "frame.md D1: rank 12 ItemEventsRun(mode 0, ctl.everyHead); rank 13 ItemEventsRun(mode 1, ctl.slotHead[curSlot]).",
+    "frame.md D1: curSlot = game.frame % 64 = 1320 % 64 = 40.",
+    "frame.md J: the walks have no draw of their own; each event's function and its spec name the seeds."
+   ]
+  },
+  {
+   "text": "Rank 14, ClientsRoomSync.",
+   "calc": [
+    "frame.md B1: rank 14 ClientsRoomSync.",
+    "frame.md J: draws: room activations, level builds, preset rolls; seeds: the room's own, the level's; not the game seed by direct reach, the saves aside, whose seed is not read (confirmed)."
+   ]
+  },
+  {
+   "text": "Rank 15, ActUnitsFrameReset.",
+   "calc": [
+    "frame.md B1: rank 15 ActUnitsFrameReset.",
+    "frame.md J: draws: the free of an inventory item with item flag 1; seeds: the free's (the item-flag condition is inferred)."
+   ]
+  },
+  {
+   "text": "Rank 16, ActsRoomRemovalsClear.",
+   "calc": [
+    "frame.md B1: rank 16 ActsRoomRemovalsClear.",
+    "frame.md J: draws: none; seeds: none (confirmed)."
+   ]
+  },
+  {
+   "text": "Rank 17, QUESTS_TimersRun.",
+   "calc": [
+    "frame.md B1: rank 17 QUESTS_TimersRun runs when frame % 20 = 0 (1320 % 20 = 0).",
+    "frame.md J: draws: six quest callbacks; seeds: the game's, the quest's, the level's (the seeds are inferred)."
+   ]
+  },
+  {
+   "text": "Rank 18, RoomsDeactivate.",
+   "calc": [
+    "frame.md B1: rank 18 RoomsDeactivate runs when frame % 12 = 0 (1320 % 12 = 0).",
+    "frame.md J: draws: the save test of inactive units, the free of an active room; seeds: see the lifecycle's save rule (confirmed)."
+   ]
+  },
+  {
+   "text": "Rank 19, ActLevelsUnloadTick.",
+   "calc": [
+    "frame.md B1: rank 19 ActLevelsUnloadTick runs when frame % 11 = 0 (1320 % 11 = 0).",
+    "frame.md J: draws: the build of a level; seeds: that level's (the seed is inferred)."
+   ]
+  },
+  {
+   "text": "Rank 20, ExpirySweepTick.",
+   "calc": [
+    "frame.md B1: rank 20 ExpirySweepTick.",
+    "frame.md B1: every frame, but it works only when frame % 1500 = 0 (1320 % 1500 = 1320).",
+    "frame.md J: draws: the free of an expired item; works only when frame % 1500 = 0; seeds: the free's (confirmed)."
+   ]
+  },
+  {
+   "text": "The tick is done; one drain or more, then the tick at counter 1321, follow.",
+   "calc": [
+    "frame.md B1: the ranks that ran at counter 1320: 1, 2, 3, 14, 15, 16, 17, 18, 19, 20, and the walks 4 to 13.",
+    "frame.md J: the passes run in one order, so which pass draws first on a shared seed does not vary."
+   ]
+  }
+ ]
+}

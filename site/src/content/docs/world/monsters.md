@@ -295,6 +295,12 @@ leapers. A run met it once: a unique sand leaper's candidate list lacked `lightn
 gets the same mod twice. A unique's
 mod count costs one extra draw (`Range(1)`, which always gives 0 but still steps the seed).
 
+![Animation: monsters-special-zombie1-hell](/illustrations/monsters-special-zombie1-hell/special.gif)
+
+[Step through monsters-special-zombie1-hell](../../illustrations/monsters-special-zombie1-hell/index.html)
+
+The roll of a random boss of class zombie1 in Hell, on an illustrative seed. First one draw from 0 to 99 on the boss's own seed: below 20 (the chance in MonUMod row 0) it is a champion and takes one champion mod; here the draw is 68, so it is a unique (special § A). A unique steps the seed once more with Range(1), which returns 0, and takes 1 + difficulty mods, three in Hell, one pick each (§ A). A pick keeps the rows that carry a weight of its kind, drops those the eligibility tests refuse (a disabled row, an expansion row in a classic game, an excluded monster type, a mode the class lacks) and, for a unique, those it already has, then draws once from 0 to the total of the weights left minus 1 and takes the first candidate whose running weight passes the draw (§ B). The frames show for each pick the number of candidates, their total, the draw and the winner with its own weight, not the table of weights. Not shown: the handlers that apply the mods, the minions and the name. Seed: illustrative, an input of our own. Every value shown is computed by our model, not observed in the game.
+
 **Pack members and preset champions**
 are not rolled. Each one always gets mod 16 `champion`, whatever the boss drew. Each counts as a special, and each
 brings its own MonStats minions if its class has them. They are not linked to the boss as minions. A pack member whose

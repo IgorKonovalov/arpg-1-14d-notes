@@ -1,0 +1,35 @@
+{
+ "marker": "schematic-only/1",
+ "args": [
+  "--mode",
+  "cast",
+  "--stat",
+  "20",
+  "--frames",
+  "14",
+  "--speed",
+  "256",
+  "--start",
+  "0",
+  "--event",
+  "7"
+ ],
+ "files": {
+  "frame-000.png": "5c66b4de5bb00d4ce24e459a3185411459a3d614f05593926fd3aee5b3d8ad0e",
+  "frame-001.png": "351525358ef98cba2692e9c084fe5fd1f4f624bdf543268c95d908dd90fd1ae9",
+  "frame-002.png": "ea6d4b0d232148696e8561a791d602794e00ebf9db6e4068ef07facd14ddbe20",
+  "frame-003.png": "16836d45bf7fcef1296612d9cf27b284ef2eb365c85091ea1dd64671b2e9dd41",
+  "frame-004.png": "e62780b5c06e3ebd578253817194dfd525e183d814d2852f4ed0ed583ea1ab74",
+  "frame-005.png": "6d78e3ab32e578fb7fbac531c542dcf5d4512d6a02365c86ec28d37295490ed8",
+  "frame-006.png": "7131b06f824cf67b5bc512f6835e0e1eb65d2329619e6856ffebdae817840cea",
+  "frame-007.png": "48e0555f80e494e6b997f8ad54971e49e28dcd6af9b860edf1f070383bcaea3a",
+  "frame-008.png": "517c1fe63e871e77bcbe802afd2837d0ebfdc8bdc8cd0b74da2b7ab35884ebe4",
+  "frame-009.png": "c113787d04bc7311149205ba476e89b14a8e29dd9950e91ca3fba5a11f499be9",
+  "frame-010.png": "51da7890ebb72e58bfe952f1b03d8bb8f8314350e395d3f46df675ef1e7a8005",
+  "frame-011.png": "013125205f7f9b9c003ce5acb9728dcd1138d2fa18cfbef94d97eca5eb17057e",
+  "frame-012.png": "963ed0174e20d98d6d07f46d9787da4fca07d533e2e7947c0dbb3ab8e8f76e50",
+  "index.html": "b3f43c859d69344a66b4af423bf60527b92d0cec1d1da8cd7dd6d9d2c5270c15",
+  "steps.json": "8a16b0dff4e57ce04f171c8fe620b5e9f3941cf3da40d92044d7d99fa2690a7d",
+  "timing.gif": "9471224d2419b0b573faf1d5b2c8ba00b802c6f6c9579b26fe13d716c162c2d2"
+ }
+}

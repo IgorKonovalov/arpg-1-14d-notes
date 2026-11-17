@@ -1,0 +1,21 @@
+{
+ "marker": "schematic-only/1",
+ "args": [
+  "lsd",
+  "28",
+  "12648430",
+  "--mf",
+  "200"
+ ],
+ "files": {
+  "frame-000.png": "0a69df0d4c744a51f3fc2e3eedd68193d5c936eb3e06a2e9c5d4644e9107594b",
+  "frame-001.png": "a532c09c7d90ffe0094a9b9a290e979ba9c1f72ebd249fd994c984067575c83d",
+  "frame-002.png": "e1b8cd508070482974134409f489804cab0ad967fd7dfdc4a9cd2823144b16ee",
+  "frame-003.png": "c97a791428f68740ee88842777555f166672c31c9cbbb6845a268d055b2a4047",
+  "frame-004.png": "a52c74adfec21cfda128702e995b37ed17d794298308de8ea3489d3d05ac4ffc",
+  "frame-005.png": "de9c8a7f975b02ccffbe1f65bffbb801e97a4a6dd95788d62f8592a1362718fd",
+  "index.html": "a6fe6a327083a8e74b7cf329ac52faaea3bb2472b5ebb20c7328beaa14db762f",
+  "quality.gif": "9d9f04c8fc38358fb9c081943fda7281b3537e419948f646d2437cddec39148f",
+  "steps.json": "35f3883f0b110c80199dd648d54da4565e85902f0771b9da66a9b75309044b7e"
+ }
+}

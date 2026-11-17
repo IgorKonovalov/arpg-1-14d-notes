@@ -2,3 +2,61 @@
 :root {
   --sl-content-width: 60rem;
 }
+
+/* Scripted widgets (one host figure per widget). Colours come only from Starlight's variables, so a widget follows
+   the light and dark themes; no motion. */
+.widget-host {
+  margin: 1.5rem 0;
+  padding: 1rem;
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: 0.5rem;
+  background: var(--sl-color-bg-nav);
+  color: var(--sl-color-text);
+}
+.widget-host figcaption {
+  font-size: var(--sl-text-sm);
+  color: var(--sl-color-gray-3);
+}
+.widget-host .widget-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.75rem 1.25rem;
+  margin-bottom: 1rem;
+}
+.widget-host .widget-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: var(--sl-text-sm);
+}
+.widget-host label {
+  color: var(--sl-color-gray-2);
+}
+.widget-host input,
+.widget-host select {
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--sl-color-gray-4);
+  border-radius: 0.25rem;
+  background: var(--sl-color-bg);
+  color: var(--sl-color-text);
+  font: inherit;
+}
+.widget-host input:focus-visible,
+.widget-host select:focus-visible {
+  outline: 2px solid var(--sl-color-accent);
+  outline-offset: 1px;
+}
+.widget-host table {
+  width: 100%;
+  font-variant-numeric: tabular-nums;
+}
+.widget-host th {
+  color: var(--sl-color-accent-high);
+}
+.widget-host .widget-live,
+.widget-host .widget-note {
+  margin: 0.75rem 0 0;
+  font-size: var(--sl-text-xs);
+  color: var(--sl-color-gray-3);
+}

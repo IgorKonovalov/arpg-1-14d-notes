@@ -1,0 +1,35 @@
+<!doctype html><!-- schematic-only/1: schematic-only page, our own graphics -->
+<title>quality roll animation</title>
+<style>body{background:#111;color:#ddd;font:14px sans-serif;margin:0;padding:12px;text-align:center}
+img{max-width:100%;height:auto;image-rendering:pixelated;background:#000}button{font-size:16px;margin:4px;padding:4px 12px}
+#cap{max-width:900px;margin:8px auto;min-height:2em;font-weight:bold}#s{width:60%}
+#calc{max-width:900px;margin:0 auto;text-align:left;font:13px/1.5 monospace;background:#1b1b22;padding:8px 14px;
+border-radius:6px}#calc li{margin:2px 0}#help{max-width:900px;margin:8px auto;text-align:left;font-size:13px;color:#aaa}
+#help summary{cursor:pointer;color:#ddd}</style>
+<img id=f width=960 height=500 alt="frame"><div>
+<button id=p>prev</button><button id=pl>play</button><button id=n>next</button>
+<input id=s type=range min=0 value=0></div><div id=cap></div>
+<div id=calc><b>Calculations for this step</b><ol id=cl></ol></div>
+<details id=help><summary>How to read this</summary><ul>
+<li>Left: the tests in the order the game runs them. The current test is outlined; a won test ends the roll, a lost one passes to the next.</li>
+<li>Right: the chance c of the current test, in four steps (base term, magic find, the row's minimum, the ratio word), then the draw. A draw below 128 wins; a c below 1 wins with no draw.</li>
+<li>The superior and normal tests use only the base term. A test with no draw changes nothing on the seed.</li>
+<li>Every value is computed by our model of the roll for the illustrative inputs given, not observed in the game.</li></ul></details>
+<script>
+var caps=[{"text": "The quality roll for item lsd, item level 28, magic find 200: the tests run in order and the first win ends the roll.", "calc": ["quality.md Inputs: item lsd, ilvl 28, magic find 200, ratio words (magic, rare, set, unique) 0,0,0,0, source seed {00c0ffee, 666} (illustrative).", "quality.md B: itemratio row 2 (version argument 100); d = ilvl - rec.level = 28 - 20 = 8.", "quality.md Test order: unique, set, rare (if the type allows), magic (or magic with no test for an always-magic type), superior, normal; losing the normal test is low."]}, {"text": "The unique test: chance c = 23780, draw 12708, lost.", "calc": ["quality.md D4: base term = (400 - 8 / 1) << 7 = 50176.", "D5: magic find on: c = c * 100 / F with F = Diminish(300, 250) = 211, so c = 23780.", "D6: c <= the row's minimum 6400 is raised to it: c = 23780.", "D7: ratio word 0: c = c - w * c / 1024 = 23780.", "D9: draw RangeB(c = 23780): the seed steps once, x = new low mod 23780 = 12708; seed = {a28ed4c0:00507fab}.", "x = 12708 >= 128: lost."]}, {"text": "The set test: chance c = 8251, draw 7946, lost.", "calc": ["quality.md D4: base term = (160 - 8 / 2) << 7 = 19968.", "D5: magic find on: c = c * 100 / F with F = Diminish(300, 500) = 242, so c = 8251.", "D6: c <= the row's minimum 5600 is raised to it: c = 8251.", "D7: ratio word 0: c = c - w * c / 1024 = 8251.", "D9: draw RangeB(c = 8251): the seed steps once, x = new low mod 8251 = 7946; seed = {7c66376b:43cd3a7d}.", "x = 7946 >= 128: lost."]}, {"text": "The rare test: chance c = 4915, draw 2685, lost.", "calc": ["quality.md D4: base term = (100 - 8 / 2) << 7 = 12288.", "D5: magic find on: c = c * 100 / F with F = Diminish(300, 600) = 250, so c = 4915.", "D6: c <= the row's minimum 3200 is raised to it: c = 4915.", "D7: ratio word 0: c = c - w * c / 1024 = 4915.", "D9: draw RangeB(c = 4915): the seed steps once, x = new low mod 4915 = 2685; seed = {a8640fd4:33e2d05a}.", "x = 2685 >= 128: lost."]}, {"text": "The magic test: chance c = 1365, draw 15, won.", "calc": ["quality.md D4: base term = (34 - 8 / 3) << 7 = 4096.", "D5: magic find on: c = c * 100 / F with F = m100 = 300 (no diminishing) = 300, so c = 1365.", "D6: c <= the row's minimum 192 is raised to it: c = 1365.", "D7: ratio word 0: c = c - w * c / 1024 = 1365.", "D9: draw RangeB(c = 1365): the seed steps once, x = new low mod 1365 = 15; seed = {17c23e7e:463c0b2c}.", "x = 15 < 128: won."]}, {"text": "The roll ends with magic (quality code 4) after 4 draws on the source seed.", "calc": ["result code = 4 (magic); draws = 4; tests reached = unique, set, rare, magic.", "source seed after the roll = {17c23e7e:463c0b2c}."]}],i=0,t=null,f=document.getElementById('f'),s=document.getElementById('s');
+s.max=caps.length-1;
+function show(k){i=Math.max(0,Math.min(caps.length-1,k));f.setAttribute('src','frame-'+('000'+i).slice(-3)+'.png');
+s.value=i;document.getElementById('cap').textContent=(i+1)+'/'+caps.length+'  '+caps[i].text;
+var cl=document.getElementById('cl');cl.innerHTML='';caps[i].calc.forEach(function(c){var li=document.createElement('li');
+li.textContent=c;cl.appendChild(li);});}
+function stop(){if(t){clearInterval(t);t=null;document.getElementById('pl').textContent='play';}}
+document.getElementById('p').onclick=function(){stop();show(i-1)};
+document.getElementById('n').onclick=function(){stop();show(i+1)};
+document.getElementById('pl').onclick=function(){if(t){stop();return;}
+ if(i>=caps.length-1)show(0);document.getElementById('pl').textContent='pause';
+ t=setInterval(function(){if(i>=caps.length-1)stop();else show(i+1)},900)};
+s.oninput=function(){stop();show(+s.value)};
+document.onkeydown=function(e){if(e.key=='ArrowRight'){stop();show(i+1)}else if(e.key=='ArrowLeft'){stop();show(i-1)}
+ else if(e.key==' '){e.preventDefault();document.getElementById('pl').click()}};
+show(0);
+</script>

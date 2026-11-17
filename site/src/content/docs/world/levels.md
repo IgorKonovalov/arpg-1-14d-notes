@@ -207,6 +207,12 @@ then freed, so a maze level's real rooms are all preset rooms.
 
 Catacombs Level 3 (level 36) built room by room. A level draw picks the start shape's two arms on the locked first room (maze § E3); growth then picks a parent room with a level draw and a side with a draw on that parent's own seed, and each new room may link to the rooms it shares an edge with by a Merge roll on their seeds (§ C, § B); each room's Def is the level type's base plus its exit bits (§ B); each special takes a dead end facing the right way or attaches a new room, then the theme pass locks up to max(2, rooms ÷ 5 + 1) rooms as their Theme records (§ D, § H). Every value shown is computed by our replay model, not observed in the game, and the seed is an illustrative input, not a level seed a game produces. The last steps convert the rooms newest first and name each room's preset file as the overview's step 9 picks it: each instance first draws an index over `Files` on the level seed (9a); a forced index replaces it if the room has one, else, for a Def strictly between the level type's rotation base and base + 16, the level type's per-build file rotation does (9b) (drlg overview, steps 9a and 9b). Seed: illustrative, an input of our own. Every value shown is computed by our model, not observed in the game.
 
+![Animation: drlg-maze-level47](/illustrations/drlg-maze-level47/maze.gif)
+
+[Step through drlg-maze-level47](../../illustrations/drlg-maze-level47/index.html)
+
+Sewers Level 1 (level 47) built room by room, for a different start shape and theme count than the Catacombs level. This level starts with a ring: rooms grown north, west and south of the first room and joined back to it, where the Catacombs level starts with two arms (maze § E1, § E3). Random growth follows (§ C), then the Sewers finisher's dock path: two rooms grown north and two east, each pair ending in a fixed, locked room (the previous-level room and the dock), a free room below the dock, and the next-level special attached as a new room, which recomputes its parent's Def (§ F2, § D). The theme pass locks up to max(2, rooms ÷ 5 + 1) free rooms as their Theme records, here three of fourteen rooms where the Catacombs level has four of seventeen (§ H). Seed: illustrative, an input of our own. Every value shown is computed by our model, not observed in the game.
+
 ## Outdoor levels
 
 The outdoor levels are those listed per act in [outdoor § A](../../spec-drlg/outdoor/#a-the-window): Act I's

@@ -1,0 +1,64 @@
+{
+ "schematic_only": "schematic-only/1",
+ "steps": [
+  {
+   "text": "The quality roll for item lsd, item level 28, magic find 200: the tests run in order and the first win ends the roll.",
+   "calc": [
+    "quality.md Inputs: item lsd, ilvl 28, magic find 200, ratio words (magic, rare, set, unique) 0,0,0,0, source seed {00c0ffee, 666} (illustrative).",
+    "quality.md B: itemratio row 2 (version argument 100); d = ilvl - rec.level = 28 - 20 = 8.",
+    "quality.md Test order: unique, set, rare (if the type allows), magic (or magic with no test for an always-magic type), superior, normal; losing the normal test is low."
+   ]
+  },
+  {
+   "text": "The unique test: chance c = 23780, draw 12708, lost.",
+   "calc": [
+    "quality.md D4: base term = (400 - 8 / 1) << 7 = 50176.",
+    "D5: magic find on: c = c * 100 / F with F = Diminish(300, 250) = 211, so c = 23780.",
+    "D6: c <= the row's minimum 6400 is raised to it: c = 23780.",
+    "D7: ratio word 0: c = c - w * c / 1024 = 23780.",
+    "D9: draw RangeB(c = 23780): the seed steps once, x = new low mod 23780 = 12708; seed = {a28ed4c0:00507fab}.",
+    "x = 12708 >= 128: lost."
+   ]
+  },
+  {
+   "text": "The set test: chance c = 8251, draw 7946, lost.",
+   "calc": [
+    "quality.md D4: base term = (160 - 8 / 2) << 7 = 19968.",
+    "D5: magic find on: c = c * 100 / F with F = Diminish(300, 500) = 242, so c = 8251.",
+    "D6: c <= the row's minimum 5600 is raised to it: c = 8251.",
+    "D7: ratio word 0: c = c - w * c / 1024 = 8251.",
+    "D9: draw RangeB(c = 8251): the seed steps once, x = new low mod 8251 = 7946; seed = {7c66376b:43cd3a7d}.",
+    "x = 7946 >= 128: lost."
+   ]
+  },
+  {
+   "text": "The rare test: chance c = 4915, draw 2685, lost.",
+   "calc": [
+    "quality.md D4: base term = (100 - 8 / 2) << 7 = 12288.",
+    "D5: magic find on: c = c * 100 / F with F = Diminish(300, 600) = 250, so c = 4915.",
+    "D6: c <= the row's minimum 3200 is raised to it: c = 4915.",
+    "D7: ratio word 0: c = c - w * c / 1024 = 4915.",
+    "D9: draw RangeB(c = 4915): the seed steps once, x = new low mod 4915 = 2685; seed = {a8640fd4:33e2d05a}.",
+    "x = 2685 >= 128: lost."
+   ]
+  },
+  {
+   "text": "The magic test: chance c = 1365, draw 15, won.",
+   "calc": [
+    "quality.md D4: base term = (34 - 8 / 3) << 7 = 4096.",
+    "D5: magic find on: c = c * 100 / F with F = m100 = 300 (no diminishing) = 300, so c = 1365.",
+    "D6: c <= the row's minimum 192 is raised to it: c = 1365.",
+    "D7: ratio word 0: c = c - w * c / 1024 = 1365.",
+    "D9: draw RangeB(c = 1365): the seed steps once, x = new low mod 1365 = 15; seed = {17c23e7e:463c0b2c}.",
+    "x = 15 < 128: won."
+   ]
+  },
+  {
+   "text": "The roll ends with magic (quality code 4) after 4 draws on the source seed.",
+   "calc": [
+    "result code = 4 (magic); draws = 4; tests reached = unique, set, rare, magic.",
+    "source seed after the roll = {17c23e7e:463c0b2c}."
+   ]
+  }
+ ]
+}

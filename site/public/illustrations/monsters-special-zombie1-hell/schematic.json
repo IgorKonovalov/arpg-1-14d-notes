@@ -1,0 +1,21 @@
+{
+ "marker": "schematic-only/1",
+ "args": [
+  "zombie1",
+  "12648430",
+  "--difficulty",
+  "hell"
+ ],
+ "files": {
+  "frame-000.png": "4bd1f3b51fe335a5ebfa89a755dfca7284594122c143a0b5b6955e8514f378bb",
+  "frame-001.png": "fd1bbbe2fdd1fb32d2a8db42f47e430296c39e91c0889a2e8a0ed97ba1eba364",
+  "frame-002.png": "91d80987232b6c37b5b645a9bf0fcdf914fd471f7547046184b42bfdc81e1200",
+  "frame-003.png": "bd48c26bfa225994d811e9c8f39325375a3ba7f15a1bce391b97e741e52ffd0e",
+  "frame-004.png": "640819dee7a6971873276645772a59082446fd710cfe52c72db7b814ab5d5209",
+  "frame-005.png": "f1e42c20dcd53227530005e7c06f84265c7d62fa5e0b8f84b2daaea700de1068",
+  "frame-006.png": "b9725cbac487502f8f0ba4500bdc797c81861db7babddd82dbedda2f373d50c2",
+  "index.html": "3b28071ead1136e011c6d4f105136405711e2e3a18dc079c0c0566412001fc9c",
+  "special.gif": "46857707fbcd1ec7b42a4a187dc8c86f620e6d36450cc7a4bd18e3b544c8954f",
+  "steps.json": "75f4f4903c37e4c73773bb57eb7c0f0247da320af5ba477a5203192080bc664f"
+ }
+}
