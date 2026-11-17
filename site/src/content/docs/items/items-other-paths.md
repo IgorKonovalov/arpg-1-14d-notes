@@ -10,10 +10,10 @@ quests drop or give. Each of these paths either calls the same item creation as 
 record, or changes an item that already exists. The shared machinery (the [treasure class](../../reference/glossary/) (TC) walk,
 the quality roll, uniques and sets, affixes, [base stats](../../reference/glossary/)) is explained on the [items](../items/) page and is not repeated
 here. This page restates four reviewed specs:
-socket filling and runewords,
-the Horadric Cube,
+[socket filling and runewords](../../spec-items/sockets-runewords/#purpose),
+[the Horadric Cube](../../spec-items/cube/#purpose),
 vendor stock and gambling and
-quest drops, quest rewards and special drops.
+[quest drops, quest rewards and special drops](../../spec-items/quest-drops/#purpose).
 
 ## The big picture
 
@@ -141,7 +141,7 @@ from a save is not rolled again: the reader rebuilds the parent with its saved l
 back in, the game finds the runeword list already present and adds nothing (seen on the *Steel* save). The save does not name the runeword's
 row either: the writer runs the match again and saves that row's name index, and the reader keeps the number without
 looking a row up; the row of a loaded runeword is always found again from its runes (read from the code;
-sockets-runewords, *Inputs*). Also read from the code only: a
+[sockets-runewords, *Inputs*](../../spec-items/sockets-runewords/#tables)). Also read from the code only: a
 loaded item still marked as a runeword whose row no longer matches is discarded.
 
 ### Socket counts
@@ -215,9 +215,9 @@ transmute reached it.
 | Cow Portal | opens the portal to the cow level |
 | the two Pandemonium portals | nothing: both do nothing in this game version |
 
-Some details from § E,
-§ M and
-§ F:
+Some details from [§ E](../../spec-items/cube/#e-building-one-output--recipeoutputcreate),
+[§ M](../../spec-items/cube/#m-draws-per-output-kind) and
+[§ F](../../spec-items/cube/#f-after-the-item-exists-in-this-order):
 
 - **Created items** are ordinary creations, entered with the cube's record: the ethereal roll is switched off and so
   is the socket roll. A record of quality 0 (runes, gems, potions) still goes through a quality roll that draws on the
@@ -543,7 +543,7 @@ the Hell levels of all but Andariel follow from the same test in the code.
 
 ### Sanctuary in a large shield
 
-Copied from sockets-runewords § Worked example. A normal large
+Copied from [sockets-runewords § Worked example](../../spec-items/sockets-runewords/#worked-example). A normal large
 shield with 3 sockets already holds Ko, Ko. The player inserts Mal, loaded from a save, so its item seed is its saved
 start value with the fixed high word 666. Mal brings its shield-group line, `red-mag` 7..7, with no draw. The shield is now full, the runes read Ko Ko Mal and a large shield is a shield, so *Sanctuary* matches. Its
 seven lines are applied on Mal's item seed:
@@ -562,7 +562,7 @@ The game seed and the shield's own seeds are unchanged at the end; only Mal's it
 
 ### A crafted Hit Power amulet
 
-Copied from cube § Example 1. A level-80
+Copied from [cube § Example 1](../../spec-items/cube/#example-1-a-crafted-hit-power-amulet-row-70). A level-80
 Sorceress, expansion, Normal, puts a magic amulet (ilvl 41), a magic jewel, `r10` and `gpb` in the cube. Row 70 is the
 first that fits. The output ilvl is 80 × 50 ÷ 100 + 41 × 50 ÷ 100 = 40 + 20 = 60, which is tier 3.
 
@@ -597,8 +597,8 @@ Slot 6 drew level 72 and `hgl`, upgraded to its exceptional base `xhg` because t
 
 ### Andariel's first kill and the Hellforge
 
-Copied from quest-drops § Example 1
-and Example 3. A
+Copied from [quest-drops § Example 1](../../spec-items/quest-drops/#example-1-andariels-first-kill-quest-tc-session-3344)
+and [Example 3](../../spec-items/quest-drops/#example-3-one-hellforge-operation-session-3315-normal-one-player). A
 level-80 Sorceress, expansion, Normal, single player, kills Andariel (level 12) with the three tested quest bits clear. The quest TC
 switch picks `Andarielq`. The TC walk on Andariel's own seed makes 7 [picks](../../reference/glossary/): the first lands on a
 `crs` that rolls rare, the other six are [NoDrop](../../reference/glossary/). Then the death script draws three gems on the quest seed:
@@ -640,14 +640,14 @@ Collected from the specs' open questions and unconfirmed points:
 
 ## Where to read more
 
-- The specs: socket filling and runewords,
-  the Horadric Cube, vendor stock and gambling,
-  quest drops and rewards.
+- The specs: [socket filling and runewords](../../spec-items/sockets-runewords/#purpose),
+  [the Horadric Cube](../../spec-items/cube/#purpose), vendor stock and gambling,
+  [quest drops and rewards](../../spec-items/quest-drops/#purpose).
 - Each spec's *Reimplementation notes* lists the traps:
-  sockets,
-  cube,
+  [sockets](../../spec-items/sockets-runewords/#reimplementation-notes),
+  [cube](../../spec-items/cube/#reimplementation-notes),
   vendors,
-  quests.
+  [quests](../../spec-items/quest-drops/#reimplementation-notes).
 - The [glossary](../../reference/glossary/) for the terms, and the wiki pages on [item drops](../items/),
   [using items and the inventory](../inventory/) (pickup, drop, stacks and the belt), [randomness](../../foundations/randomness/) and
   [saves](../../characters/saves/).

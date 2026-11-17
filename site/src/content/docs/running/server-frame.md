@@ -8,7 +8,7 @@ The server advances each game by one **frame** every 40 ms (25 per second is the
 change it has no reference: checked by a second reading). This page gives the order of everything inside a frame: the tick and its
 passes, the ten walks over the unit event lists, the queue that fills them, the periodic timers, the order rooms are activated
 and populated in, and where client messages are applied. It answers the question that decides the draws on a
-[shared seed](../../reference/glossary/): **whose draws come first**. It restates the server frame spec.
+[shared seed](../../reference/glossary/): **whose draws come first**. It restates the [server frame spec](../../spec-sim/frame/#purpose).
 
 What an event does is another page's: a mode's frames are [animation and timing](../animation/), a think is
 [monster AI](../monster-ai/), a skill or missile is [skills and missiles](../../characters/skills/), a hit is [combat](../../characters/combat/), a population is
@@ -21,7 +21,7 @@ This page names its ground at each statement, because the kinds differ and they 
 
 | Kind | What it is | Where it stops |
 |---|---|---|
-| **Seen in a window** | A [frame window](../../reference/glossary/) is a run of consecutive frames in one small scene of the game, with every event, queue call and seed step logged and each entry seed asserted against the chain, none resynchronised. § K1 lists the windows and which count. | It holds for the scenes run. The same seed and script repeating confirms nothing. Much is taken from the log as given, and most events move no seed. |
+| **Seen in a window** | A [frame window](../../reference/glossary/) is a run of consecutive frames in one small scene of the game, with every event, queue call and seed step logged and each entry seed asserted against the chain, none resynchronised. [§ K1](../../spec-sim/frame/#k1-the-windows-as-they-stand) lists the windows and which count. | It holds for the scenes run. The same seed and script repeating confirms nothing. Much is taken from the log as given, and most events move no seed. |
 | **Seen in the kept logs** | Logs of earlier game sessions, read again against an order model. No game was run for this. | The logs name few kinds of event, so a large total holds few pairs that can fail. |
 | **Emulated** | The game's own code run in an emulator on declared inputs and compared with a model: the code's map. | It shows what that code does with what it is given, up to where a case ends. It is not the order in a game. |
 | **Checked by a second reading** | The instructions read again with a second tool, or a scan of every reference to or store into the thing named. The spec counts it confirmed. | It covers what the code says, not that a game reached it. |
@@ -82,7 +82,7 @@ flowchart TD
   R20 --> R21["21 between the ticks: the drain first"]
 ```
 
-The table's last column is each pass's route to a draw, from § J. **"None" means by
+The table's last column is each pass's route to a draw, from [§ J](../../spec-sim/frame/#j-draws-per-pass-and-the-shared-seeds). **"None" means by
 direct reach:** the call graphs do not follow indirect calls (54 and 57 of them in ranks 1 and 15, and so on). Each pass's own code, and its "none" with the
 stops the spec names, is checked by a second reading, a second call-graph walker; what lies past a stop (the refresh's aura route, an item's free,
 the quest callbacks' and the level build's seeds, the per-item counts) is read from the code.
@@ -132,7 +132,7 @@ The marking and the list clear ran under emulation. The 78 marking sites are not
 
 ## The message drain
 
-From § C; each paragraph names its ground.
+From [§ C](../../spec-sim/frame/#c-the-message-drain); each paragraph names its ground.
 
 Three queues are drained in order, each first in, first out: **system** messages (game create, join), **in-game packets** of every client of every game,
 and **host control**. The queues' order is checked by a second reading: the pop takes the head and both appends go to the tail, under one lock. A packet's
@@ -193,7 +193,7 @@ at or below it is raised to −1, the every-frame marker; the queue then follows
 | 10–13 | Objects and items, both parts | Read from the code |
 
 **Seen in a window**: 3 020 adjacent walks of different ranks, none inverted, in the seven counted windows that log seed steps: a Blood Moor pack and the Den of
-Evil, one player, Nova or standing, with what § K3 takes as given: 4 before 7, 417; 7 before 8, 1 975; 7 before 9, 203; 8 before 9, 425.
+Evil, one player, Nova or standing, with what [§ K3](../../spec-sim/frame/#k3-a-large-zero-can-test-little) takes as given: 4 before 7, 417; 7 before 8, 1 975; 7 before 9, 203; 8 before 9, 425.
 
 **Seen in the kept logs**, by the logs' phase and call site, placing a walk against a neighbour:
 - the players' slot walk before the monsters' (3 007 pairs);
@@ -245,7 +245,7 @@ keeps them, since no record holds a room. A unit made inactive by a room's relea
 
 ## What an event runs
 
-From § F. The dispatches, their bound tests and tables, and the queue sites' constant kinds are
+From [§ F](../../spec-sim/frame/#f-dispatch-the-event-tables-the-freeze-drop-kinds-6-and-11). The dispatches, their bound tests and tables, and the queue sites' constant kinds are
 checked by a second reading; other sentences name their ground.
 
 An event has a **kind** below 15, and each unit type has its own table of what a kind means, so a kind's meaning depends on the type. For players and monsters the kinds are the mode's frame, the mode's end, a monster's AI, regeneration, a state's do function,
@@ -350,14 +350,14 @@ sequenceDiagram
   Note over G: the player's exit is the frame's end
 ```
 
-1. At rank 4, missile 456's every-frame event runs. Inside it monster 40 dies and the game seed steps 2. That the 2 are one item's is the treasure class reading, not this log's.
+1. At rank 4, missile 456's every-frame event runs. Inside it monster 40 dies and the game seed steps 2. That the 2 are one item's is the [treasure class reading](../../spec-items/tc/#h-item-pick-and-hand-off), not this log's.
 2. The seed at the missile's exit equals the seed at the player's entry: handed on.
 3. At rank 7, the player's slot event runs a skill do. It creates 64 missiles, ids 514 to 577, one step per creation, 66 steps from the frame's start.
 4. In frame 1962 rank 4 runs the new missiles newest first: 577, 576, 575, and on. Missile 577's own seed is set from the low half of the last step, and 514's from the first.
 
 ## What the windows test
 
-The spec's own warning. § K1 lists the windows. Each is whole and carried, with 0 mismatches. They run in single player, one fresh process per scene: one Sorceress of level 80 casting Nova or, in one window, standing, on six map seeds and two scripts. The same seed and script repeating confirms nothing.
+The spec's own warning. [§ K1](../../spec-sim/frame/#k1-the-windows-as-they-stand) lists the windows. Each is whole and carried, with 0 mismatches. They run in single player, one fresh process per scene: one Sorceress of level 80 casting Nova or, in one window, standing, on six map seeds and two scripts. The same seed and script repeating confirms nothing.
 
 **Ten windows by count, and five carry the traffic.** The seven windows that log seed steps hold 36 016 chained events, and five of them hold 34 773: two Den of Evil windows and three Blood Moor pack windows, one of those with the player standing. The other two are the Den after it was cleared or nearly so, 517 and 726 events, and they test the save's position at frame 8192. The three town windows log no seed steps and were read with no step in another unit's event allowed, so they test the entry and exit seeds and the order, and no step's site. Two more windows are whole and carried, hold 12 837 more chained events, and are not counted: one for table sites missing, one for a unit id reused across a level change.
 
@@ -371,7 +371,7 @@ The spec's own warning. § K1 lists the windows. Each is whole and carried, with
 
 ### A zero tests less than it sounds
 
-From § K3. The counts of the first and last bullets were recounted by a second reader and are confirmed as counts; what each
+From [§ K3](../../spec-sim/frame/#k3-a-large-zero-can-test-little). The counts of the first and last bullets were recounted by a second reader and are confirmed as counts; what each
 count means is counted, not raised, like the rest of this section.
 
 - **Most events move no seed.** Of the 37 977 events in the seven windows that log seed steps, 37 489 (98.7%) moved neither the game seed nor their own. 452 moved their own, and **only 53 moved the game seed**: the player's skill do 34, a missile's event 17, a monster's every-frame event 2. 17 did both, so 488 moved either. The chained events mostly say that no seed moved unlogged, and little about any draw's value.
@@ -379,11 +379,11 @@ count means is counted, not raised, like the rest of this section.
 included), 9 995 in the tick with no event open and 12 043 inside an event.
 - **Some readings accept any of several values.** While a fresh seed shares its low half with a chained one, the log reader holds every value the seed may have, and a reading passes on any of them: 225 readings held more than one. There a surplus step is not seen, while a lost one still is. Dropping one in-tick step at random is seen 24 of 25 times in the two full maze windows, 4 of 25 in the first pack window, 25 of 25 in the standing window and 14 of 25 in the second Nova window, where most in-tick steps are on no chained seed.
 - **Taken as given, not predicted:** a unit's own draws (AI, skill do, a missile's own), the number of drop draws on a dead monster, the listed pass steps, the client steps, the save, and the equality of kind 11's seeds. Every think in the windows is taken as given. What is predicted is the arithmetic of every logged reading, the missiles' first readings, the class of every step, and the order.
-- **The per-death item rule tests almost nothing.** Over 54 logged deaths, the item constructor's steps and the unit constructor's are 0 and 0 in 37, and 1 and 1 in 17, 0 failures. Read from the code, an item's step cannot come without a unit's, so in a game the rule can fail only on a lost line. The zeros test nothing, and the pairs at 1 and 1 show one path and that no other unit was created in those segments. A sub-missile would add a unit step and pass, and none occurred in a segment. "2 per item" over a kill with several items and "0 on a no-drop" are not tested: no segment holds two items, and neither the item count nor a no-drop is logged. "Two per dropped item" is the treasure class reading.
+- **The per-death item rule tests almost nothing.** Over 54 logged deaths, the item constructor's steps and the unit constructor's are 0 and 0 in 37, and 1 and 1 in 17, 0 failures. Read from the code, an item's step cannot come without a unit's, so in a game the rule can fail only on a lost line. The zeros test nothing, and the pairs at 1 and 1 show one path and that no other unit was created in those segments. A sub-missile would add a unit step and pass, and none occurred in a segment. "2 per item" over a kill with several items and "0 on a no-drop" are not tested: no segment holds two items, and neither the item count nor a no-drop is logged. "Two per dropped item" is the [treasure class reading](../../spec-items/tc/#h-item-pick-and-hand-off).
 
 ### Another unit's event drawing on a seed
 
-From § K4, which has the sites. A step on a seed inside someone else's event must match a listed
+From [§ K4](../../spec-sim/frame/#k4-touches-another-units-event-or-a-rooms-walk-drawing-on-a-seed), which has the sites. A step on a seed inside someone else's event must match a listed
 trigger. **Seen in a window: the sites of each trigger.** The steps inside a killer's event holding a death are the kill's sites, 124 of them; the steps with a room walk open are the listed
 functions only, 1 720 of them; the owner and defender steps are at their listed sites. The counts below are those on a chained seed, and they are counted, not raised:
 
@@ -395,13 +395,13 @@ functions only, 1 720 of them; the owner and defender steps are at their listed 
 
 Owner and defender match event type and site, **not the target**: the logs do not hold the target, so they separate "this site outside a combat event" from "inside one". Which seed a step moved is another matter, since a step's line logs the low half it read.
 
-**Seen in a window: the defender's 8 steps moved the player's seed, in two hits.** In the standing window, two Fallen at frames 1992 and 2020 each ran the defence roll and the wear sites inside their own attack events, 4 steps a hit. Each of the 8 logged low halves matches exactly one kept seed, the player's, and the player's next entry reading equals that seed with those 4 steps applied, 2 of 2. It agrees with the defence rolls and wear.
+**Seen in a window: the defender's 8 steps moved the player's seed, in two hits.** In the standing window, two Fallen at frames 1992 and 2020 each ran the defence roll and the wear sites inside their own attack events, 4 steps a hit. Each of the 8 logged low halves matches exactly one kept seed, the player's, and the player's next entry reading equals that seed with those 4 steps applied, 2 of 2. It agrees with [the defence rolls](../../spec-combat/to-hit/#c-the-hit-test-and-the-defence-rolls) and [wear](../../spec-items/economy/#h-wear-durability-quantity-charges-replenish).
 
 **Two hits on one unit is the whole of that.** That the seed is the player's because the player is the defender is not confirmed, and rests on the specs: no window has another defender at these sites, a monster defender above all. The rest of the fifth kind of shared seed rests on the specs and on one uncounted reading from a pilot. Nova kills at range, so a casting player is rarely attacked.
 
 ### Shared-seed pairs
 
-From § K5. A pair is two top-level events of different units that each moved the game seed in one frame. **Seen in a window: there are 2 in the
+From [§ K5](../../spec-sim/frame/#k5-shared-seed-pairs). A pair is two top-level events of different units that each moved the game seed in one frame. **Seen in a window: there are 2 in the
 counted windows,** both handed on and in pass order, 0 reversed, recounted by a second reader. Over every log of the window runs, pilots and development logs included, there are 8: missile then player 3, missile then missile 4, player then monster 1. This is a named count reported as measured, and it is not a short against a target.
 **No confirmed statement rests on a pair.** The rule for whose draw comes first follows from every game-seed step being logged inside an open event and from the events running in the tested order. What is thin is the variety among drawing events: the 53 above.
 
@@ -417,7 +417,7 @@ Counted, not raised. Between the ticks the main loop runs client code on client 
 
 ## What a build with no log still needs
 
-**The activation record** (read from the code, § H5 and § H6). Per frame, a log-free build takes as input: each client whose player's room at rank 14 is not its client room, with the new room, the frame and the client's place in the list; every on-demand activation and every one-room population; and the room pins that hold a release back. From these the rest follows: the creations, each act's list order, each frame's population order, the idle counts, the releases.
+**The activation record** (read from the code, [§ H5 and § H6](../../spec-sim/frame/#h-rooms-list-order-the-new-room-walk-the-room-sync-the-activation-record)). Per frame, a log-free build takes as input: each client whose player's room at rank 14 is not its client room, with the new room, the frame and the client's place in the list; every on-demand activation and every one-room population; and the room pins that hold a release back. From these the rest follows: the creations, each act's list order, each frame's population order, the idle counts, the releases.
 
 The record **cannot be derived from client messages alone**. The room a player stands in at rank 14 is the end of its movement in the walks, so that input stays logged until a movement model exists. With one, it follows from the player's position each frame, and the on-demand activations still need the warp and waypoint requests and the population's level-point lookups.
 
@@ -426,7 +426,7 @@ tick's first ranked line. It reads as the act's day-and-night light (read from t
 
 ## Traps for a rebuild
 
-From the reimplementation notes.
+From the [reimplementation notes](../../spec-sim/frame/#reimplementation-notes).
 
 Seen in a window:
 - **The stamp a packet reads is the frame before the one it acts in.**
@@ -447,7 +447,7 @@ Read from the code:
 
 ## What is not known yet
 
-From the spec's open questions, and the limits above:
+From the [spec's open questions](../../spec-sim/frame/), and the limits above:
 
 - **The act clock:** whether its refresh can draw in play.
 - **Ranks 5 and 10 to 13 in a game:** no counted window holds an event in them.
@@ -462,6 +462,6 @@ From the spec's open questions, and the limits above:
 
 ## Where to read more
 
-- The spec: server frame, whose reimplementation notes list the traps and whose § K has the current counts.
+- The spec: [server frame](../../spec-sim/frame/#algorithm), whose [reimplementation notes](../../spec-sim/frame/#reimplementation-notes) list the traps and whose [§ K](../../spec-sim/frame/#k-what-the-frame-windows-test) has the current counts.
 - The [glossary](../../reference/glossary/) for rank, frame window and shared seed.
 - Related wiki pages: [animation and timing](../animation/) (a mode's frames and the schedule), [levels](../../world/levels/#rooms-that-come-and-go-release-and-restore) (activation and release), [monster AI](../monster-ai/#when-a-unit-thinks), [skills and missiles](../../characters/skills/#draw-order-and-chaining), [combat](../../characters/combat/#draw-order-and-chaining), [seed to world](../seed-to-world/) (what has to come from outside), [randomness](../../foundations/randomness/) (seeds and draws) and [how we know](../../reading-the-tags/).

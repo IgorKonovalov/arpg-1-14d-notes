@@ -9,7 +9,7 @@ The other pages each explain one part of the game: [randomness](../../foundation
 runs them, from the moment a game is created with a seed to the moment a monster dies and its items fall. It adds no
 rule of its own. Each step is explained on the page that owns it; this page says only **what runs when**, **which
 [seed](../../reference/glossary/) is handed from one step to the next**, and **what has to come from outside**: where the player
-walks, and what happens in the fights. It restates the seed-to-world spec.
+walks, and what happens in the fights. It restates the [seed-to-world spec](../../spec-chain/overview/#purpose).
 
 The short version: everything that does not depend on what the player does is built from the seed the game was
 created with, and 37 recorded games were rebuilt step by step with 0 mismatches, given what the player did and what the
@@ -99,7 +99,7 @@ sequenceDiagram
 
 ### A. Game creation
 
-(chain § Algorithm A, rng/seeds)
+([chain § Algorithm](../../spec-chain/overview/#algorithm) A, rng/seeds)
 The game seed and the map seed both start from the seed given at creation. Four game-seed draws follow, in this
 order: one seeds the monster regions (the [monster pools](../../world/monsters/#which-monsters-a-level-can-have-the-pool)), one
 the object-region seed, one the vendors' store seed and one the quest seed. The project's tool reproduces all four from
@@ -108,7 +108,7 @@ the seed alone, along with every act's level-seed base and every level's seed; o
 
 ### B. Acts and levels
 
-(chain § Algorithm B, [levels](../../world/levels/#acts-levels-and-rooms))
+([chain § Algorithm](../../spec-chain/overview/#algorithm) B, [levels](../../world/levels/#acts-levels-and-rooms))
 Each act's seed starts from the map seed and gives a level-seed base. A level, when it is first needed, starts its
 seed from that base **plus its level id**: a sum, not a draw, so a level's seed does not depend on which levels were
 built before it. The run built 176 combinations of level, difficulty and game type, with all three generator kinds and
@@ -117,7 +117,7 @@ and each room it creates takes one draw.
 
 ### C. A room activates
 
-(chain § Algorithm C, [levels](../../world/levels/#room-tiles-and-the-k-draws))
+([chain § Algorithm](../../spec-chain/overview/#algorithm) C, [levels](../../world/levels/#room-tiles-and-the-k-draws))
 When a room activates (a player comes near), it is re-seeded, picks its tiles with [k](../../reference/glossary/) draws, and gets its
 collision grid, stamped from its own tiles and those of the neighbours already active. That is how the walk reaches the
 grid: a neighbour that activates later is not stamped in. One more draw then gives the
@@ -127,7 +127,7 @@ last point is inferred: the code that adds the preset unit has not been read.
 
 ### D. The new-rooms walk
 
-(chain § Algorithm D, lifecycle § D)
+([chain § Algorithm](../../spec-chain/overview/#algorithm) D, [lifecycle § D](../../spec-drlg/lifecycle/#d-the-new-rooms-walk-populate-once-restore-once-per-activation))
 At the start of the next frame the server walks the act's new rooms in the order of the act's room list. For each:
 
 1. **The wanderer tick**: one draw on the room's seed, always.
@@ -150,7 +150,7 @@ pass's warp test can even activate a room and step a level's seed.
 
 ### E. One monster's creation
 
-(chain § Algorithm E, [monsters](../../world/monsters/#placement-where-each-monster-stands))
+([chain § Algorithm](../../spec-chain/overview/#algorithm) E, [monsters](../../world/monsters/#placement-where-each-monster-stands))
 Every server unit other than a player steps the game seed once when it is created (an item twice). For a monster:
 
 1. one game-seed step, and the monster's own seed starts from it;
@@ -170,7 +170,7 @@ them.
 
 ### F. Coming back to a room
 
-(chain § Algorithm F, [levels](../../world/levels/#rooms-that-come-and-go-release-and-restore))
+([chain § Algorithm](../../spec-chain/overview/#algorithm) F, [levels](../../world/levels/#rooms-that-come-and-go-release-and-restore))
 A released room that activates again re-creates its saved monsters, then its items, then its other units, each kind in
 the reverse of the order the release saved it: the saved list's order, which the specs call oldest first, and not the units' age. A re-created monster is a **new unit for the seeds**: a new game-seed step, a new own seed and a full creation,
 keeping only its id, class, cell, a few saved stats and, for a special, its mods from the save. Where it lands and
@@ -186,7 +186,7 @@ only two mismatches were exactly that.
 
 ### G. A death and its drop
 
-(chain § Algorithm G, [items](../../items/items/#the-big-picture))
+([chain § Algorithm](../../spec-chain/overview/#algorithm) G, [items](../../items/items/#the-big-picture))
 When a monster dies, its treasure class is walked on the **dying unit's own seed**, and each pick's quality is rolled
 on the same seed. Then each item made takes two game-seed steps: the first gives the item's unit seed, on which its
 base stats are drawn; the second gives the start of its [item seed](../../reference/glossary/), on which the rest of its build
@@ -199,7 +199,7 @@ the object-region seed has not moved.
 
 ### H. Each item's build
 
-(chain § Algorithm H, [items](../../items/items/))
+([chain § Algorithm](../../spec-chain/overview/#algorithm) H, [items](../../items/items/))
 On the item seed: the unique or set pick and, when it fails, the fallback builders; the builder's affix picks with
 their property rolls; the [staff mods](../../reference/glossary/); then the ethereal roll, the socket roll and the automagic pick.
 The staff mods, once taken from the recording, are modelled and run in the chain.
@@ -294,7 +294,7 @@ The next drop of that game starts from the game seed `A15D299B:15EB20E3` that th
 
 ## Where to read more
 
-- The spec: seed to world, with the entry table of what each step receives.
+- The spec: [seed to world](../../spec-chain/overview/#algorithm), with the entry table of what each step receives.
 - The pages in build order: [randomness](../../foundations/randomness/) (the seed tree), [levels](../../world/levels/) (steps B, C and F),
   [objects](../../world/objects/) and [monsters](../../world/monsters/) (steps D and E), [items](../../items/items/) (steps G and H).
 - [How we know](../../reading-the-tags/) for runs, recordings and boundary oracles; the [glossary](../../reference/glossary/) for D2 terms.

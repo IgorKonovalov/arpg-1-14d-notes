@@ -8,8 +8,8 @@ This page explains what the server does when a unit uses a skill: how the reques
 when the skill's animation starts and which on its action frame, what the skill costs and how its delay works, how a
 skill's melee hit is built, what the charge-up skills and their finishers do, which item stats and skills react to
 hits and kills, how a summon is made, and how a missile is created, flies, collides and hits. It restates the
-reviewed skills specs: the overview in skills, the skill side in
-dispatch and the missile side in missiles.
+reviewed skills specs: the overview in [skills](../../spec-skills/overview/#purpose), the skill side in
+[dispatch](../../spec-skills/dispatch/#purpose) and the missile side in [missiles](../../spec-skills/missiles/#purpose).
 The specs carry the exact arithmetic and [draw](../../reference/glossary/) order; this page tells the story. Where something is
 read from the code but not yet seen in a test run, or is still unknown, the page says so. "Confirmed by a second
 reading" means the instructions were read again with a second tool, or every call of or store into the thing was
@@ -224,7 +224,7 @@ code.
 
 ## Item skills and chance to cast
 
-Dispatch § H, read from the code unless said:
+[Dispatch § H](../../spec-skills/dispatch/#h-item-granted-skills-and-item-event-casts), read from the code unless said:
 
 - **An aura granted by an item** runs on the same frame grid as a selected aura, while the
   item's aura stat stays above 0.
@@ -552,7 +552,7 @@ from the code). Two draws happen at creation:
 
 ## Missiles: each frame
 
-Missiles § D:
+[Missiles § D](../../spec-skills/missiles/#d-each-frame):
 
 - **Missiles move first.** Read from the code, every frame runs the missiles, then players, monsters and objects, so
   every missile steps before any unit acts. Confirmed: a new missile first steps on the frame after its creation
@@ -573,7 +573,7 @@ Missiles § D:
 
 ## Missiles: the hit
 
-Missiles § E and § F:
+[Missiles § E](../../spec-skills/missiles/#e-the-hit) and [§ F](../../spec-skills/missiles/#f-the-packet-at-the-hit-missile_builddamage):
 
 1. **The filters.** Read from the code: the missile records the unit as its last one hit before the type and friend
    filters, which may still refuse it.
@@ -645,7 +645,7 @@ sequenceDiagram
 
 ## Difficulty, game type and player against player
 
-Overview § C, read from the code: difficulty enters Static Field, curse
+[Overview § C](../../spec-skills/overview/#c-branches), read from the code: difficulty enters Static Field, curse
 lengths and a summon's level-table stats; expansion and player count change nothing in the machinery itself (a monster
 skill hit's terms are its attack stats'). Players and monsters differ in the costs, ammunition, delay, checks and the
 town rules above, and a skill's line missile carries the owner's to-hit only for a monster (Double Throw, which adds the skill's to-hit to its
@@ -691,9 +691,9 @@ From the specs' open questions:
 
 ## Where to read more
 
-- The specs: skills overview,
-  dispatch and
-  missiles, and the
+- The specs: [skills overview](../../spec-skills/overview/#reimplementation-notes),
+  [dispatch](../../spec-skills/dispatch/#reimplementation-notes) and
+  [missiles](../../spec-skills/missiles/#reimplementation-notes), and the
   catalogue for the numbered functions. Each *Reimplementation notes* section lists the
   traps for someone rebuilding the system.
 - The [glossary](../../reference/glossary/) for D2 terms: start and do functions, progressive charges and the finisher, the

@@ -24,6 +24,66 @@
     {
       "slug": "reference",
       "label": "Reference"
+    },
+    {
+      "slug": "spec-data",
+      "label": "Spec: Game data"
+    },
+    {
+      "slug": "spec-drlg",
+      "label": "Spec: Level generation"
+    },
+    {
+      "slug": "spec-monsters",
+      "label": "Spec: Monsters"
+    },
+    {
+      "slug": "spec-monster-ai",
+      "label": "Spec: Monster AI"
+    },
+    {
+      "slug": "spec-items",
+      "label": "Spec: Items"
+    },
+    {
+      "slug": "spec-player",
+      "label": "Spec: Characters"
+    },
+    {
+      "slug": "spec-hirelings",
+      "label": "Spec: Hirelings"
+    },
+    {
+      "slug": "spec-combat",
+      "label": "Spec: Combat"
+    },
+    {
+      "slug": "spec-skills",
+      "label": "Spec: Skills and missiles"
+    },
+    {
+      "slug": "spec-anim",
+      "label": "Spec: Animation"
+    },
+    {
+      "slug": "spec-path",
+      "label": "Spec: Pathing"
+    },
+    {
+      "slug": "spec-sim",
+      "label": "Spec: Server frame"
+    },
+    {
+      "slug": "spec-quests",
+      "label": "Spec: Quests and travel"
+    },
+    {
+      "slug": "spec-chain",
+      "label": "Spec: Seed to world"
+    },
+    {
+      "slug": "spec-quirks",
+      "label": "Spec: Quirks"
     }
   ]
 }

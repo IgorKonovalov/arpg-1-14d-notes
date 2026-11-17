@@ -1,0 +1,564 @@
+---
+title: "Level links, warp slots and warp points"
+sidebar:
+  order: 7
+---
+
+## Purpose
+
+Levels connect in two ways: through a **warp** (stairs, a cave mouth, a portal tile) or through a **walkable seam**
+(two outdoor levels that touch). This spec covers, in the order the game runs them:
+- the **act link builder**: when an act is created, it lays out the act's outdoor chain on a copy of the act seed and
+  writes each level's rectangle, the town orientation and level 27's file index;
+- the per-level **link lists** that override `Levels` `Vis0..7`/`Warp0..7`;
+- the **warp slots** a preset DS1 cell carries, which become room flags;
+- the **warp points** list (`level+0x1E0`) that `LevelInit` builds after every level build, which
+  drlg/collision § I reads;
+- the **pairing** that finds, when a room with a warp activates, the matching room of the destination level.
+
+In maze levels the warp rooms are the specials of [maze.md](../maze/). Act III's link layout and the warp bits of
+outdoor rooms are made by the outdoor generators, specified in [outdoor.md](../outdoor/) (§ J and § B). Primitives are
+those of rng; the act seed is that of rng/seeds step 3.
+
+## Entry points
+
+| When | Function | Tag |
+|---|---|---|
+| Act created: per-act link setup, before any level is built | `DRLG_ActCreate` → | [C] |
+| One act link table laid out | — | [C] |
+| A level's position when the builder does not place it | — | [C] |
+| Room flags from a preset instance (seams, warp slots, waypoint) | `DRLG_PresetMapScan` | [C] |
+| Warp points, at the end of every `LevelInit` | — | [C] |
+| Room-state restore, at the end of every `LevelInit`, before the points (no warp data, no draw) | — | [C] |
+| Warp pairing, when a room with a warp bit activates | — | [C] |
+| Warp tile and warp node at room activation | see room-tiles.md step 10 | [C] |
+
+- [C] `LevelRoomStateRestore` restores room `+0x60` bit 0 from the per-room array at level `+0x22C` that `LevelUnload`
+  (keep mode) saves, ORing it in room by room in list order: 25 rebuilds with a saved array, 90 rooms whose bit it set,
+  and no change on a first build (166). It is not a warp pass, despite its place next to the point build.
+
+
+## Inputs
+
+### Tables
+
+| Used for |
+| --- |
+| `Vis0..7` (leveldefs `+0x48 + 4k`): the destination level of slot *k*, or a seam neighbour |
+| `Warp0..7` (leveldefs `+0x68 + 4k`): the LvlWarp `Id` of slot *k*; −1 = no warp (a seam) |
+| `[difficulty]` (`+0x0C + 4·diff`, `+0x18 + 4·diff`): every level rect's size |
+| `+0x24`/`+0x28`: anchor entries' and unplaced levels' positions |
+| the level whose position an unplaced level's offset is relative to |
+| the town-index write (preset levels 1 and 40), the border pass (outdoor levels) |
+| the warp record of a slot |
+| `+0x1C`/`+0x20`: the warp unit's offset from its cell |
+| `+0x14`/`+0x18`: where the server puts a unit that comes out of the paired warp |
+| `+0x2C`: `'b'`, `'l'`, `'r'` record fitting (room-tiles.md step 10) |
+
+- [C] Stock data: all 236 `Vis` cells resolve to levels. The links are symmetric except 133 → 17. 228 slots hold
+  `Vis` + `Warp`, 8 hold `Vis` without `Warp` (26↔27, 27↔28, 32↔33, 107↔108), and none hold `Warp` without `Vis`.
+
+
+### Runtime state
+
+| State | Type | Owner offset | Source |
+|---|---|---|---|
+| act seed | `Seed` | act | rng/seeds steps 3a–3c |
+| act index (0-based), difficulty | `u32` | act `+0x480`, `+0x450` | game |
+| link lists | list of `LevelLinks` `{levelId, vis[8], warp[8], next}`, 0x48 bytes | act `+0x90` | § C |
+| link builder | `LinkBuild`, 500 bytes: seed copy `+0x000`, `rect[15]` `+0x008`, table `+0x0F8`, `dir[15]` `+0x0FC`, `dir0[15]` `+0x138`, `flip[15]` `+0x174` (`step`), `flip0[15]` `+0x1B0`, `i` `+0x1EC` | stack | § B (`LinkBuild+0x0FC` is `dir`) |
+| level rect | `{x, y, w, h}` `i32`, tiles | level `+0x1C`–`+0x28` | § C |
+| DRLG room flags | `u32`: `0x10 << m` warp slot *m*, `0x30000` waypoint | DRLG room `+0x28` | § D |
+| level points | 12-byte entries `{x, y, type}`, count `+0x1D8` | level `+0x2C` | § D |
+| warp points | `x[9]` `+0x1E0`, `y[9]` `+0x204`, count `+0x228`, `i32` subtiles | level | § E |
+| Act III level rects and link lists | rects, `LevelLinks` | levels 75–83; act `+0x90` | [outdoor.md § J](../outdoor/#j-act-iii) (modelled since) |
+| outdoor rooms' warp-slot bits | `u32` | DRLG room `+0x28` of `DrlgType` 3 rooms | [outdoor.md § B](../outdoor/#b-the-cell-grid-and-its-bits): grid0 OR `0x80000` (modelled since) |
+
+### Constants
+
+| Name | Value | Tag |
+| --- | --- | --- |
+| Rogue Encampment side-pair table `g_LinkRogueSideOk` | 64 `i32`, 0 or 1; nonzero at indices 0, 1, 9, 19, 21, 24, 30, 31, 33, 39, 41, 53, 54, 56, 62, 63 | [C] |
+| Arreat Plateau offsets `g_LinkArreatOffsets` | 4 × `{dx, dy}` `i32`: `k` 0 `(0, −160)`, 1 `(−96, −64)`, 2 `(−64, −96)`, 3 `(−160, 0)` | [C] |
+| Act IV pick flag `g_LinkPickOutdoorFlag` | `u32`, written by the Outer Steppes pick, ORed into level 104's outdoor data | [C] |
+| warp slot cell | wall cell of orientation 10 or 11; slot `m` = bits 20–25, sub = bits 8–15 | [C] |
+
+## Algorithm
+
+```mermaid
+flowchart TD
+  ac["DRLG_ActCreate: act seed, level seed base, tomb or Act III draws"] --> li["ActLinkInit: per act, LevelLinkBuild on act-seed copies (A, B)"]
+  li --> wr["level rects, town index, level 27's index (one act-seed draw), seams in the link lists (C)"]
+  wr --> build["later, per level: LevelInit builds rooms (drlg/overview, maze.md)"]
+  build --> scan["PresetMapScan: room flags = seams, warp slots, waypoint; level points (D)"]
+  scan --> pts["LevelWarpPointsBuild: one point per warp or waypoint room (E)"]
+  pts --> act["a room with a warp bit activates: WarpPairLink builds the destination and pairs by rank (F)"]
+```
+
+### A. Per-act link setup
+
+```
+A1. ActLinkInit(act):                                                [C]
+      act 0 (I):  Build(check Act1A, after LinkOutdoorFlags)
+                  Build(check Act1B, after LinkOutdoorFlags)
+                  LevelBorderAdj(1 … 17)
+      act 1 (II): Build(check Act2A);  Build(check Act2B)
+                  LevelBorderAdj(40 … 46)
+      act 2 (III): level 75 at its Levels offset; jungle layout /   ; outdoor.md § J
+                  LevelSeamsByTouch(75, 83);  LevelBorderAdj(75 … 83)
+      act 3 (IV): Build(check Act4A);  Build(check Act4B)
+                  level 104's outdoor data (+0x14) |= g_LinkPickOutdoorFlag   ; set by its pick (B2)
+                  LevelBorderAdj(103 … 106)
+      act 4 (V):  Build(no check);  Build(no check)
+                  LevelSeamsByTouch(111, 112);  LevelBorderAdj(111 … 112)
+                  LevelSeamsByTouch(110, 111);  LevelSeamsByTouch(109, 110)
+                  Build(check Act5C)
+```
+
+- A1. [C] This runs inside `DRLG_ActCreate` after the act seed's own draws (rng/seeds steps 3a–3c) and before the town is
+  built. The run predicted the act seed at every `LevelLinkBuild` entry and exit and the act's link lists after
+  `ActLinkInit` for Acts I, II, IV and V (196 calls, 69 lists). The call order of each act function is read from its
+  pushes.
+- A1. [C] **Act IV flag.** After its two builds, `ActLinkAct4` ORs `g_LinkPickOutdoorFlag` into dword 0 of level 104's
+  outdoor data (`+0x14`); the Outer Steppes pick writes the flag (B2). Writer and reader agree.
+
+
+### B. The act link builder
+
+Each table entry places one level's rectangle `rect[i]` against the rectangle of its **anchor** entry `rect[a]`
+(`a` = `table[i].anchor`, an index into the same table, −1 for none).
+
+```mermaid
+flowchart TD
+  s["B.seed = copy of act seed; dir, dir0, flip, flip0 = −1; rect[i] size = Levels Size[diff]"] --> i0["i = 0"]
+  i0 --> e{"table[i].level = 0?"}
+  e -->|"yes"| post["per-entry writes (C1)"]
+  e -->|"no"| p{"pick(i)?"}
+  p -->|"0: exhausted"| rs["reset entry i; i = i − 1"]
+  rs --> e
+  p -->|"placed"| c{"no check, or check(i) accepts?"}
+  c -->|"yes"| inc["i = i + 1"]
+  inc --> e
+  c -->|"no: same i, next choice"| e
+```
+
+```
+B1. LevelLinkBuild(act, table, check, after):                       [C] (§ 3)
+      B.seed ← copy of act.seed                                      ; all picks draw on the copy
+      for every i: B.dir[i], B.dir0[i], B.flip[i], B.flip0[i] ← −1
+                   B.rect[i].w, h ← Levels[table[i].level].SizeX[diff], SizeY[diff]
+      i: i32 ← 0
+      while table[i].level ≠ 0:
+        if not table[i].pick(B, i):                                  ; exhausted
+          B.dir[i], B.dir0[i], B.flip[i], B.flip0[i] ← −1
+          i ← i − 1;  continue                                       ; back up one entry
+        if check = none or check(B, i): i ← i + 1                    ; else the same entry tries its next choice
+      for i in table order: C1(act, B, i, after)
+      ; B.seed is discarded
+```
+
+- B1. [C] **The pick protocol.** A cycling pick tests `dir0[i] = −1`. If so, it draws on `B.seed`, stores the drawn
+  choice in `dir0` and `dir` (and `flip0`/`flip`), and places the rect. Otherwise it computes the next choice and returns 0
+  if that equals the first one (leaving `dir` as it was), else stores it and places. So an entry draws again only after a
+  backtrack has reset it. Every `mod` is the compiler's signed `% n`.
+- B1. [I] **Five picks never return 0**: `LinkAnchor` and `LinkPickFixed` (no draw; a check that rejected them would retry
+  the same rect forever), which draw again on every call. No stock case was
+  seen to reject them.
+- B1. [C] **No backtrack happened in the run**: each of the 51 rejects in the checked builds was followed by the same
+  entry's next choice, which a later check accepted. No pick was exhausted in the 64 builds
+  or in its offline scan either.
+- B1. [C] The entry's `anchor2` field (`+0xC`) would add a second seam pair in C1, but it is −1 in all nine stock tables.
+
+- B1. [C] **Every `LevelLinkBuild` starts from the act seed as it is then.** The builder leaves the act seed alone except for
+  level 27's draw (C1), which comes after the layout of Act I's last table. So all the tables of one act start from the
+  same value, and their first draws repeat one another (§ Worked example).
+
+**B2. The pick callbacks.** `P` is the anchor's rect, `w`, `h` the entry's size, `÷` truncates toward zero. "Cycle *n*"
+means: first call `d ← Step(B.seed) & (n − 1)`, then `d ← (d + 1) mod n` until back at `dir0`.
+
+| Pick | Choice | Position by choice | Tag |
+|---|---|---|---|
+| — | none, no draw | `(Levels OffsetX, Levels OffsetY)` | [C] |
+| — | cycle 4 | 0 `(P.x − 16, P.y + P.h)`; 1 `(P.x − w, P.y − 16)`; 2 `(P.x + P.w − w + 16, P.y − h)`; 3 `(P.x + P.w, P.y + P.h − h + 16)` | [C] |
+| — | cycle 8 | 0 `(P.x − 8 − w÷2, P.y + P.h)`; 1 `(P.x + w÷2 + 8, P.y + P.h)`; 2 `(P.x − w, P.y − h÷2 − 8)`; 3 `(P.x − w, P.y + h÷2 + 8)`; 4 `(P.x − 8 − w÷2, P.y − h)`; 5 `(P.x + w÷2 + 8, P.y − h)`; 6 `(P.x + P.w, P.y − h÷2 − 8)`; 7 `(P.x + P.w, P.y + h÷2 + 8)` | [C] |
+| — | `d ← lo & 3`, then `f ← lo & 1` (two draws); next `(d, f) ← ((d + f) mod 4, (f + 1) mod 2)` until back at `(dir0, flip0)` | `f` 1: 0 `(P.x, P.y + P.h)`; 1 `(P.x − w, P.y + 8)`; 2 `(P.x + P.w − w, P.y − h)`; 3 `(P.x + P.w, P.y + P.h − h − 8)`. `f` 0: 0 `(P.x + P.w − w, P.y + P.h)`; 1 `(P.x − w, P.y + P.h − h − 8)`; 2 `(P.x, P.y − h)`; 3 `(P.x + P.w, P.y + 8)` | [C]; (0, 1) and (2, 0) placed, never kept (B2 note) |
+| — | size 96×56 for odd `d`, 56×96 for even | `f` 1: 0 `(P.x − 16, P.y + P.h)`; 1 `(P.x − w, P.y − 16)`; 2 `(P.x + P.w − w + 16, P.y − h)`; 3 `(P.x + P.w, P.y + P.h − h + 16)`. `f` 0: 0 `(P.x + P.w − w + 16, P.y + P.h)`; 1 `(P.x − w, P.y + P.h − h + 16)`; 2 `(P.x − 16, P.y − h)`; 3 `(P.x + P.w, P.y − 16)` | [C] |
+| — | `d` 0, no draw | `(P.x, P.y + P.h)` | [C] |
+| — | first `d ← (lo & 1) + 1`, then the other of 1, 2 | 1 `(P.x − w, P.y)`; 2 `(P.x, P.y − h)` | [C] |
+| — | cycle 8 | 0, 1 `(P.x, P.y + P.h)`; 2, 3 `(P.x − w, P.y)`; 4, 5 `(P.x, P.y − h)`; 6, 7 `(P.x + P.w, P.y)` | [C] |
+| — | `d` 3; a draw on every call | `lo & 1` = 1: `(P.x + P.w, P.y + P.h − h + 8)`, flag; `lo & 1` = 0: `(P.x + P.w, P.y − 8)`, flag | [C] |
+| — | `b ← lo & 1` on every call | size 64×160 (`b` 0) or 160×64; `(P.x − w, P.y + P.h − h − 16)` | [C] |
+| — | first `b ← lo & 1`, then the other value | size as above; `(P.x + T[k].dx, P.y + T[k].dy)`, `k = b + 2·dir[a]`, `T` = `g_LinkArreatOffsets` (Constants); the anchor is Rigid Highlands, so `dir[a]` is Rigid's `b` | [C] |
+| — | `b ← lo & 1` on every call | size as above; `(Levels OffsetX, Levels OffsetY)` | [C] |
+
+- B2. [C] Blood Moor, Rigid Highlands and Arreat Plateau overwrite the `Levels` size of their entry; see
+  Levels § Outdoor sizes from the link picks.
+  Tundra Wastelands (117) ended on `b` 0 in 9 checked builds.
+
+**B3. The validators.** `overlap` is the test of [maze.md § B](../maze/#b-primitives) step B2.
+
+```
+B3. check(B, i) → bool:                                              [C] (§ 3)
+      a ← table[i].anchor
+      plain (2A, 2B, 4A, 4B, 5C): reject if overlap(rect[i], rect[j]) for some j < i, j ≠ a
+      Act1A: plain;  then
+        level 1 (Rogue Encampment): accept iff g_LinkRogueSideOk[dir[i] + 4·flip[i] + 8·dir[a] + 32·flip[a]] ≠ 0
+                                                                     ; the current flip, not flip0
+        level 17 (Burial Grounds): reject if some j ≠ i in 0 ..< 15 has anchor[j] = a and dir[j] = dir[i]
+                                                                     ; [C] 3 rejects
+      Act1B: plain;  then if i ≠ 0:                                  ; [I] the widening decides no check on stock data, B3 note
+        reject if overlap({rect[0].x, rect[0].y − 200, rect[0].w, rect[0].h + 200}, rect[i])   ; 200 tiles toward −y
+```
+
+- B3. [C] The plain test made every reject of the checked builds: 51, all by overlap (Blood Moor 21, Far Oasis 14, City
+  of the Damned 9, Black Marsh 7).
+- B3. [C] The Rogue Encampment lookup reads `g_LinkRogueSideOk` with `a` = Blood Moor. The 7 lookups of the checked builds
+  were accepts at index 41 (Rogue Encampment `(d, f)` = (1, 0), Blood Moor (1, 1)).
+
+- B3. [C] A reject by a 0 entry of `g_LinkRogueSideOk`: 15 rejects of level 1 where the plain test passed, at 15
+  distinct indices (8, 10, 12, 14, 22, 27, 35, 40, 42, 44, 45, 46, 51, 55, 58), each followed by the next `(d, f)`.
+
+- B3. [C] **The Burial Grounds reject**: 3 rejects of level 17 (map seeds 52, 17, 5) where the plain test passed and
+  another child of Cold Plains already held that side; the same entry's next choice was accepted.
+
+- B3. [C] **Act1B widens rect[0] 200 tiles toward −y**, not west: `y − 200` and `h + 200` (`add [esi+0x14], 200;
+  add [esi+0xC], −200`, rect[0] at `B + 8`), restored after the test. Rect[0]
+  is Moo Moo Farm (39). At the widened test the logged rect[0] is the model's Moo Moo Farm rect with `y − 200` and
+  `h + 200`, `x` and `w` unchanged, in all 36 widened tests, and the check returns the gap test's result on it.
+
+- B3. [I] **The widening decides no check on stock data.** The table's outcome depends only on the difficulty (the
+  `Levels` sizes) and the first draws of Black Marsh and Dark Wood, since entries 0–2 are two anchors and the fixed
+  pick; an offline scan holds all 16 pairs at every difficulty, and its 3 600 widened tests with the plain test passed
+  all accept, as do the 36 logged ones. So a reimplementation must make the test, but no stock build is changed by it.
+
+
+**B4. The tables** (entry: level ← anchor index, pick):
+
+| Table | Entries | Tag |
+|---|---|---|
+| — | Stony Field 4 (anchor), Cold Plains 3 ← 0, Blood Moor 2 ← 1, Rogue Encampment 1 ← 2, Burial Grounds 17 ← 1 | [C] |
+| — | Moo Moo Farm 39 (anchor), Monastery Gate 26 (anchor), Tamoe Highland 7 ← 1 (fixed), Black Marsh 6 ← 2, Dark Wood 5 ← 3 | [C] |
+| — | Lut Gholein 40 (anchor), Rocky Waste 41 ← 0, Dry Hills 42, Far Oasis 43, Lost City 44 each ← the previous entry, Valley of Snakes 45 ← 4 | [C] |
+| — | Canyon of the Magi 46 (anchor) | [C] |
+| — | Pandemonium Fortress 103 (anchor), Outer Steppes 104 ← 0, Plains of Despair 105 ← 1, City of the Damned 106 ← 2 | [C] |
+| — | Chaos Sanctum 108 (anchor) | [C] |
+| — | Harrogath 109 (anchor), Bloody Foothills 110 ← 0 (anchor pick: `Levels` offsets), Rigid Highlands 111 ← 1, Arreat Plateau 112 ← 2 | [C] |
+| — | Tundra Wastelands 117 (no anchor) | [C] |
+| — | Pandemonium Run 2 134, Tristram 136 (anchors) | [C] |
+
+### C. Level rectangles and the links after the layout
+
+```
+C1. per entry i of the table, in order:                             [C] (§ 3)
+      L ← LevelEnsure(act, table[i].level)                           ; creates the level if needed (no draw on the act seed)
+      L.rect ← B.rect[i]
+      if L is a preset level: if L.id = 1: L.presetIdx ← B.dir[i]                     ; the town orientation
+                              if L.id = 40: L.presetIdx ← B.dir[i + 1]                 ; Rocky Waste's side
+      if L.id = 6:                                                   ; level 27's file index, on the ACT seed
+        if B.dir[i] = 1: idx27 ← 2 − (Step(act.seed) & 1)            ; r & 1 = 1 → 1: [C]
+                                                                     ; r & 1 = 0 → 2: [I] not reachable on stock data, C1 note
+        if B.dir[i] = 3: idx27 ← (~Step(act.seed)) & 1
+      if after: after(act, L, B, i)                                  ; Act I: LinkOutdoorFlags
+      if act.index ≠ 4:
+        if table[i].anchor ≠ −1:                                     ; a walkable seam both ways
+          LevelLinkSet(L, anchor level, warp −1);  LevelLinkSet(anchor level, L, warp −1)
+        if table[i].anchor2 ≠ −1: the same with anchor2's level      ; −1 in every stock entry
+
+C2. LevelLinkSet(L, dest, warp):                                     [C] (§ 3)
+      N ← L's node in act[+0x90]; if none: create it as a copy of Levels[L.id].Vis0..7 and Warp0..7, prepended
+      if N.vis[k] = dest for some k (the first): N.warp[k] ← warp
+      else: the first k with N.vis[k] = 0 and N.warp[k] = −1: N.vis[k] ← dest;  N.warp[k] ← warp
+
+C3. LevelSeamsByTouch(lo, hi):                                       [C] (§ 3)
+      for a in lo … hi:
+        ensure a's node (C2's copy)
+        for b in lo … hi, b ≠ a: if Touch(rect[a], rect[b]): LevelLinkSet(a, b, warp −1)
+      Touch(A, B) = RectTouch(A, B, t = −1):
+                   gx ← (A.x ≤ B.x) ? B.x − A.w − A.x : A.x − B.w − B.x;  gy likewise
+                   true iff (gx = 0 and gy ≤ −1) or (gy = 0 and gx ≤ −1)   ; a shared edge, not a corner
+
+C4. LevelSetPosition(L):  ; the rect of a level the builder does not place   [C]
+      (bx, by) ← (0, 0);  if Levels[L.id].Depend ≠ 0: (bx, by) ← position of the Depend level (created first if needed)
+      L.rect ← (Levels.OffsetX + bx, Levels.OffsetY + by, Levels.SizeX[diff], Levels.SizeY[diff])
+
+C5. LevelVisIds(L) / LevelWarpIds(L) / LevelWarpId(L, m):             [C]
+      vis[8] ← L's node in act[+0x90] (+0x04) if any, else leveldefs +0x48
+      warp[8] ← that node (+0x24) if any, else leveldefs +0x68
+      LevelWarpId(L, m) ← warp[m]
+```
+
+- C2. [C] The node copy (prepended to act `+0x90`), the first-match update and the first-free-slot add are what the 69
+  logged link lists show.
+- C2. [I] With no free slot the slot index stays −1, and the write lands on the node's level id and `vis[7]`. No stock
+  level fills all 8 slots in the run.
+- C3. [C] With `t` = −1, its only use here, `RectTouch` is true when the rects share an edge segment: one gap 0 and the
+  other negative. Every pair test of the run was true (54: 36 with `gx` = 0, 18 with `gy` = 0), and the checked Act V link
+  lists follow from them.
+- C1. [C] The level-27 draw is the builder's only act-seed draw, made while the per-entry loop handles level 6 (Black
+  Marsh) in table, after that table's layout. It was predicted in all 16 cases. Black Marsh's side was 3 in
+  every case of that run (16 cases). then reached side 1 with map seeds 22 and 25 (4 draws,
+  index and act seed after as predicted), all with `r & 1 = 1`, so index 1, and with map
+  seeds 90 and 5, index 1 again. When Black Marsh ends on side 0 nothing is drawn or written, and level 27 keeps its
+  create-time index: 0 and 2 with map seeds 2 and 58. The index left here is the one level 27's build uses
+  ([preset.md](../preset/) step 7) and that the Barracks placement reads.
+
+- C1. [I] **Index 2 of side 1 is not reachable on stock data.** Black Marsh is entry 3, after two anchors
+  and the fixed pick, so its first draw is the first step of the seed copy: the same value `r` as the level-27 draw,
+  which is the act seed's first step after the copy was taken (the picks step only the copy). Its first
+  choice is `r & 3`; the choices come out 0 → 0, 1 → 1, 2 → 3, 3 → 3 at every difficulty, with no backtrack, so side 1
+  arises only from `r & 3` = 1, and then `r & 1` = 1 gives index 1. Index 2 needs `r & 3` = 1 with `r & 1` = 0, which
+  no `r` gives. For the same reason Black Marsh never ends on side 2.
+- C1. [C] Levels 1 and 40 take the link value as their preset file index, which overrides the create-time index
+  ([drlg/overview](../overview/) step note 6): 30 town indices were predicted.
+- C1. [C] Act V (`act.index` 4) writes no seams in the builder; its seams come from `LevelSeamsByTouch`.
+
+- C4. [C] Level 27 sits at level 26's builder position + (0, −40). The rects of 218 maze levels, and those of levels 27
+  and 108 that the maze reads, matched.
+- C5. [C] So `Warp`*k* pairs with `Vis`*k* by slot index. The lookup makes no draw.
+- [C] **`Vis` with `Warp` −1 is a walkable seam, not a warp.** The builder writes −1 between each entry and its anchor
+  (Acts I–IV) and `LevelSeamsByTouch` between touching levels (Act III 75–83, Act V 109–112). Two of the four data pairs
+  without `Warp` are joined by the maze code itself: 27↔28 (`MazeBarracksPlace`) and 107↔108 (`MazeRiverOfFlame`).
+
+
+### D. Room flags and level points from a preset instance
+
+```
+D1. DRLG_PresetMapScan(L, ps, flags):  the flag part                 [C]
+      grid[cx, cy] ← flags | OR over k in 0 ..< 8 with LevelWarpId(L, k) = −1 of (0x10 << k)   ; every 8 × 8 room; even when Scan = Pops = 0
+      if ps.rec.Scan:
+        for each wall cell (x, y) of the DS1 with orientation o ∈ {10, 11}:
+          c: u32 ← the cell;  m ← (c >> 20) & 0x3F;  sub ← (c >> 8) & 0xFF
+          if m < 8 and (sub = 0 or sub = 4 or c & 0x80000000): grid[x ÷ 8, y ÷ 8] |= 0x10 << m
+          if 8 ≤ m < 30: a pop cell (drlg/preset)
+          if 30 ≤ m < 34: append {ps.x + x, ps.y + y, type} to L's points (+0x2C), type ← {30: sub, 31: sub + 5, 32: 10, 33: 11}[m]
+        for each object unit with class < 0x23D and Objects SubClass bit 6 (a waypoint):
+          grid[(unit.x ÷ 5) ÷ 8, (unit.y ÷ 5) ÷ 8] |= 0x30000
+      ; a single-room instance (a maze room of at most 12 × 12) uses cell (0, 0) for all
+      PresetRoomCreate ORs each room's grid cell into its flags (+0x28)
+```
+
+- D1. [C] 21728 preset rooms' warp and waypoint bits (`0x30FF0`) were predicted from the DS1s, 770 of them with DS1 slot or
+  waypoint bits.
+- D1. [C] The rule holds for presets placed by any generator. The predicted flags of every logged warp-point build
+  match, split by generator: preset levels 6120 rooms (100 with a warp-slot bit, 184 with the waypoint bits), maze
+  rooms 19 389 (805, 163), outdoor embedded presets 65 052 (882, 240).
+- D1. [C] The outdoor generators write the warp-slot and waypoint bits of their own out rooms into grid0 (for example
+  `OutWaypointPlace`, which marks level 3's waypoint next to its Blood Moor seam opening); an out room's
+  flags are its grid0 cell `| 0x80000`.
+
+- D1. [C] `LevelPointFind` (drlg/collision § I step I2)
+  takes the point list only when the level's `Levels.Position` (leveldefs `+0x90`) is set. With `Position` 0 it calls
+  `LevelWaypointRoom`, which takes the first room of the level that passes the waypoint test, activates it, and returns
+  the tile of the first type-2 unit of its preset list with id < `0x23D` and Objects `SubClass` bit `0x40`, falling back
+  to other room searches and the room centre. All 26 distinct type-11 points logged for `Position`-0 levels with a
+  logged waypoint object are that object's tile. The level-seed draw it can make belongs to `LevelPointFind`, which
+  runs during population, not to the build.
+- D1. [I] For a level with `Position` set, the type-11 point is a slot-33 cell of a preset (this section's level
+  points, through `LevelPointPick`). One logged case has a source (level 125), and Tristram's point has none.
+
+- [C] **Which slot each stock record carries** is DS1 data, surveyed in
+  LvlPrest § Warp slots. Each record the maze code places carries
+  one slot or none, and no `base + mask` record carries one. In a maze level the warp rooms are therefore exactly the
+  specials and fixed rooms of [maze.md](../maze/) whose records carry a slot.
+- [C] Basement 3 (54) has no slot-2/3 bit: its NW and SE rooms take `File4`, whose DS1s hold no warp-slot cell.
+
+
+### E. Warp points
+
+```
+E1. LevelWarpPointsBuild(L):  ; at the end of every LevelInit         [C]
+      ; L[+0x1E0 … +0x22B] were cleared by LevelUnload: the list starts empty
+      for R in L.rooms (newest first):
+        if R.flags & 0x30000, or some m in 0 ..< 8 has R.flags & (0x10 << m) and LevelWarpId(L, m) ≠ −1:
+          n: i32 ← L[+0x228];  L[+0x228] ← n + 1                     ; no bound check
+          L.x[n] ← (R.x + R.w ÷ 2) × 5;  L.y[n] ← (R.y + R.h ÷ 2) × 5   ; the room centre, in subtiles
+```
+
+- E1. [I] The count is not bounded by the 9-entry arrays; no build had more than 9 points.
+
+- E1. [I] Stock data does not pass 9 in any logged build. Over the 37 kept logs with `LWP` lines (1452 builds of 93
+  levels) the count equals the number of rooms that qualify by `Levels` `Warp0..7`, no qualifying bit is on two rooms
+  of a build, no build has two waypoint rooms, and the largest count is 8 (Valley of the Kings, 46). In the data the
+  most `Warp` ≠ −1 slots of a level is 7 (46), and the 43 levels the logs miss have at most 3. A count above 9 would need
+  one slot's warp cells in two rooms of a level; no static bound excludes that.
+
+### F. Warp pairing
+
+```mermaid
+flowchart TD
+  a["room with warp bit m activates"] --> d["dest = Vis[m] of S; LevelEnsure, LevelInit if not built"]
+  d --> w{"Warp[m] ≠ −1?"}
+  w -->|"no: a seam"| mark["add dest rooms within 6 tiles<br/>to the source room's near list"]
+  w -->|"yes"| k["k = earlier slots of S naming dest"]
+  k --> r{"k-th slot j of dest naming S<br/>has a room with bit j?"}
+  r -->|"yes"| pair["paired room: first room of dest with bit j"]
+  r -->|"no"| fb{"first slot j of dest naming S<br/>whose room exists?"}
+  fb -->|"yes"| pair
+  fb -->|"no"| none["no pair"]
+```
+
+```
+F1. WarpPairLink(srcRoom, m):                                        [C]
+      if m > 7: fatal
+      S ← srcRoom's level;  vis ← LevelVisIds(S);  dest ← vis[m]
+      D ← LevelEnsure(act, dest);  if D has no rooms: LevelInit(D)   ; the neighbour is built lazily
+      if LevelWarpId(S, m) ≠ −1:
+        k: i32 ← number of j < m with vis[j] = dest
+        j ← the k-th slot (0-based) of LevelVisIds(D) that names S.id
+        if j exists and FindRoom(D, j): return                       ; rank pairing
+      for j in 0 ..< 8 with LevelVisIds(D)[j] = S.id:                 ; the fallback walk
+        if FindRoom(D, j): return
+      FindRoom(D, j): the first room of D.rooms (newest first) whose flags have 0x10 << j;
+                      it is appended to srcRoom's near list, and srcRoom gets a warp node
+                      pointing at it, with the 'b' LvlWarp record of (S, m)
+      ; with LevelWarpId(S, m) = −1, FindRoom instead appends every room of D with bit 0x10 << j and a gap below 6 tiles
+      ; to srcRoom's near list and makes no warp node                [I]
+```
+
+- F1. [C] 172 pairings were predicted: 162 by rank (32 at rank 1 on a repeated destination) and 10 by the fallback (the
+  Durance 101 ↔ 100 and 101 ↔ 102, and caves). No draw is made.
+- F1. [C] **Rank pairing makes repeated destinations distinct.** A wilderness level that names the same cave in four
+  slots gets four distinct stairs, matched in slot order. The fallback catches the levels whose stairs record faces one
+  side only: the Durance Prev and Next records carry slot 2/3 or 0/1 by the side the finisher's rotation faced, so the
+  slot a Durance level ends up with depends on that draw. In seed 2027 level 100's Prev took slot 2, and Travincal pairs
+  with it by rank (83 slot 0 ↔ 100 slot 2).
+- F1. [C] The caller is `RoomNeighboursEnsure`, which calls `WarpPairLink` once per warp bit `0x10 << slot` of the room's
+  flags, in slot order, when a room activates (from `RoomActivateB`, only while the room's `+0x2C` is
+  0), except for a room of level 133, for which it makes no call (below). So entering a room with stairs builds the
+  next level. Its 695 logged calls made 737 `WarpPairLink` calls: 725 with `Warp` −1, which made no warp node, and 12
+  that paired. `+0x2C` is 0 on a
+  room's first activation and again after `LevelUnloadCheck` cleared the near lists of the rooms of the levels linked
+  to one it unloads, so a room can be ensured again (1 logged case). With `Warp` −1 the call appends
+  destination rooms to the source room's near list (next note).
+- F1. [I] **The pairing extends the source room's near list.** `RoomNeighboursEnsure` first rebuilds the list (`+0x08`,
+  count `+0x2C`) from the rooms of the same level whose gap to the room is below 6 tiles on both axes, the room itself
+  included. `RoomNearListAppend` then adds each paired room at the end and re-sorts the list with an exchange sort over
+  adjacent pairs `(d, c)` that swaps them unless `d.x < c.x + c.w` and `d.y < c.y + c.h` (signed). This is the list the
+  bit-2 scan, the collision near list and `DUNGEON_NearRoomsBuild` read, so the paired room of the next level becomes a
+  near room of the stairs room. With `Warp` ≠ −1, `RoomWarpNodeAdd` prepends the node `{D, next, 1, LevelWarpRec(S, m,
+  'b')}` to the source room's `+0x4C`. Nothing marks the destination room.
+- F1. [I] `WarpPairLink(a1, srcRoom, m)` is stdcall; `srcRoom` null or `m` ≥ 8 is fatal. Its first argument, the
+  caller's `ECX`, reaches only a function that does not read it, so it has no effect.
+
+- F1. [I] **133 → 17.** Matron's Den's Prev stairs carry slot 0, so they name `Vis0` 17 with `Warp0` 8. Level 17 names
+  no slot back, so both walks would find nothing; but `RoomNeighboursEnsure` makes no pairing call at all for a room of
+  level 133 (`[level+0x1D0]` = `0x85`), so that room never pairs, whatever its `Warp`. The pairing
+  code's lack of a level test holds for `WarpPairLink` itself, not for its caller. What the game does when that warp
+  is used is open.
+
+### G. The warp unit and the LvlWarp columns
+
+- [C] At room activation the warp cell gets its tile and its warp node: `id ← LevelWarpId(L, m)`, the LvlWarp record
+  refitted to `Direction` `'l'` (orientation 10) or `'r'` (11), and one extra tile pick when `LitVersion` ≠ 0. Level 133
+  skips the tile. This is room-tiles.md step 10.
+- [C] The warp unit is a preset unit of type 5 whose class is the LvlWarp `Id`, placed at its cell plus
+  `OffsetX/OffsetY` of the LvlWarp row fitted to the cell's direction, unless the cell is on the room's last column or
+  row: all 21 type-5 units of the logged server walks sit at a warp cell of their room's preset instance, × 5 plus
+  those offsets.
+- [C] A unit leaving through a warp is put on the paired warp unit's position and given the exit position, that
+  position plus `ExitWalkX/ExitWalkY`, as a walk target (server): four trips between Halls of the Dead 1 and 2 (rows
+  45 and 46, offsets (5, 0) and (0, 5))..
+  The player's side of the trip (the free-cell search, the quest gates into 73, 100, 118, 128 and 132) is
+  [quests/travel § H](../../spec-quests/travel/#h-warps).
+- [I] `SelectX/Y/DX/DY` are read only by the client, which draws the warp's selection box. The client reaches the
+  records through a pointer not traced, so no reader search bounds them.
+- [I] **Units.** `OffsetX/OffsetY` are subtiles relative to the room: `WarpUnitAdd` converts the cell's room-relative
+  tile to subtiles (× 5) and adds them. `ExitWalkX/ExitWalkY` are subtiles added to the paired warp unit's subtile
+  position. `SelectX/SelectY/SelectDX/SelectDY` are screen pixels: the client converts the unit's subtile position with
+  `X = (x − y)·16`, `Y = (x + y)·8`, subtracts the view origin, adds `SelectX/SelectY` for the box corner and takes
+  `SelectDX/SelectDY` as its width and height.
+
+## Outputs
+
+- Per act: every placed level's rect, the town indices of levels 1 and 40, level 27's index, the act seed after its one
+  possible draw, and the link lists at act `+0x90`. [C]
+- Per build: each DRLG room's warp-slot and waypoint flags, the level points (`+0x2C`), and the warp points
+  (`+0x1E0`/`+0x204`/`+0x228`) that drlg/collision § I
+  reads. [C]
+- Per activated warp room: its paired room in the destination level, built on demand. [C]
+
+
+## Worked example
+
+Seeds are `low:high`, hex. Map seed 2027, normal, Act I (index 0).
+
+**1. Act I's link build.** The act seed after rng/seeds steps 3a–3b is `723C4A71:0000034D` (Act I has no 3c draw). Table copies it:
+
+| Entry | Draws on the copy (low word) | Choice | Rect `(x, y, w, h)` | Check |
+|---|---|---|---|---|
+| 0 Stony Field 4 | — | anchor | `(1000, 1000, 80, 80)` | accept |
+| 1 Cold Plains 3 ← 0 | `2FAADC42` | `& 3` = 2 | `(1016, 920, 80, 80)` | accept |
+| 2 Blood Moor 2 ← 1 | `A91230D8`, `A16ACE86` | `d` 0, `f` 0 | `(1056, 1000, 56, 96)` | overlap: reject |
+| 2 | — | `(0, 1)` | `(1000, 1000, 56, 96)` | reject |
+| 2 | — | `(1, 0)` | `(920, 960, 96, 56)` | reject |
+| 2 | — | `(1, 1)` | `(920, 904, 96, 56)` | accept |
+| 3 Rogue Encampment 1 ← 2 | `C984F905`, `CE97DE40` | `d` 1, `f` 0 | `(864, 912, 56, 40)` | side-pair table: accept |
+| 4 Burial Grounds 17 ← 1 | `216F652A` | 2 | `(1072, 872, 40, 48)` | accept |
+
+The copy ends at `216F652A:562B2051` and is discarded; level 1's index is Rogue's `dir` 1. Table copies the **same** act seed:
+
+| Entry | Draws on the copy | Choice | Rect | Check |
+|---|---|---|---|---|
+| 0 Moo Moo Farm 39 | — | anchor | `(5000, 1148, 80, 80)` | accept |
+| 1 Monastery Gate 26 | — | anchor | `(3000, 1000, 64, 18)` | accept |
+| 2 Tamoe Highland 7 ← 1 | — | fixed 0 | `(3000, 1018, 80, 80)` | accept |
+| 3 Black Marsh 6 ← 2 | `2FAADC42` | 2 | `(3016, 938, 80, 80)` | overlaps 26: reject |
+| 3 | — | 3 | `(3080, 1034, 80, 80)` | accept |
+| 4 Dark Wood 5 ← 3 | `A91230D8` | 0 | `(3064, 1114, 80, 80)` | accept |
+
+In the per-entry loop, level 6 has `dir` 3, so the act seed itself steps once: `2FAADC42:2FA5920E`, and level 27's index is
+`(~0x2FAADC42) & 1` = 1. That is the value the Barracks placement of every seed-2027 log read. Each anchored entry writes a
+seam both ways: level 3's list becomes `Vis` 4, 2, 17, 9, 9, 9, 9, 0 with `Warp` −1, −1, −1, 0, 1, 2, 3, −1 (slots 0–2 are
+the new seams, 3–6 the four cave slots of the `Levels` row). The `LNKS` line logged after `ActLinkInit` holds exactly these
+nine lists. [C]
+
+The value `2FAADC42` appears three times (Cold Plains, Black Marsh and the level-27 draw), because all three draws are the
+first step from the same act seed (B1). [C]
+
+**2. Level 9's warp points** (Cave Level 1, the maze of [maze.md § Worked example](../maze/#worked-example), example 2).
+`Levels` row 9: `Vis0` 3 (`Warp0` 4), `Vis4` 13 (`Warp4` 5), the other slots 0 / −1. The maze rooms are 24 × 24 > 12 × 12, so
+each becomes nine 8 × 8 preset rooms (54 rooms in all). Two carry a warp bit after the DS1 scan:
+
+| Room (list position) | Record | Rect | Bit → slot | `Vis` / `Warp` | Point (subtiles) |
+|---|---|---|---|---|---|
+| #35 | 83 `Cave Prev W` | `(1572, 1300, 8, 8)` | `0x10` → 0 | 3 / 4 | `((1572 + 4) × 5, (1300 + 4) × 5)` = `(7880, 6520)` |
+| #38 | 94 `Cave Down N` | `(1524, 1364, 8, 8)` | `0x100` → 4 | 13 / 5 | `(7640, 6840)` |
+
+The Coldcrow room (`Scan` 0) carries nothing. `L[+0x228]` = 2. The Prev room's rooms come first because the maze converts
+its rooms newest first and each conversion prepends its preset rooms. [C]
+
+**Pairing with Cold Plains (3).** Level 3's slots 3–6 all name 9, and its cave mouth (an outdoor room, input from the log)
+carries slot 6 (`0x400`) in this seed.
+- From 3, slot 6: `k` = 3 earlier slots naming 9. Level 9 has only one slot naming 3 (slot 0), so the rank search fails.
+  The fallback takes slot 0, whose room is #35. [C]
+- From 9, slot 0: `k` = 0, so the rank slot is level 3's slot 3. No room of level 3 has `0x80`, so the fallback walks
+  slots 3, 4, 5 (no room) and pairs with slot 6, the room at `(1072, 952)`. [C]
+
+## Reimplementation notes
+
+- **Copy the act seed per table.** Each `LevelLinkBuild` steps a fresh copy, and only level 27's draw touches the act seed.
+  A model that carries one stream through the tables is off from the second table on. [C]
+
+- **A pick draws only on its first try.** A rejected choice moves to the next one with no draw; a backtrack resets the
+  entry, which then draws again. Three picks draw on every call. [C]
+
+- **Pre-fill the room flags with the seam bits** (`Warp` −1 slots), even for instances with `Scan` and `Pops` 0, and do not
+  turn them into points. [C]
+- **The waypoint flag does not carry** to the next room in the point build. [C]
+
+- **Pairing needs the fallback.** Rank alone mispairs the Durance and some caves. [C]
+- **Reset the warp points at every build.** `LevelUnload` clears them, and each `LevelInit` rebuilds them. [C]
+
+
+## Evidence
+
+- Reference model: replays the link builds, the point builds and the pairings of the run
+  (the worked examples included). It is a check of this spec, not a source: every statement above cites the code, the data
+  or a run.
+- Tables and formats: Levels § Links survey,
+  Levels § Code semantics of the links,
+  LvlWarp, LvlPrest § Warp slots,
+  ds1 § Warp-slot cells. Types:
+  (`LevelLinks`, `LinkEntry`, `LinkBuild`).
+- [maze.md](../maze/), [drlg/overview](../overview/), [preset.md](../preset/) step 7, room-tiles.md step 10,
+  rng/seeds.

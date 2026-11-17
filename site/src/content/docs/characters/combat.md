@@ -7,9 +7,9 @@ sidebar:
 This page explains what happens when one unit hits another: whether the swing connects, how much damage it carries,
 how the defender's resistances and reductions cut it down, and what the hit does on arrival (crushing blow, open
 wounds, life and mana leech, chill, the life change). It restates the reviewed combat specs: the overview in
-combat, the hit test in to-hit, the
-damage build in damage, the defender's side in
-reductions and the arrival in delivery.
+combat, the hit test in [to-hit](../../spec-combat/to-hit/#purpose), the
+damage build in [damage](../../spec-combat/damage/#purpose), the defender's side in
+[reductions](../../spec-combat/reductions/#purpose) and the arrival in [delivery](../../spec-combat/delivery/#purpose).
 The specs carry the exact arithmetic and [draw](../../reference/glossary/) order; this page tells the story. Where something is
 read from the code but not yet seen in a test run, or is still unknown, the page says so. Many branches no run met are
 **confirmed under emulation**: the game's own function was run on its own with declared inputs and matched the model
@@ -379,7 +379,7 @@ zero on a monster.
 
 ### Chill, stun, freeze and poison
 
-From delivery § D:
+From [delivery § D](../../spec-combat/delivery/#d-stun-cold-freeze-poison-burn):
 
 - **Chill** draws one `Range(100)` on the **defender's** seed whenever a chill is applied, whatever the outcome; that
   draw is confirmed. Read from the code: a monster whose `coldeffect` is 0 is not chilled and draws nothing, a player
@@ -399,7 +399,7 @@ it, and their natural regeneration is suspended meanwhile (6 181 ticks reproduce
 life regeneration stat whatever its sign, so poison bleeds a poisoned player every frame; that is confirmed by the
 stats run (1 082 poisoned ticks). The tick never takes a player's life below one point, so poison and open wounds
 cannot kill a player; no poisoned tick reached the floor in play, and the floor is confirmed under emulation
-(delivery § E; the tick itself is
+([delivery § E](../../spec-combat/delivery/#e-the-stat-events-crushing-blow-open-wounds-freeze); the tick itself is
 on the [stats and states](../stats-and-states/#regeneration-life-mana-stamina-and-poison) page).
 
 ## Draw order and chaining
@@ -471,8 +471,8 @@ below is the logged one; the spec's table also gives each seed before and after.
 | 12 | monster | chill `Range(100)` = 79 | no shatter |
 
 The per-difficulty examples (monster hits blocked and resisted in Normal, Nightmare, Hell and classic Hell, and
-crushing blow at 8 players) are in the worked examples of to-hit,
-reductions and delivery.
+crushing blow at 8 players) are in the worked examples of [to-hit](../../spec-combat/to-hit/#worked-example),
+[reductions](../../spec-combat/reductions/#worked-example) and [delivery](../../spec-combat/delivery/#worked-example).
 
 ## What is not known yet
 
@@ -502,9 +502,9 @@ From the specs' open questions:
 ## Where to read more
 
 - The specs: combat overview,
-  to-hit, damage,
-  reductions,
-  delivery. Each *Reimplementation notes* section lists the traps
+  [to-hit](../../spec-combat/to-hit/#reimplementation-notes), [damage](../../spec-combat/damage/#reimplementation-notes),
+  [reductions](../../spec-combat/reductions/#reimplementation-notes),
+  [delivery](../../spec-combat/delivery/#reimplementation-notes). Each *Reimplementation notes* section lists the traps
   for someone rebuilding the system.
 - The [glossary](../../reference/glossary/) for D2 terms.
 - Related wiki pages: [randomness](../../foundations/randomness/) (unit seeds and draws), [monsters](../../world/monsters/) (a monster's level,

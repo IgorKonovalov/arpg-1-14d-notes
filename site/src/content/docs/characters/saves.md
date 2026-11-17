@@ -162,7 +162,7 @@ in this build) and the classic bounds 4 and 8, which are read from the code:
 
 A new character is first written as a header-only [stub](../../reference/glossary/) with bit 0 set; how the game then builds the
 character is on the [characters](../characters/) page and in
-player/creation § A. The creation screen sets
+[player/creation § A](../../spec-player/creation/#a-the-stub-and-the-servers-checks). The creation screen sets
 bit 5 for any class in an expansion install unless its "expansion" box is cleared, and toggles bits 2 and 6 with the
 hardcore and ladder boxes (read from the code). Bit 1 is set only by the
 client's character-creation screen and the reader never tests it (read from the code); what that screen means by it is
@@ -268,7 +268,7 @@ Each list starts with `JM` and a count:
   read back on load, and its first value is whatever the writer's stack held, so a reimplementation may write
   anything there. In play a corpse carries three quarters of the experience its death cost (confirmed on test deaths
   in Nightmare and Hell), and it is returned to its owner on pickup (read from the code: no pickup was run;
-  player/creation § J). A saved corpse does not keep it: the reader re-creates the corpse with no experience on it, so picking it up
+  [player/creation § J](../../spec-player/creation/#j-other-level-and-experience-changes)). A saved corpse does not keep it: the reader re-creates the corpse with no experience on it, so picking it up
   after a load returns nothing (read from the code).
 - In an expansion game, `jf` carries the mercenary's items (confirmed with a hired mercenary), and `kf` carries one
   byte and, when the player has an Iron Golem holding an item, that item (read from the code).
@@ -387,7 +387,7 @@ loaded at 99. Saves older than version 92 hold the mercenary in an older form, w
 71 exercised: version 87 keeps the Id and has its experience converted on load, and version 71 keeps only the seed
 and the name, so the game picks the Id (Id 1 for both test saves, in Act I and Act II). How the level and stats follow from these values is on the
 [characters](../characters/) page and in
-hirelings § H.
+[hirelings § H](../../spec-hirelings/overview/#h-the-mercenary-from-a-save-d2s_readmercheader-merc_create).
 
 ## A worked example
 
@@ -461,7 +461,7 @@ From save/d2s § Open questions:
 
 - what item flag bit 13 means, and how soon after a drop the game clears it;
 - not exercised in a run: ground positions, a hotkey bound to an item, realm data on a simple item, gold items, the
-  golem section, a mercenary name id past its hireling row's last name (since run on a test save, hirelings § H), two or more corpses, a few reader error
+  golem section, a mercenary name id past its hireling row's last name (since run on a test save, [hirelings § H](../../spec-hirelings/overview/#h-the-mercenary-from-a-save-d2s_readmercheader-merc_create)), two or more corpses, a few reader error
   codes, the older reader's failures and the old versions other than 71 and 87, character stats with a parameter or a sign, a save above 8 KiB, a classic game's items, and stats beyond those the runs
   saved;
 - what the character-creation screen means by status bit 1.
@@ -474,8 +474,8 @@ item fields, and the old formats) are still waiting for a run, or have no case o
 - The spec: save/d2s, with its
   reimplementation notes.
 - How a new character's first save comes to be: [characters](../characters/) and
-  player/creation § Outputs.
-- How a saved mercenary is rebuilt: hirelings § H.
+  [player/creation § Outputs](../../spec-player/creation/#outputs).
+- How a saved mercenary is rebuilt: [hirelings § H](../../spec-hirelings/overview/#h-the-mercenary-from-a-save-d2s_readmercheader-merc_create).
 - How item stats are rolled before they are saved: the [items](../../items/items/) page.
 - What the quest and waypoint records mean and which events write them: [quests and travel](../../running/quests/).
 - Terms: the [glossary](../../reference/glossary/).

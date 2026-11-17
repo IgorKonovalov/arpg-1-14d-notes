@@ -9,9 +9,9 @@ picks a [treasure class](../../reference/glossary/) (TC), walks it to decide how
 item's quality with your [magic find](../../reference/glossary/), picks a unique or set row or a set of affixes, rolls the
 property values,
 and finally decides whether the item is ethereal, socketed, or gets an extra affix from the `AutoMagic` table. It is based on five
-reviewed specs: treasure classes, the quality roll,
-uniques and sets, affixes and
-base stats and properties. Chests use the same treasure-class walk. Other
+reviewed specs: [treasure classes](../../spec-items/tc/#purpose), [the quality roll](../../spec-items/quality/#purpose),
+[uniques and sets](../../spec-items/uniques-sets/#purpose), [affixes](../../spec-items/affixes/#purpose) and
+[base stats and properties](../../spec-items/properties/#purpose). Chests use the same treasure-class walk. Other
 ways to get an item, such as vendors or the cube, are on [their own page](../items-other-paths/).
 
 ## The big picture
@@ -60,7 +60,7 @@ source seed at all; everything from the unique pick to the automagic affix happe
 
 [Step through items-tc-andariel-hell](../../illustrations/items-tc-andariel-hell/index.html)
 
-Andariel's drop in an expansion Hell game, one player alone, magic find 200, walked pick by pick. Each pick of a TC with positive Picks draws on the source seed over the TC's total weight plus NoDrop (a TC with negative Picks takes its entries in order with no draw), and a picked sub-TC is walked to the end before the parent's next pick (TC § D, § E, § G); a monster drop stops at six items (§ H). A picked item that is not a unique or set entry then runs the quality tests its type allows in order, unique, set, rare, magic, superior, normal, until one wins (losing the normal test gives low quality); a test draws on the same source seed against its chance unless the chance is already below one, which wins with no draw (TC § H, quality § Test order, § D, § E). Not modelled and not shown: the quest drop, gold amounts, base stats, the ethereal and socket rolls, automagic, and the properties' values. Seed: illustrative, an input of our own. Every value shown is computed by our model, not observed in the game.
+Andariel's drop in an expansion Hell game, one player alone, magic find 200, walked pick by pick. Each pick of a TC with positive Picks draws on the source seed over the TC's total weight plus NoDrop (a TC with negative Picks takes its entries in order with no draw), and a picked sub-TC is walked to the end before the parent's next pick (TC § D, § E, § G); a monster drop stops at six items (§ H). A picked item that is not a unique or set entry then runs the quality tests its type allows in order, unique, set, rare, magic, superior, normal, until one wins (losing the normal test gives low quality); a test draws on the same source seed against its chance unless the chance is already below one, which wins with no draw (TC § H, quality § Test order, § D, § E). Every value shown is computed by our models, not observed in the game, and the seed is an illustrative input, not a seed a game derives. Not modelled and not shown: the quest drop, gold amounts, base stats, the ethereal and socket rolls, automagic, and the properties' values. Seed: illustrative, an input of our own. Every value shown is computed by our model, not observed in the game.
 
 ## Which treasure class
 
@@ -147,7 +147,7 @@ of a full drop gets no gold find.
 Chests use the same walk with no level upgrade. Their TC is an `Act N Chest A/B/C` of their [act](../../reference/glossary/) and
 difficulty, the tier set by where the chest's level falls in thirds of the act's level span; the tier rule and the
 walk are confirmed on recorded chest drops. The tier (0, 1 or 2) is also passed as the item level of the quality roll,
-so a chest's quality roll runs at item level 0 to 2 (confirmed; quality). A chest can also force a
+so a chest's quality roll runs at item level 0 to 2 (confirmed; [quality](../../spec-items/quality/#c-shared-terms-and-magic-find)). A chest can also force a
 quality on its drop; when the entry is gold or a potion, that item skips the quality roll and is then built as normal
 quality anyway, because the always-normal rule of item creation overrides it (read from the code; elixirs are the
 exception and keep the forced quality). The
@@ -564,9 +564,9 @@ The main flow above is confirmed in recorded games. These parts are not, or are 
 
 ## Where to read more
 
-- The specs: treasure classes, quality,
-  uniques and sets, affixes,
-  base stats and properties.
+- The specs: [treasure classes](../../spec-items/tc/#purpose), [quality](../../spec-items/quality/#purpose),
+  [uniques and sets](../../spec-items/uniques-sets/#purpose), [affixes](../../spec-items/affixes/#purpose),
+  [base stats and properties](../../spec-items/properties/#purpose).
 - The [glossary](../../reference/glossary/) for every D2 term used here.
 - Related pages: [randomness](../../foundations/randomness/) for the seeds, [monsters](../../world/monsters/) for monster kinds and levels,
   [objects](../../world/objects/) for chests, [other ways to make an item](../items-other-paths/), [using items and the inventory](../inventory/) for what happens to an item after it is made, [saves](../../characters/saves/) for how an

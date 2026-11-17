@@ -1,0 +1,794 @@
+---
+title: "Base stats and the property roll"
+sidebar:
+  order: 5
+---
+
+## Purpose
+
+Once item creation has a base, this spec says which values the item ends up with and which draws produce them. It
+has two halves. **Base stats** (`ItemInitStats`) run before the quality switch and draw on the item
+unit's own seed: quantity, durability, defense and the picture. The **property roll**
+(`ItemApplyProps`) runs inside the quality builders and draws on the item seed: it turns a row's
+`(code, par, min, max)` blocks into stat-list entries through `Properties` and `ItemStatCost`. After the builder, the
+**ethereal** and **socket** rolls take one item-seed draw each. The spec starts where
+[items/uniques-sets § A](../uniques-sets/#a-the-item-seed-at-entry) seeds the item and ends with the socket roll.
+Which affix, unique or set row is applied is decided upstream: [items/uniques-sets](../uniques-sets/) for uniques
+and sets, and [items/affixes](../affixes/) for the magic, rare, superior and automagic rows and the staff mods. Primitives are those of rng.
+
+```mermaid
+flowchart LR
+  IC["ItemCreate<br/>unit seed, item seed"] --> IS["§ A ItemInitStats<br/>unit seed"]
+  IS --> CB["ItemCreateByQuality<br/>switch, builders"]
+  CB --> AP["§ B–E ItemApplyProps<br/>item seed, per block, per slot"]
+  AP --> W["§ G stat lists<br/>main list, set lists"]
+  CB --> ET["§ F ethereal roll<br/>one draw"]
+  ET --> SO["§ F socket roll<br/>one draw, count from start"]
+  SO --> AM["automagic pick and props<br/>items/affixes"]
+```
+
+## Entry points
+
+| When | Function | Tag |
+|---|---|---|
+| Every created item, before the quality switch | — | [C] |
+| A builder applies a row: affix (mode 0), `qualityitems` (mode 1), unique (mode 3), set (mode 4) | — | [C] |
+| After the builder, expansion items | — | [C] |
+| After the builder, qualities 1..3 | — | [C] |
+
+- [C] On the drop path these callers reach `ItemApplyProps`, with `a2`, `a5` and `a6` 0 in every call: mode 0 from
+  `ITEMS_PickMagicAffix` and `ITEMS_BuildRareAffixes` (the affix row) and from `ItemCreateByQuality` for the
+  automagic row; mode 1 from `ITEMS_BuildSuperiorPick` (the `qualityitems` row); mode 3 from `ITEMS_BuildUnique` and
+  mode 4 from `ITEMS_BuildSetPick` (row from the item's file index). The model reproduced 727 mode-0, 27 mode-1, 60
+  mode-3 and 65 mode-4 calls.
+- [I] Vendors and gambling reach the roll through other callers of item creation.
+
+
+## Inputs
+
+### Tables
+
+| Anchor | Used for |
+|---|---|
+| `Weapons.txt:durability`, `Armor.txt:durability` (u8 `+0x112`) | max durability; the current durability draw |
+| `Weapons.txt:nodurability` | not tested by § A; read through `ItemHasDurability` in § F |
+| `Armor.txt:minac`, `Armor.txt:maxac` | the defense draw; the `ac%` base reset |
+| `Armor.txt:block`, `Armor.txt:speed` | stats 20 and 67 |
+| `Weapons.txt:mindam`, `Weapons.txt:maxdam`, `Weapons.txt:2handmindam`, `Weapons.txt:2handmaxdam`, `Weapons.txt:minmisdam`, `Weapons.txt:maxmisdam` | base damage stats; funcs 5, 6, 7 |
+| `Weapons.txt:stackable`, `Weapons.txt:minstack`, `Weapons.txt:maxstack`, `Misc.txt:spawnstack` | the quantity draw |
+| `Weapons.txt:gemsockets`, `Weapons.txt:invwidth`, `Weapons.txt:invheight`, `Misc.txt:hasinv` | socket caps (same offsets in Armor and Misc) |
+| `ItemTypes.txt:VarInvGfx`, `ItemTypes.txt:Quiver` | the picture draw; the quiver branch |
+| `ItemTypes.txt:MaxSock1`, `ItemTypes.txt:MaxSock25`, `ItemTypes.txt:MaxSock40` | `ItemMaxSockets` by ilvl |
+| `UniqueItems.txt:prop1` (12 blocks), `SetItems.txt:prop1` (9), `SetItems.txt:aprop1a` (10), `SetItems.txt:add` func | the row blocks of modes 3 and 4 |
+| `MagicPrefix.txt:mod1code` (3 blocks, also MagicSuffix and AutoMagic), `QualityItems.txt:mod1code` (2 blocks) | the row blocks of modes 0 and 1 |
+| `Properties.txt:func1`, `Properties.txt:stat1`, `Properties.txt:set1`, `Properties.txt:val1` (slots 1..7) | the slot walk |
+| `ItemStatCost.txt:ValShift` | the stored value's shift |
+| `Skills.txt:reqlevel`, `Skills.txt:maxlvl` | the skill level of funcs 11 and 19 |
+
+- [C] A row's property cells are compiled into 16-byte blocks `{code: i32, par: i32, min: i32, max: i32}`. `code` is
+  the `Properties` record index, looked up case-insensitively (`setitems` row 122 `Light` stores 73, the row of
+  `light`); a blank code is −1, and so are the 13 commented-out `*code` cells of `uniqueitems`.
+- [C] The `setitems` blocks are `prop1..9` at `+0x088` and `aprop1a, aprop1b, …, aprop5b` at `+0x118`, pinned
+  against `setitems.bin`.
+- [C] **No stored entry depends on** `ItemStatCost` `op`, `op param`, `op base`, `op stat1..3`, any `Encode`/save
+  column (those belong to the save, save/d2s § J), the `Sets` partial and full
+  blocks, `gems` or `runes` (applied when worn or socketed). Every final list logged reproduces with a model that reads
+  none of them (335 stock, 2 799 ItemRatio-forced), and the readers of the `Sets` blocks, the gems and runes and the
+  save columns lie outside `ItemCreateByQuality`'s call graph. The handlers and the writer read none of the `op`
+  columns; the stat evaluation does (`StatRecompute`, `StatEvaluate`), and that is how `op` reaches creation through
+  `EVD` (§ G).
+
+### Runtime state
+
+| State | Type | Source |
+|---|---|---|
+| `unit.seed` | `Seed` at `Unit+0x20` of the item unit | the unit constructor's game-seed draw (rng/seeds step 7a) |
+| `item.seed` | `Seed` at `ItemData+0x04`, `{start, 666}` at entry | [uniques-sets § A](../uniques-sets/#a-the-item-seed-at-entry) |
+| `item.start` | u32 at `ItemData+0x10` | the low word the item seed was initialised from; the socket count reads it |
+| `item.quality` | u32 at `ItemData+0x00`; **0** while § A runs on a drop | written by `ItemCreateByQuality` |
+| `item.fileIndex` | i32 at `ItemData+0x28` | the unique or set row for modes 3 and 4 |
+| `ilvl` | i32 at `ItemData+0x2C`, through `ITEMS_GetItemLevel` (raised to 1) | funcs 11 and 19, the socket bands |
+| `itemVersion` | u16 at `ItemData+0x30` | ≥ 100 expansion, 1..99 classic, never 0 on a drop |
+| `item.flags` | u32 at `ItemData+0x18` | — |
+| `item.gfx` | u8 at `ItemData+0x49` | the picture variant |
+| `rec` | the creation record, `ItemCreateRec+0x54` (`quantity` override), `+0x44` and `+0x80` (flag bits, § F) | [items/tc § H](../tc/#h-item-pick-and-hand-off) |
+| `game.difficulty` | at `Game+0x6D` | the socket difficulty cap |
+| `EVD` | i32, the **evaluated** max durability (stat 73 through the stat lists) | read by func 13 and by the ethereal roll; see § G |
+| `PACK_SHIFT`, `PACK_MASK` | i32 at `DataTables+0xC6C`, `+0xC70` | func 19's param packing, logged as 6 and 63 |
+
+### Constants
+
+| Name | Value | Tag |
+| --- | --- | --- |
+| `N_FUNCS` | 37 handler slots; slots 0 and 25..35 are NULL | [C] |
+| `SLOTS` | 7 slots per `Properties` row | [C] |
+| `ETH_CHANCE` | `r < 5` of `Range(100)` | [C] |
+| `SOCK_CHANCE` | `r < 33` of `Range(100)` (`cmp 0x21; jl`) | [C] |
+| `SOCK_DIFF_CAP` | 3 / 4 / 6 for Normal / Nightmare / Hell | [C] |
+| `MAX_SOCKETS` | 6 | [C] |
+| `MAIN_LIST` | state 0, flags `0x40` | [C] |
+| `SET_LISTS` | states 165..169 (`itemset1..5`), flags `0x2040` | [C] |
+| `STACK_CAP` | 511 for `maxstack` + stat 254 | [I] |
+| `PACK_SHIFT`, `PACK_MASK` | 6, 63 in all 37 logged games (`DataTables+0xC6C`, `+0xC70`) | [C] |
+
+- [C] Each constant is what uses, and the model reproduces 2 281 creations with it, 0 mismatches.
+
+
+### Inputs and boundaries
+
+| Input | Kind | Owner | Tag |
+|---|---|---|---|
+| `EVD`, the evaluated max durability | computed, not an input: own stat 73 + `MulDiv(base 73, dur%, 100)` (§ G); the logged value checks it | this spec, § G | [C] |
+| `DataTables+0xC6C`, `+0xC70` | logged once per game: 6 and 63 | data/excel | [C] |
+| the `skills` rows funcs 11 and 19 read (`reqlevel`, `maxlvl`) | table values | Skills | [C] |
+| the affix, rare-name, automagic and `qualityitems` picks | predicted (row and entry seed) by the items/affixes model chained with this one over the two runs, re-analysis 2026-10-15 | [items/affixes § C](../affixes/#c-one-magic-affix-pick--items_pickmagicaffix), [§ F](../affixes/#f-the-superior-builder--items_buildsuperior--items_buildsuperiorpick), [§ J](../affixes/#j-after-the-switch-ethereal-sockets-automagic) | [C] |
+| `ITEMS_RollStaffMods` | modelled (S2b), no longer a seed oracle: the model predicts the exit seed of 105 stock rolls and the `item_singleskill` (107) entries of every final list | [items/affixes § I](../affixes/#i-staff-mods--items_rollstaffmods) | [C] |
+
+- [C] Inside `ItemInitStats` and inside every `ItemApplyProps` call, the ethereal roll and the socket roll, the run
+  needed **no** oracle: every draw site is a plain range draw on the unit seed or the item seed, and no
+  handler or callee evaluates a `*code.bin` formula.
+- [C] No func reaches the calc VM: the roll, the writer, the base resets, the skill getters, `ITEMS_GetItemLevel`,
+  `MulDiv` and the stat-list add and set were all read, and a mechanical call-graph closure of
+  `ItemApplyProps` and the 37 handler slots (644 functions) holds none of the 56 `data/calc` functions; no evaluator
+  entry is ever stored as a pointer, so the graph's indirect calls cannot reach it.
+
+## Algorithm
+
+All arithmetic is signed 32-bit unless a step says otherwise. Division `÷` truncates toward zero. `Range(s, n)` is
+the rng spec's `Range`: one `Step` and `low mod n`, or 0 with **no step** when `n < 1` (signed). `RangeOffset(s, b,
+n)` is `b + Range(s, n)`, so it returns `b` with no step when `n < 1`. [C] Three stock and 16 forced-run value rolls
+with a negative bound reproduce, and flooring the divisions instead breaks 6 forced-run creations (the func-11 and
+-19 skill levels with a negative `max`).
+
+### A. Base stats on the unit seed
+
+```mermaid
+flowchart TD
+  S["ItemInitStats(item, rec)"] --> G{"type 4, gold?"}
+  G -->|yes| GD["gold: ilvl + Range(5 × ilvl)"]
+  G -->|no| Q{"ItemTypes.Quiver ≠ 0?"}
+  Q -->|yes| QV["quiver: quantity"]
+  Q -->|no| AR{"type 50, armo?"}
+  AR -->|yes| AD["durability, then defense"]
+  AR -->|no| WP{"type 45, weap?"}
+  WP -->|yes| WD["quantity if stackable,<br/>then durability"]
+  WP -->|no| MS["misc: quantity if stackable;<br/>type 11 setup on item.seed"]
+  GD & QV & AD & WD & MS --> P["picture if VarInvGfx ≠ 0"]
+  P --> CQ["ItemCreateByQuality"]
+```
+
+```
+us ← unit.seed                                  ; every draw of § A, except A5's type-11 setup
+A1. if item.type = 4 (gold):                                                     [C]
+      n: i32 ← rec.ilvl + Range(us, 5 × rec.ilvl)  ; draw (none when 5 × ilvl < 1)
+      if n < 1: n ← 1
+      if rec.quantity > 0: n ← rec.quantity         ; record +0x54
+      base stat 14 ← n
+A2. else if ItemTypes[item.type].Quiver ≠ 0:                                     [C]
+      lo: i32 ← minstack;  hi: i32 ← min(maxstack + stat254, 511)
+      q: i32 ← lo + Range(us, hi − lo)              ; draw (none when hi ≤ lo); spawnstack NOT read
+      if q < 1: q ← 1
+      if rec.quantity > 0: q ← rec.quantity
+      base stat 70 ← q
+A3. else if IsType(item, 50 armo):                                                [C]
+      base stat 20 ← block;  base stat 67 ← −speed
+      Durability(us)                                ; draw, see A6
+      base stat 31 ← RangeOffset(us, minac, maxac − minac + 1)   ; draw (none when maxac < minac)
+A4. else if IsType(item, 45 weap):                                                [C]
+      if stackable:
+        lo ← minstack;  hi ← min(maxstack + stat254, 511)
+        q ← lo + Range(us, hi − lo)                 ; draw (none when hi ≤ lo)
+        if rec.quantity > 0: q ← rec.quantity
+        if q = 0 or item.quality ∈ 4..9: q ← 1      ; item.quality is 0 here on a drop
+        base stat 70 ← q
+      Durability(us)                                ; draw, see A6
+      base stats 21, 22 ← mindam, maxdam;  23, 24 ← 2handmindam, 2handmaxdam
+      base stats 159, 160 ← minmisdam, maxmisdam when maxmisdam ≠ 0
+      base stat 68 ← −speed
+A5. else (misc):                                                                  [C]
+      if stackable:
+        lo ← minstack;  hi ← min(maxstack + stat254, 511);  sp ← spawnstack
+        top: i32 ← (sp ≥ lo and sp ≠ 0) ? sp : (lo ≤ hi ? hi : lo)
+        q ← lo + Range(us, top − lo)                ; draw (none when top ≤ lo)
+        if rec.quantity > 0: q ← rec.quantity
+        if item.quality ∈ 4..9 or q = 0: q ← 1
+        base stat 70 ← q
+      if item.type = 11: ItemType11Setup(item)      ; draws on item.seed, not us     [I]
+A6. Durability(us):                                                               [C]
+      d: u8 ← base.durability;  h: u32 ← d >> 1     ; unsigned shift
+      cur ← h + Range(us, h)                        ; draw (none when d < 2)
+      base stat 72 ← min(cur, 255);  base stat 73 ← d
+A7. n ← ItemTypes[item.type].VarInvGfx                                            [C]
+    if n ≠ 0: item.gfx ← RangeOffset(us, 0, n) & 0xFF                             ; draw, last of § A
+A8. ItemCreateByQuality(game, item, rec)                                          ; uniques-sets § B, then § F here
+```
+
+Step notes:
+
+- A1–A7. **The base stats use the unit seed only.** The item seed is untouched by § A, except by the type-11 setup:
+  the item seed at the entry of `ItemCreateByQuality` was `{ItemData+0x10, 666}` in every logged creation, and the
+  model reproduced all 2 281 base-stat blocks (unit seed, values and picture) over armour 167, weapons 414, misc
+  1 106, quivers 115 and gold 478. [C]
+- A1–A7. The order per category is fixed: armour draws durability then defense; a weapon draws quantity (stackable
+  only) then durability; misc and quivers draw quantity; every category then draws the picture. A range of width
+  < 1 draws nothing (`d < 2`, `hi = lo`, `maxac < minac`, `VarInvGfx = 0`). [C]
+- A2. **Quivers ignore `spawnstack`.** `aqv` spawned with 103..348 and `cqv` with 60..246 arrows or bolts, each
+  `minstack + Range(maxstack − minstack)`. [C]
+- A2, A4, A5. **The quantity draw never reaches its top.** `lo + Range(top − lo)` lies in `[lo, top − 1]`. A misc base
+  uses `spawnstack` as the top when it is non-zero and ≥ `minstack`: 29 keys (`minstack` 1, `spawnstack` 6) spawned
+  with 1..5. [C]
+- A4. The quantity-1 rule for qualities 4..9 never fires on a drop, because the quality is still 0 when § A runs
+  (`ItemData` is zeroed at allocation): the quality logged at the entry of `ItemInitStats` is 0 in every creation (335
+  stock, 2 800 ItemRatio-forced). A rare or magic throwing weapon keeps its drawn quantity: five stock ones kept 63
+  (`7pi`), 109 and 39 (`7ta`), 92 and 66 (`bal`). [C]
+- A6. **Durability** lies in `[⌊d/2⌋, 2⌊d/2⌋ − 1]` and is never `d` for `d ≥ 2`; max durability is `d`. [C]
+
+- A6. **`nodurability` is not tested here.** 80 bows, crossbows and throwing potions drew their durability on the unit
+  seed (`6hb` 32 → current 26). [C]
+- A3. **Defense** is inclusive, `[minac, maxac]`, drawn after durability. [C]
+- A3–A6. Defense, damage, block, speed, quantity and durability are written as the unit's **base stats**
+  (`UnitSetStat`), not into the property list. [C]
+- A5. The type-11 setup has no stock case: type 11 (`elix`) has one record, `elx`, which no TC cell, cube output or
+  vendor column names, and `elix` has `TreasureClass` 0 (full-table check). It stays code-read.
+  [I]
+
+### B. ItemApplyProps: modes and blocks
+
+```mermaid
+flowchart TD
+  M{"mode"} -->|"0 affix row"| A0["3 blocks; first code < 0 ends the row"]
+  M -->|"1 qualityitems row"| A1["2 blocks; first code < 0 ends the row"]
+  M -->|"3 unique, fileIndex"| U["12 blocks prop1..12; code < 0 skipped"]
+  M -->|"4 set, fileIndex"| S["9 blocks prop1..9, then 10 blocks aprop1a..5b"]
+  S --> AF{"add func ≠ 0?"}
+  AF -->|no| ML["aprop to the main list"]
+  AF -->|yes| SL["aprop pair k to state 165 + k − 1"]
+  A0 & A1 & U & ML & SL --> AB["§ C ApplyBlock, per block in column order"]
+```
+
+```
+B1. ItemApplyProps(mode, item, row):          ; a2 = a5 = a6 = 0 on the drop path                    [C] (all of B1–B4)
+B2. mode 3:
+      if item.fileIndex < 0 or UniqueItems[item.fileIndex] = none: return
+      for k in 0 ..< 12: ApplyBlock(3, item, u.prop[k], state 0, flags 0x40)
+      return
+B3. mode 4:
+      s ← SetItems[item.fileIndex];  if s = none: return
+      for k in 0 ..< 9: ApplyBlock(4, item, s.prop[k], 0, 0x40)
+      for k in 0 ..< 10:                      ; aprop1a, aprop1b, aprop2a, …, aprop5b
+        pair: i32 ← k ÷ 2                     ; 0..4
+        if s.addFunc ≠ 0: ApplyBlock(4, item, s.aprop[k], 165 + pair, 0x2040)
+        else:             ApplyBlock(4, item, s.aprop[k], 0, 0x40)
+      return
+B4. modes 0 and 1:
+      n ← 3 (mode 0) or 2 (mode 1)
+      for i in 0 ..< n:
+        b ← row.block[i]                     ; affix record +0x24 + 16i; qualityitems +0x0C + 16i
+        if b = none or b.code < 0: return    ; the first blank block ends the row
+        ApplyBlock(mode, item, b, 0, 0x40)
+```
+
+Step notes:
+
+- B2–B4. **Skip versus stop.** In modes 3 and 4 a block with `code < 0` is skipped (§ C tests it); in modes 0 and 1
+  it ends the row. The affix tables, `qualityitems` and `uniqueitems` have no used block after a blank one, so on stock
+  data the two differ only for the −1 blocks of the commented-out unique codes. [C]
+- B3. **`aprop` blocks are rolled at creation**, with the same handlers and item-seed draws as the `prop` blocks.
+  Three *Civerb's Cudgel* (`add func` blank) put `aprop1a` `dmg/lvl` in the main list (Worked example 6); rows with
+  `add func` 1 or 2 put theirs in the lists of state 165 and up (103 slots). [C] (`g_SetAPropStates`, `SetItems.txt:add` func)
+- B3. On stock data, 82 set rows with `add func` 1 (1 row) or 2 (81) carry `aprop`s, one row with 2 carries none, and
+  two rows with it blank carry one (`Civerb's Cudgel` `dmg/lvl`, `Trang-Oul's Claws` `extra-pois`), by a full-table
+  check. At creation the code distinguishes only 0 from non-zero; what 1 and 2 change happens when the item is worn
+  (next note). [C] (`SetItems.txt:add` func)
+- B3. **When worn**: `add func` 1 switches the list of
+  pair *k* on while the member it names is worn, `add func` 2 while *k* other members are worn; the wearer also gets
+  one list per set from the `Sets` partial and full blocks. 19 525 toggles and 5 569 wearer lists were predicted.
+  [C]
+- B3. The save writer marks a set item's lists by the same five states, which is the second code path for the
+  state numbers. [C]
+- B1. **Version 0** sends each block to `g_PropFuncTableV0[code]` and applies only 2 set blocks. No drop creates an
+  item of version 0. [I]
+
+### C. One block: the slot walk
+
+```
+C1. ApplyBlock(mode, item, b, state, flags):                                      [C] (PROP_ApplyBlock, all of C1–C3)
+      if b.code < 0: return
+      p ← Properties[b.code]                 ; g_pProperties, 0x2E-byte records
+C2.   prev: i32 ← 0
+      for k in 0 ..< 7:
+        f ← p.func[k]
+        if f ≥ 37 or Handler[f] = none: return          ; func 0 (blank) ends the walk
+        r: i32 ← Handler[f](mode, item, b, p.set[k], p.stat[k], p.val[k], prev, state, flags)
+C3.     if k = 0: prev ← r                   ; slot 1's return value, handed to slots 2..7 unchanged
+```
+
+Step notes:
+
+- C2. Every `Properties` row fills its slots from slot 1 without a gap, so on stock data the walk covers exactly the
+  used slots. [C]
+- C3. **prev** is slot 1's return value, 0 for slot 1 itself. A handler that writes nothing returns 0, so a later
+  "reuse" slot then rolls its own value. For `res-all`, `all-stats`, `dmg-elem-min` and `dmg-elem-max`, slot 1
+  (func 1) draws once and slots 2..4 (func 3) reuse the value unless slot 1 rolled 0. [C]
+- C2. The table pointer and count are `DataTables+0xA4` and `+0xAC`; the loader stores them. [C]
+
+### D. The value roll and the stat writer
+
+```
+D1. Roll(item, b) → i32:                      ; PROP_RollValue(min, max)                        [C]
+      if b.max = b.min: return b.min          ; NO draw
+      lo ← min(b.min, b.max);  hi ← max(b.min, b.max)        ; signed compare
+      return lo + Range(item.seed, hi − lo + 1)               ; draw
+D2. Write(item, stat, param, v, set, state, flags) → i32:   ; PROP_WriteStat                    [C]
+      if v = 0 or stat invalid: return 0      ; nothing written
+      list ← TargetList(item, state, flags)   ; found or created and attached
+      x: i32 ← v << ItemStatCost[stat].ValShift
+      if set ≠ 0: SetStat(list, stat, param, x) else AddStat(list, stat, param, x)
+      if stat = 58:                           ; poisonmaxdam
+        if set ≠ 0: SetStat(list, 326, 0, 1) only if 326 is absent
+        else:        AddStat(list, 326, 0, 1)
+      return v
+D3. Reset(item, stat):                        ; PropBaseReset, on the unit's base stats          [C]
+      stat 16 or 31, armour with maxac ≠ 0: base stat 31 ← max(base 31 + 1, maxac + 1)
+      stat 17 or 22, weapon: base 22, 24 (and 160 if throwable) ← maxdam, 2handmaxdam, maxmisdam
+      stat 18 or 21, weapon: base 21, 23 (and 159 if throwable) ← mindam, 2handmindam, minmisdam
+      any other stat: nothing
+```
+
+Step notes:
+
+- D1. Every per-func draw except func 19's is this roll, on the item seed for every drop-path call. A reversed pair is
+  swapped, so the draw range is `|max − min| + 1`. [C]
+- D2. `AddStat` adds to the existing `(stat, param)` entry and removes an entry that reaches 0; `SetStat` replaces
+  it. The only `Properties` row with `set` = 1 is `color`. [C]
+- D2. `ValShift` is 8 for the `hitpoints`/`mana`-type stats and 0 elsewhere: a rare `maxmana` roll of 14 is stored
+  as 3 584 (Worked example 5). [C]
+- D3. **The `ac%` reset accumulates.** Each func-2 block on armour sets the base defense to `max(defense + 1, maxac +
+  1)`: `maxac + 1` after one `ac%` block, `maxac + 2` after a second (a set item with `ac%` in a `prop` and an
+  `aprop`). [C]
+
+### E. The handlers per func
+
+Notation: `Roll` is D1 on the block; `W(stat, param, v)` is D2 with the slot's `set`, `state` and `flags`;
+`Reset` is D3 on the slot's stat; `v ← prev or Roll` means `v ← prev` when `prev ≠ 0`, else `Roll` (the draw happens
+only then).
+
+| func | draws on the item seed | writes | Tag |
+| ---: | --- | --- | --- |
+| 1 | `Roll` | `Reset` when mode = 1; `W(stat, 0, v)` | [C] |
+| 2 | `Roll` | `Reset` in every mode; `W(stat, 0, v)` | [C] |
+| 3 | `v ← prev or Roll` | `Reset` when mode = 1; `W(stat, 0, v)` | [C] |
+| 4 | as 3 | `Reset` in every mode; as 3. No row uses it | [I] |
+| 5 | `v ← prev or Roll` | E1 (min damage) | [C] |
+| 6 | `v ← prev or Roll` | E1 (max damage) | [C] |
+| 7 | `v ← prev or Roll` | E2 | [C] |
+| 8 | `v ← prev or Roll` | `W(stat, 0, v)` | [C] |
+| 9 | as 8 | `W(stat, par, v)` when `par` is a skill id. No row uses it | [I] |
+| 10 | `v ← prev or Roll` | `W(stat, par mod 3 + (par ÷ 3) × 8, v)` | [C] |
+| 11 | **none** | E3: `W(stat, par × 64 + (L & 63), chance)` | [C] |
+| 12 | `Roll` | `W(stat, param = v, value = par)` | [C] |
+| 13 | `Roll` | `Reset` when mode = 1; `W(stat, 0, v)`; if written, base stat 72 ← `EVD` | [C] |
+| 14 | E5 | E5 | [C] |
+| 15 | none | `v ← min`; stat 21 → E1 as func 5 with prev = v, else `W(stat, 0, v)` | [C] |
+| 16 | none | `v ← max`; stat 22 → E1 as func 6, else `W(stat, 0, v)` | [C] |
+| 17 | `Roll` only when `par` = 0 | `v ← par`; stat 22 → E1 as func 6, else `W(stat, 0, v)` | [C] |
+| 18 | none | E6. Not reached on the drop path | [I] |
+| 19 | **one** `Range(c − c ÷ 8)` | E4 | [C] |
+| 20 | none | `AddStat(list, 152, 0, 1)` | [C] |
+| 21 | `Roll` | `W(stat, val, v)` (the class or element in `val1`) | [C] |
+| 22 | `Roll` | `W(stat, (u16) par, v)` | [C] |
+| 23 | none | if not ethereal and `ItemHasDurability`: `ITEMS_MakeEthereal` (§ F), no `PROP_WriteStat` call, return 1 | [C] for that make branch; the two skips (already ethereal, no durability) [I] |
+| 24 | `v ← prev or Roll` | `W(stat, par, v)` | [I] |
+| 36 | `Roll` | `W(stat, param = v, value = val)` | [I] |
+
+- [C] The handler of func *f* is the word at ` + 4f`; slots 0 and 25..35 are NULL. The run reached funcs 1,
+  2, 3, 5, 6, 7, 8, 10, 11, 13, 14, 15, 16, 17, 19, 20, 21 and 22 (2 279 slots), every one reproduced. A TC-named
+  forced run (a loose `treasureclassex.bin` naming the carriers, the handlers read no TreasureClassEx cell)
+  reached func 12 and func 23's make branch, three slots each, reproduced with the final lists. Funcs 18, 24 and 36
+  and func 23's skips were not reached, and no drop-path row uses 4 or 9; their rows stay inferred.
+
+- [C] **Funcs 1 and 13 roll in mode 1 too.** Superior `att` rolled 1..3 over 11 items and superior `dur%` 10..15 over
+  15 items, never their maximum; the mode-1 `Reset` has no case for stats 19 and 75.
+- [C] **Func 2 rolls `ac%` in every mode** (0, 1, 3 and 4 logged); what goes to its maximum is the base defense
+  (`maxac + 1`, D3), not the stat.
+- [C] Funcs 15, 16 and 17 (the damage pairs and `…/lvl` codes) never draw, except func 17 with `par` 0. A `dmg-norm`
+  block whose `min` is 0 hands prev 0 to func 5, which then rolls.
+- [C] **Func 12 puts the roll in the param.** `skill-rand` (*Ormus' Robes*, `36..60`, `par` 3) draws once on the item
+  seed and writes `item_singleskill` with the roll as param and `par` as value: on three *Ormus' Robes* the roll was 39,
+  37 and 38 and the write was stat 107, param the roll, value 3 each time (the swapped reading would have written a
+  value of 37–39); reproduces the three creations from their seeds.
+- [I] **Func 36 does the same with the class.** `randclassskill` (*Hellfire Torch*, `0..6`, `val1` 3) writes
+  `item_addclassskills` with a random class as param and value `val`. Its only carrier is never dropped in stock
+  single-player play, so only edited data reaches it.
+- [C] Func 10's param packs the class in bits 3 and up and the tab in bits 0–1: every func-10 write logged has param
+  `par mod 3 + (par ÷ 3) × 8` (2 stock, 15 ItemRatio-forced).
+
+**E1. Funcs 5 and 6, damage by base column.**
+
+```
+E1. b1 ← base 1-hand column, b2 ← 2-hand column, bt ← throw column    ; mindam/2handmindam/minmisdam (5), max… (6)   [C]
+    s1, s2, st ← 21, 23, 159 (func 5) or 22, 24, 160 (func 6)
+    write s1 unless the item is a weapon with b1 = 0 and b2 ≠ 0
+    write s2 unless the item is a weapon with b2 = 0 and b1 ≠ 0
+    write st unless the item is a non-throwable weapon
+    each write: x ← v; if the column c ≠ 0 and c + v ≤ 0: x ← 1 − c (func 5) or −c (func 6)
+                W(s, 0, x)
+    return v                                                         ; unclamped
+```
+
+- [C] A non-weapon writes all three stats; a one-hand weapon writes only the one-hand and (if throwable) the throw
+  stat. *Civerb's Cudgel* `dmg-max` wrote stat 22 only (Worked example 6), the rare `bal` `dmg-min` wrote 21 and 159
+  (Worked example 3).
+- [I] The clamp is not reached on stock data: no drop-path `dmg-min` or `dmg-max` block is negative in
+  `uniqueitems`, `setitems`, the three affix tables or `qualityitems` (data check of the run).
+
+**E2. Func 7, `dmg%`.**
+
+```
+E2. v ← prev or Roll                                                                   [C]
+    if the item is a weapon:
+      base 21..24, 159, 160 ← their base columns (as D3, all six)
+      m ← max(maxdam, 2handmaxdam)
+      t ← MulDiv(m, v, 100)
+      if t ≤ 0: E1 as func 6 with v = 1; return                 ; +1 max damage, no percent stat     [C]
+    W(18, 0, v); W(17, 0, v)                                     ; 18 first, then 17
+```
+
+- [C] **The `+1` fallback acts.** Seven superior weapons of the ItemRatio-forced runs have `max(maxdam, 2handmaxdam) · v
+  < 100` (`swb` 14·5, `hbw` 6·7, `tax` 7·10, `2hs` 17·5, `pil` 9·11, `ob2` 8·7, `axe` 11·6); each wrote only max-damage
+  stats of value 1 and no 17 or 18, and reproduces each. Func 7 reads no ItemRatio cell;
+  the forced runs give the path, not its frequency, and no stock drop met it.
+- [C] On stock data the reset of the damage columns never acts after a change: four unique and set rows carry
+  `ethereal`, and none has a func-7 block after it (full table). What the reset does after such a change has no stock case. [I]
+- [C] `MulDiv` is signed and truncates toward zero, so for the positive operands here `t = ⌊m · v / 100⌋` and the
+  fallback fires exactly when `m · v < 100`.
+
+**E3. The skill level `L` of funcs 11 and 19.**
+
+```
+E3. sk ← SKILLS_GetRecord(par); if none: write nothing, draw nothing, return 0          [C]
+    req ← sk.reqlevel;  cap ← sk.maxlvl, or 20 when < 1
+    if b.max > 0:  L ← b.max
+    if b.max = 0:  t ← (ilvl − req) ÷ 4 + 1;  L ← min(max(t, 1), cap)
+    if b.max < 0:  step ← max(1, −(max(99 − req, 1) ÷ b.max))
+                   L ← (ilvl − req) ÷ step;  if L ≤ 0: L ← 1          ; no cap
+    func 11: chance ← b.min, or 5 when ≤ 0;  W(stat, par × 64 + (L & 63), chance)
+```
+
+- [C] The divisions are signed and truncate toward zero (the `÷ 4` is `cdq; and edx,3; add; sar 2`). All 25 func-11
+  slots and 15 func-19 slots reproduced.
+
+**E4. Func 19, `charged`.**
+
+```
+E4. L as E3
+    c: i32 ← b.min;  if c = 0: c ← 5                                                    [C]
+    if b.min < 0: c ← −b.min + (−b.min × L) ÷ 8
+    c ← clamp(c, 1, 255)
+    r ← Range(item.seed, c − c ÷ 8)                             ; the width is ≥ 1 for c ≥ 1: always one draw
+    value ← ((r + 1 + c ÷ 8) & 0xFF) + c × 256                  ; current charges low, maximum high
+    param ← (par << PACK_SHIFT) + (L & PACK_MASK)
+    SetStat(list, stat, param, value)                           ; set directly, no ValShift, not through D2
+```
+
+- [C] **The multiplier is the skill level, not the item level.** All 204 `charged` rows of `magicsuffix` have `min`
+  < 0 and `max` < 0, so `L` comes from the ilvl through E3; the current charges lie in `[c ÷ 8 + 1, c]`. 13 magic
+  suffixes and 2 uniques reproduced (Worked example 5).
+
+**E5. Func 14, `sock`.**
+
+```
+E5. cap ← min(6, invwidth × invheight);  if cap = 0: return 0                  ; before any draw   [C]
+    cap ← min(cap, ItemMaxSockets(item))                                       ; § F, F5
+    n ← prev if prev ≥ 1, else Roll                                            ; draw unless prev ≥ 1
+    if n < 1: n ← par
+    if cap < 1: return                                                         ; AFTER the draw, nothing written
+    set item.flags 0x800;  base stat 194 ← min(max(n, 1), cap)
+```
+
+- [C] Unlike the socket roll of § F, no quality clamp applies; 6 `sock` slots reproduced. A `sock` block on a base whose
+  `ItemMaxSockets` is 0 (the draw with nothing written) was not reached.
+
+**E6. Func 18, `ac/time`.**
+
+- [I] No draw. The value is `((max + 256) × 1024 + (min + 256)) × 4 + par`, with each `+ 256` term clamped to
+  `[0, 1023]` and `par` to `[0, 3]`, set directly with param 0. Only two `spawnable` 0 `magicsuffix` rows name it, so no
+  drop reaches it.
+
+### F. Ethereal and sockets
+
+```mermaid
+flowchart TD
+  J["join of ItemCreateByQuality"] --> V{"quality in 1..9?"}
+  V -->|no| R0(("return 0"))
+  V -->|yes| X{"itemVersion ≥ 100?"}
+  X -->|yes| ET["F1–F3 ethereal roll"]
+  X -->|no| SQ
+  ET --> SQ{"quality in 1..3?"}
+  SQ -->|yes| SO["F4–F6 socket roll"]
+  SQ -->|no| AM
+  SO --> AM["automagic pick and props<br/>items/affixes"]
+```
+
+```
+F1. if itemVersion ≥ 100: EtherealRoll(item, rec)                                    [C]
+    if quality ∈ 1..3: SocketRoll(game, item, rec)
+EtherealRoll:
+F2. if rec+0x80 & 0x02: return                                                       [C]
+    if not (IsType(item, 45) or IsType(item, 50)): return                            [C] (all of F2–F3)
+    if not ItemHasDurability(item) or quality ∈ {1, 5} or base.quest: return
+    r ← Range(item.seed, 100)                                                        ; draw
+F3. if (rec+0x80 & 0x04) or (rec+0x44 &) or r < 5:
+      ITEMS_MakeEthereal(item)          ; flag; weapon: base 21..24, 159, 160 ← (x × 3) ÷ 2; else base 31 ← (x × 3) ÷ 2
+      if ItemHasDurability(item):
+        base stat 73 ← base73 ÷ 2 + 1;  base stat 72 ← EVD
+SocketRoll:
+F4. if quality < 2 or not base.hasinv or base.stackable: return                      [C] (ITEMS_GetStartSeed, all of F4–F6)
+    cap ← ItemMaxSockets(item);  if cap = 0: return
+    cap ← min(cap, 3 / 4 / 6 by game.difficulty)
+    if itemVersion < 100 and IsType(item, 3 tors): return                            ; no draw [C]
+    r ← Range(item.seed, 100)                                                        ; draw
+    if rec+0x80 & 0x08: return                                                       ; tested after the draw [C]
+    if rec+0x80 & 0x10: r ← 0
+F5. ItemMaxSockets(item) = min(gemsockets, MaxSock1 if ilvl ≤ 25, MaxSock25 if ilvl ≤ 40, else MaxSock40)
+F6. if (rec+0x44 & 0x800) or r < 33:
+      set item.flags 0x800
+      ITEMS_SetSockets(item, item.start mod cap + 1)       ; u32 mod, NOT a draw
+      ; SetSockets: n ← min(n, 6, invwidth × invheight, ItemMaxSockets); base stat 194 ← n
+```
+
+Step notes:
+
+- F1. **Order.** The ethereal roll runs only in an expansion game and before the socket roll; the socket roll runs for
+  qualities 1..3, and low quality (1) fails its first test. The automagic pick
+ follows both. [C]
+
+- F2. **Who can be ethereal.** Weapons and armour with durability, not low (1) or set (5), not a quest base. Uniques
+  can; set items never are; bows and indestructible bases are excluded by `ItemHasDurability` (`nodurability`, stat
+  152). 375 eligible drops drew: 15 with `r < 5` became ethereal, 360 did not. [C]
+- F3. The ×3/2 applies to the base stats as the builder left them, so an `ac%` armour is multiplied from `maxac + 1`.
+  The durability becomes `⌊max/2⌋ + 1` and the current durability the evaluated max. [C]
+
+- F2, F4. **The skip bits.** Every ethereal roll entered with `rec+0x80 & 0x02` returned without a draw: 132 cube
+  outputs and 209 player start items, 11 of the cube's being weapons or armour with durability and a quality other than
+  1 or 5, where the roll would otherwise draw. In the player logs 54 socket rolls with `rec+0x80 & 0x08` made their
+  `Range(100)` draw and then wrote no sockets, 21 of them with a draw below 33. So the ethereal roll tests its skip bit
+  before its draw and the socket roll after. [C]
+- F3. The forced bits `rec+0x80 & 0x04` / `& 0x10` are the resolver's upgrade bits,
+  never set with stock data: none of the 354 ethereal and 287 socket rolls of the stock drop logs had `rec+0x80 &
+  0x14`, nor any player start item. [C]
+  That the ethereal roll tests them after its draw has no stock case. [I]
+- F3. **An `ethereal` unique can be made ethereal twice.** Func 23 makes the item ethereal without touching durability;
+  the roll then tests the record bits, not the item flag. A unique whose `indestruct` follows its `ethereal` has no
+  durability and does not draw (*Ethereal Edge*, *Ghostflame*, *Shadowkiller*); *Wraithflight* (`7gl`, durability 16,
+  no `indestruct`) draws, and with `r < 5` gets a second ×3/2 and halved durability. Not reached in the runs. [I]
+
+- F6. **The socket count is not drawn.** It is `item.start mod cap + 1`, where `item.start` is the low word the item
+  seed was initialised from. All 29 socketed drops had that count; the difficulty cap clamped `ItemMaxSockets` in
+  expansion Normal (3) and classic Nightmare (4), and Hell drops reached 6. 88 draws: 29 socketed, 59 not. [C]
+
+- F5. **ilvl 40 uses `MaxSock25`** (`cmp 0x28; jg`). [C]
+- F6. `ITEMS_SetSockets` also has quality clamps (magic ≤ 4, rare ≤ 2, crafted ≤ 3, set and unique special); only
+  qualities 2 and 3 reach it from here. [I] Neither gets a quality clamp: in the 34 calls of
+  the drop socket roll logged step by step, the cap after the quality switch equalled `min(p, 6)` (normal 30,
+  superior 4). [C] The setter is
+  read in full, with the load setter that keeps a count above these clamps, in
+  [items/sockets-runewords § F](../sockets-runewords/#f-socket-counts-the-two-setters); filling the sockets and the
+  runeword are [items/sockets-runewords](../sockets-runewords/).
+- F4. **Classic body armour (`tors`, item version < 100) makes no socket draw.** The 10 classic `tors` drops of
+  qualities 2 and 3 in the H2b run each passed `ItemMaxSockets` > 0 and reached the test, and none drew; the 5 expansion
+  `tors` drops of quality 2 past the same point each drew. [C]
+
+### G. Stat storage
+
+- [C] **Two kinds of destination.** § A, the resets of D3, ethereal and the socket count write the unit's base stats.
+  Every property write goes through D2 to the **main list** (state 0, flags `0x40`), except the `aprop` blocks of a
+  set row with `add func` ≠ 0, which go to the lists of state 165..169 (flags `0x2040`). These are the lists the save
+  writes. The final lists of 2 264 items matched at the return of `ItemCreateByQuality`.
+- [C] **`op` is not applied at creation.** No handler and not the writer read `op`, `op param`, `op base` or
+  `op stat1..3`; the lists reproduce with no `op` applied. A `…/lvl` property stores its raw `par` (Civerb's `dmg/lvl`
+  8, stat 218); the per-level value is an evaluation-time view.
+- [C] `op` reaches creation only through `EVD`, which func 13 and the ethereal roll read through
+  `ItemMaxDurability`: the item's cached value of stat 73, re-evaluated whenever stat 73 or a stat that
+  feeds it changes. The evaluation adds to the own value one term per `op` input of the stat; for stat 73 the only one
+  is op 13 from stat 75 (`dur%`), so on an item `EVD = own 73 + MulDiv(base 73, dur%, 100)`, which is
+  `max + ⌊max × dur% / 100⌋` for the positive values of a drop. The model predicts all 15 func-13 values and all 15
+  ethereal halvings of the run (re-analysis 2026-10-15).
+- [C] Funcs 18, 19 and 20 bypass `ValShift`; their stats have `ValShift` 0.
+- [C] **The saved stats.** Three drops saved by *Save and Exit* in the run (`7cm` rare, `brs` unique, `cqv`) hold their
+  logged main lists (value `>> ValShift`), defense, durability, quantity and flags when read back.
+
+
+### H. RNG call sequence
+
+```mermaid
+sequenceDiagram
+  participant G as game.seed
+  participant C as ItemCreate
+  participant U as unit.seed
+  participant I as item.seed
+  C->>G: Step, unit seed
+  C->>G: Step, start
+  C->>U: § A quantity or durability, defense, picture
+  opt type 11
+    C->>I: type-11 setup
+  end
+  C->>I: builder pick draws, uniques-sets or items/affixes
+  C->>I: § B ItemApplyProps per row, block, slot
+  Note over I: staff mods inside the builder, items/affixes
+  opt expansion, eligible base
+    C->>I: § F ethereal, Range 100
+  end
+  opt quality 2 or 3, eligible base
+    C->>I: § F socket test, Range 100
+  end
+  opt expansion, quality not 5 or 7, auto prefix
+    C->>I: automagic pick and mode-0 props
+  end
+```
+
+```
+H1. game.seed: unit seed, then item.start; item.seed ← {start, 666}            [C]
+H2. unit.seed: § A, per category (A1–A7); nothing else in creation steps it     [C]
+H3. item.seed: type-11 setup (type 11 only)                                     [I]
+H4. item.seed: the builder's pick draws and its ItemApplyProps calls, in the order its spec gives   [C]
+      unique / set: one pick draw, then mode 3 / 4         (uniques-sets C5, D3)
+      magic, rare: affix picks and mode-0 calls; on a rare all pick draws precede all property draws
+      superior: qualityitems row draws, then mode 1
+      then the staff mods, inside the builder after its last ItemApplyProps (items/affixes § I)
+      a failed builder: reseed {S, 666}, then the fallback builder (uniques-sets E)
+    within one call: blocks in § B order, slots in § C order, draws per § E
+H5. item.seed: ethereal Range(100)        (F2: expansion, eligible base)
+H6. item.seed: socket Range(100)          (F4: quality 2 or 3, eligible base); the count draws nothing
+H7. item.seed: the automagic pick and its mode-0 ItemApplyProps (items/affixes § J)
+```
+
+Step notes:
+
+- H4–H7. The item seed is drawn in this order in every logged creation: the item seed after each `ItemApplyProps`
+  call, after the ethereal roll and after the socket roll matched the model, 2 281 creations, 0 mismatches. [C]
+
+- H4. Magic: each pick applies its own row, so prefix draws, prefix properties, suffix draws, suffix properties. Rare: all picks first, then the property
+  calls interleaved prefix *k*, suffix *k* for *k* = 0..2 ([items/affixes § E](../affixes/#e-the-rare-builder--items_buildrare--items_buildrareaffixes), § 6). [C]
+- H4. The staff mods advance the item seed after the builder's last `ItemApplyProps` and add an `item_singleskill`
+  (107) entry to the main list; they are specified in [items/affixes § I](../affixes/#i-staff-mods--items_rollstaffmods).
+  The model predicts the exit seed of 105 stock rolls (21 ItemRatio-forced), the join seed after every builder whose
+  log has no affix lines, and the 107 entries of every final list (354 stock lists, 4 items with entries). [C]
+
+
+## Outputs
+
+| Output | Where | Written by | Tag |
+|---|---|---|---|
+| gold, quantity, durability, max durability | base stats 14, 70, 72, 73 | § A, § F (ethereal), func 13 (72) | [C] |
+| defense, block, speed | base stats 31, 20, 67 / 68 | § A, D3, § F | [C] |
+| weapon damage | base stats 21–24, 159, 160 | § A, D3, E2, § F | [C] |
+| picture variant | `ItemData+0x49` | A7 | [C] |
+| ethereal, socketed | `ItemData+0x18` bits, `0x800`; socket count base stat 194 | § F, E5 | [C] |
+| property stats | main list (state 0, `0x40`), set lists (165..169, `0x2040`); `(stat, param) → value << ValShift` | D2, E4, func 20 | [C] |
+| item seed | advanced by every draw of § B–F | — | [C] |
+
+## Worked example
+
+Seeds are `low:high` in hex.
+
+### Example 1: a normal weapon, socketed (stock)
+
+Expansion Hell, `flb` (record 37), ilvl 81, quality 2. [C]
+
+| Step | Log | Value |
+|---|---|---|
+| A4 entry | `IIS0 … "useed":"5acc52e2:0000029a","iseed":"9778ef05:0000029a","start":2541285125` | not stackable: no quantity draw |
+| A6 | `IIS1 … "useed":"7ca6ea84:25df07b2"` | durability 50: `h` = 25, `0x7ca6ea84 mod 25 = 21`, current 46, max 50 |
+| A7 | `"gfx":0`, no further step | `VarInvGfx` 0: no draw |
+| builder | `ICJ {"seed":"9778ef05:0000029a",…}` | the normal builder drew nothing |
+| F2 | `ETHR {"r":23,"seed":"8660c173:3f2d9029"}` | `23 ≥ 5`: not ethereal |
+| F4 | `SOKM {"ms":5}`, `SOKR {"r":24,"seed":"51651da8:380c4aed"}` | cap `min(5, 6)` = 5; `24 < 33`: socketed |
+| F6 | `SSET {"n":1,"start":2541285125}` | `2541285125 mod 5 + 1 = 1` socket |
+
+### Example 2: magic gloves, `ac%` and its reset (stock)
+
+Expansion Hell, `mgl` (`minac` 8, `maxac` 9, durability 16), ilvl 81, magic *Sturdy … of Wealth*. [C]
+
+| Step | Log | Value |
+|---|---|---|
+| A6 | `IIS0 … "useed":"30ab68b5:0000029a"` | draw 1: `0xcccb65e3 mod 8 = 3`, current 8 + 3 = 11 |
+| A3 | `IIS1 … "useed":"e1b3d122:556b1150", "b":[[31,0,8],[72,0,11],[73,0,16]]` | draw 2: `RangeOffset(8, 2)` = 8 + 0 = 8 |
+| E func 2 | `SLOT {… "func":2,"stat":16,"blk":[5,0,10,20],"seed":"ffe702b3:0b133afb"}`, `ROLLR {"v":20,"seed":"1dcefeba:6abc2481"}` | `0x1dcefeba mod 11 = 10` → 20; D3: defense `max(8 + 1, 9 + 1)` = 10 |
+| E func 1 | `SLOT {… "func":1,"stat":79,"blk":[58,0,41,80]}`, `ROLLR {"v":44,"seed":"b9b00abb:1f383118"}` | `0xb9b00abb mod 40 = 3` → 44 |
+| F2 | `ETHR {"r":39,"seed":"c45ba2ff:4d72eb9b"}` | not ethereal; quality 4: no socket roll |
+| out | `LX … "b":[[31,0,10],…], "sub":[[0,64,[[16,0,20],[79,0,44]]]]` | main list `{16: 20, 79: 44}`, defense 10 |
+
+The item seed between the builder entry (`1b20a375:0000029a`) and each `SLOT` is the affix picks'.
+
+### Example 3: an ethereal rare throwing weapon (stock)
+
+Expansion Hell, `bal` (record 46: damage 5–10, throw 12–15, durability 10, stack 16..130), ilvl 84, rare. [C] 
+
+| Step | Log | Value |
+|---|---|---|
+| A4 quantity | `IIS0 … "useed":"5d38edc4:0000029a"` | draw 1: `0xd0253a6e mod 114 = 50` → 16 + 50 = 66; quality still 0, kept |
+| A6 | `IIS1 … "useed":"0179b7d8:56d0dcb2"` | draw 2: `0x0179b7d8 mod 5 = 1` → current 6, max 10 |
+| E2 `dmg%` | `ROLLR {"v":40,"seed":"169c8107:0e9b2e57"}`, `WR` 18 then 17 | `0x169c8107 mod 10 = 9` → 40; `MulDiv(10, 40, 100)` > 0, no fallback |
+| E1 `dmg-min` | `ROLLR {"v":3,"seed":"2f0868ba:096e5742"}`, `WR` 21 and 159 | one-hand and throw; no 23 (`b2` = 0) |
+| F2–F3 | `ETHR {"r":2,"seed":"3e12c96a:6822b0d6"}`, `EVD {"at":"eth","v":6}` | `2 < 5`: ethereal |
+| out | `LX … "b":[[21,0,7],[22,0,15],…,[72,0,6],[73,0,6],[159,0,18],[160,0,22]]` | ×3/2: 5→7, 10→15, 12→18, 15→22; max durability `10 ÷ 2 + 1` = 6, current = `EVD` 6 |
+
+### Example 4: a unique, fixed blocks and one roll (forced path, saved)
+
+Expansion Hell, `brs` (`minac` 65, `maxac` 68, durability 50), ilvl 84, unique row 86. This is the `brs` that the run saved and read back. [C]
+
+| Step | Log | Value |
+|---|---|---|
+| A6, A3 | `IIS0 … "useed":"d9273692:0000029a"` → `IIS1 … "useed":"5824477d:57eb9bf5"` | durability `25 + 4` = 29; defense `RangeOffset(65, 4)` = 65 + 1 = 66 |
+| pick | `UPK {"row":86,"n":1,…}`, item seed `6776eac4:16ed416f` | one candidate, one draw (uniques-sets C5) |
+| B2 blocks 1–4 | `ROLLR {"v":15,…}`, `{"v":50,…}`, `{"v":90,…}`, `{"v":2,…}`, seed unchanged | `min = max`: four writes, no draw |
+| B2 block 5, func 2 | `SLOT {…"blk":[5,0,60,100]}`, `ROLLR {"v":89,"seed":"55162a43:2b277db1"}` | `0x55162a43 mod 41 = 29` → 89; defense `max(67, 69)` = 69 |
+| F2 | `ETHR {"r":76,"seed":"8acdb340:237d2cc2"}` | not ethereal; quality 7: no socket roll |
+| out | `LX … "b":[[31,0,69],[72,0,29],[73,0,50]], "sub":[[0,64,[[16,0,89],[45,0,90],[46,0,15],[89,0,2],[110,0,50]]]]` | matches the saved item |
+
+### Example 5: charges from the skill level, and `ValShift` (forced path)
+
+Expansion Hell, `7ss`, ilvl 84, a rare after a failed unique. [C]
+
+| Step | Log | Value |
+|---|---|---|
+| D2 `ValShift` | `WR {"stat":9,"param":0,"v":14,…}` → list entry `[9,0,3584]` | `maxmana` 14 stored as `14 << 8` |
+| E3 | `SLOT {…"func":19,"stat":204,"blk":[243,106,-20,-4],"seed":"4be9c52f:53b58398","req":12,"maxlvl":20}` | `step = max(1, −(87 ÷ −4))` = 21; `L = (84 − 12) ÷ 21` = 3 |
+| E4 | `SLOTR {"r":27,"seed":"35deb0c3:1fa9ad62"}` | `c = 20 + (20 × 3) ÷ 8` = 27; `Range(27 − 3)`: `0x35deb0c3 mod 24 = 19` |
+| out | list entry `[204,6787,6935]` | param `106 << 6 + 3` = 6787; value `(19 + 1 + 3) + 27 × 256` = 6935: 23 of 27 charges |
+
+### Example 6: a set item's `aprop` in the main list (forced path)
+
+Expansion Nightmare, `gsc` (damage 8–18), ilvl 61, set row 2 *Civerb's Cudgel* (`add func` blank). [C]
+
+| Step | Log | Value |
+|---|---|---|
+| pick | `SPK {"n":1,"total":7,…}`, item seed `141337f7:2336e5ac` | uniques-sets D3 |
+| `prop1` func 1 | `SLOT {…"stat":19,"blk":[15,0,75,75]}`, `ROLLR {"v":75,…}` | no draw |
+| `prop2` func 6 | `SLOT {…"func":6,"blk":[28,0,17,23]}`, `ROLLR {"v":21,"seed":"f485e6bf:085f8763"}`, `WR {"stat":22,…}` | `0xf485e6bf mod 7 = 4` → 21; stat 22 only (E1) |
+| `aprop1a` func 17 | `SLOT {…"func":17,"stat":218,"blk":[145,8,0,0],"st":0,"fl":64}`, `WR {"stat":218,…,"v":8}` | `par` 8, no draw, main list |
+| F | `ETH0`, `ETHX`, no `ETHR`; no `SOK0` | quality 5: no ethereal draw, no socket roll |
+| out | `LX … "sub":[[0,64,[[19,0,75],[22,0,21],[218,0,8]]]]` | one main list |
+
+## Reimplementation notes
+
+- **Two seeds.** Base stats step the item unit's seed (`Unit+0x20`), the property roll, ethereal and sockets step the
+  item seed (`ItemData+0x04`). Drawing a base stat from the item seed shifts the unique or set pick and everything
+  after it. [C]
+- **`min = max` draws nothing.** Most unique blocks are fixed values and leave the seed alone (Worked example 4).
+  [C]
+- **Charges always draw**, even when `c ÷ 8` leaves a width of 1. [C]
+- **The socket count is `start mod cap + 1`**, not a draw; keep `ItemData+0x10` (which a fallback rewrites) around.
+  [C]
+- **`sock` draws even when it then writes nothing** (cap < 1 after `ItemMaxSockets`), but not when the inventory size
+  is 0. No stock `sock` block runs with a cap below 1 (no unique or set `sock` row has such a base at an ilvl it drops
+  at, and the magic `sock` rows are refused on them), so this rests on the code reading. [I]
+
+- **Superior is not "max".** Funcs 1, 2 and 13 roll in mode 1; a D2R-era description that says otherwise does not
+  describe 1.14d. [C]
+- **`ac%` raises the base defense to `maxac + 1` per block**, before ethereal ×3/2. [C]
+- **Durability and quantity draws never hit the top value.** `[⌊d/2⌋, 2⌊d/2⌋ − 1]` and `[lo, top − 1]`. [C]
+
+- **Quivers ignore `spawnstack`; misc honours it.** [C]
+- **A value of 0 writes nothing**, and slot 1 then hands prev 0 on, so a later reuse slot draws its own value. [C]
+
+- **Do not apply `op` at creation.** The lists hold raw values (`<< ValShift`); `…/lvl` stats hold `par`. [C]
+
+- **Property codes resolve case-insensitively** when the tables are compiled. [C]
+- **A superior ethereal `dur%` item: func 13 first, then the halving of the base.** Func 13 runs in the builder; the
+  ethereal roll then halves the *base* stat 73 to `h = ⌊max/2⌋ + 1` (not the evaluated max), and stat 72 takes the
+  re-evaluated stat 73. Three forced-path items show it: `xrs` max 50, `dur%` 11 → base 73 = 26, 72 = 28; `7ba` 35, 12 →
+  18, 20; `7ha` 28, 15 → 15, 17, each predicted. [C]
+
+## Evidence
+
+- Tables: Properties, ItemStatCost,
+  Weapons, Armor, Misc,
+  ItemTypes, UniqueItems,
+  SetItems, MagicPrefix,
+  MagicSuffix, AutoMagic,
+  QualityItems, Skills.
+- Specs: rng, rng/seeds, [items/uniques-sets](../uniques-sets/),
+  [items/affixes](../affixes/) (the picks, staff mods, automagic and their draw order),
+  save/d2s § J.

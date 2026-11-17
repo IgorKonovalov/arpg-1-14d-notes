@@ -7,10 +7,10 @@ sidebar:
 This page explains how the game decides which monsters exist. It covers which classes each [level](../../reference/glossary/) can host, how
 a room gets filled the first time it becomes active, which of those monsters become champions, uniques or
 [superuniques](../../reference/glossary/), and what level, hit points, defence and experience each one is created with. It restates the
-reviewed monster specs: the overview in monsters, the level pools
-in pool, room population in spawn,
-special monsters in special and stats in
-stats. The specs carry the exact arithmetic and [draw](../../reference/glossary/) order; this page tells
+reviewed monster specs: the overview in [monsters](../../spec-monsters/overview/#data-flow), the level pools
+in [pool](../../spec-monsters/pool/#purpose), room population in spawn,
+special monsters in [special](../../spec-monsters/special/#purpose) and stats in
+[stats](../../spec-monsters/stats/#purpose). The specs carry the exact arithmetic and [draw](../../reference/glossary/) order; this page tells
 the story. Where something is read from the code but not yet seen in a test run, or is still unknown, the page
 says so.
 
@@ -96,7 +96,7 @@ the same region seed. Every set after the first differs from the first in at mos
 come between one level's picks and the next level's, so a reimplementation has to make them even if it never
 draws a monster. If it skips them, every later level's pool comes out wrong.
 
-A short example from the spec's worked example (pool § Worked example,
+A short example from the spec's worked example ([pool § Worked example](../../spec-monsters/pool/#worked-example),
 `-seed 1`, normal, expansion): *Act 1 - Wilderness 2* has four candidates, `brute1`, `corruptrogue1`,
 `fallenshaman1` and `cr_lancer1`, and `NumMon` 3. The three draws take `brute1`, then `fallenshaman1`, then
 `cr_lancer1`, so `corruptrogue1` is left out of that game's pool for that level.
@@ -348,7 +348,7 @@ twice.
   `regurgitator3` got Holy Shock first, then its original Holy Freeze.
 - Every other handler only writes stats.
 
-The draw order on the boss's seed is: for a champion,
+The [draw order](../../spec-monsters/special/#draw-order-on-the-unit-seed) on the boss's seed is: for a champion,
 the champion roll, its one pick, `rndname`, then the pack size. For a unique, the champion roll, `Range(1)`, one draw
 per mod, the minion count, then `rndname`.
 
@@ -461,7 +461,7 @@ data. The third, `druidhawk`, can: it belongs to the Druid's Raven, so by the co
 normal row. Ravens were created in a skills run, but only their seed, hit points and defence were checked, not
 this list.
 
-**Monster equipment** (`MonEquip`, stats § B, step B12) comes
+**Monster equipment** (`MonEquip`, [stats § B](../../spec-monsters/stats/#b-monstatsinit-in-order), step B12) comes
 last. Only two classes have a row that equips at creation in the stock table: 234 (a flying scimitar) and 267 (Blood
 Raven), each with one row of level 0 and one location. For them one unit-seed step picks the location and the item is
 created there when it is free, taking two game-seed steps like any item. The end-to-end run created Blood Raven three
@@ -483,8 +483,8 @@ for Lut Gholein's NPCs, the rogue hireling and the cow; the camel was not met.
 at each change: none changed. Monsters created after the change get the new count. A monster that is re-created when
 its room comes back from inactive is created anew, then gets its first instance's maximum hit points and experience
 back from the saved record; its level comes out of the new creation and the re-applied mods again, so a minion
-created at the plain pool level comes back 3 levels higher at its first restore (stats § Inputs and oracles,
-lifecycle § H; the page on [levels](../levels/#rooms-that-come-and-go-release-and-restore)
+created at the plain pool level comes back 3 levels higher at its first restore ([stats § Inputs and oracles](../../spec-monsters/stats/#inputs-and-oracles),
+[lifecycle § H](../../spec-drlg/lifecycle/#h-the-restore); the page on [levels](../levels/#rooms-that-come-and-go-release-and-restore)
 tells the whole story). The formula above 8 players is read from the code only.
 
 ## Classic nightmare and hell
@@ -577,7 +577,7 @@ special count stays at 7.
 
 ### A unique group and its name
 
-Copied from special § Example 2:
+Copied from [special § Example 2](../../spec-monsters/special/#example-2-a-unique-group-expansion-nightmare):
 expansion nightmare, *Arreat Plateau*, a random boss of class `blunderbore6`.
 
 | # | Draw on the boss's seed | Result |
@@ -595,7 +595,7 @@ On the client, 33102 keeps its low byte, 78. On a seed made from 78 it draws suf
 
 ### A possessed champion's stats
 
-Copied from stats § Example 2:
+Copied from [stats § Example 2](../../spec-monsters/stats/#example-2-a-champion-sk_archer7-class-576-frozen-tundra-mod-possessed):
 `sk_archer7` in *Frozen Tundra*, expansion hell, `/players 8`, monster level 81 (the area's `MonLvl3Ex`). The `MonLvl`
 row 81 gives hit points 5722, defence 1581 and experience 45759. The class's hell `MonStats` give 70, 100, 100 and 95.
 
@@ -611,16 +611,16 @@ row 81 gives hit points 5722, defence 1581 and experience 45759. The class's hel
 
 ## What is not known yet
 
-Each spec's *Open questions* has the full list: pool,
-spawn, special,
-stats. The ones that bear on this page:
+Each spec's *Open questions* has the full list: [pool](../../spec-monsters/pool/),
+spawn, [special](../../spec-monsters/special/),
+[stats](../../spec-monsters/stats/). The ones that bear on this page:
 
 - **Pools:** a creation in a level with no record (the fallback level 1) has no stock case. Natural nightmare and
   hell pools are checked for one seed, with Act I visited.
 - **Population:** what `sparsePopulate` really does (unreachable on stock data, and the community sources
   disagree), and games with several real players, which were not logged. The Chaos Sanctuary gate's closed state
   needs the three seal bosses dead, Lord De Seis among them, and no session created him. The room field the wanderer
-  roll tests and the restore of inactive monsters are answered by the room lifecycle spec.
+  roll tests and the restore of inactive monsters are answered by the [room lifecycle spec](../../spec-drlg/lifecycle/).
   Many guard exits and rare branches were never reached: the evil hut object, the wanderer spawn, and others listed in
   the spec. Monster positions also depend on inputs no spec yet produces end to end: the collision grid at the start
   of the pass, whose object marks are modelled but whose marks of players, monsters that walked in, items and corpses
@@ -643,9 +643,9 @@ stats. The ones that bear on this page:
 
 ## Where to read more
 
-- The specs: monsters overview,
-  pool, spawn,
-  special, stats.
+- The specs: [monsters overview](../../spec-monsters/overview/#data-flow),
+  [pool](../../spec-monsters/pool/#reimplementation-notes), spawn,
+  [special](../../spec-monsters/special/#reimplementation-notes), [stats](../../spec-monsters/stats/#reimplementation-notes).
   Each *Reimplementation notes* section lists the traps for someone rebuilding the system.
 - The [glossary](../../reference/glossary/) for D2 terms.
 - Related wiki pages: [randomness](../../foundations/randomness/) (seeds and draws), [levels](../levels/) (rooms, logic boxes, the

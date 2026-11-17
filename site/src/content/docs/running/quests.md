@@ -9,8 +9,8 @@ into the game, which listens for things that happen (a talk, a kill, entering a 
 the player's [quest record](../../reference/glossary/). Travel is the other half of moving through the game: waypoints, the NPCs
 and portals that change act, town portals, warp tiles, and where a player lands after each of them. This page
 explains both, and which of them draw on a [seed](../../reference/glossary/). It restates three reviewed specs: the
-quests and travel overview, quest progression
-and travel.
+[quests and travel overview](../../spec-quests/overview/#purpose), [quest progression](../../spec-quests/progression/#purpose)
+and [travel](../../spec-quests/travel/#purpose).
 
 What a quest *drops or gives* (the quest treasure classes, Andariel's and the Hellforge's special drops, the imbue,
 socket and personalise services) is on [other item paths](../../items/items-other-paths/#quest-drops-and-quest-rewards); how the
@@ -542,8 +542,8 @@ player is talking to an NPC or holds an item on the cursor, no object can be ope
 
 ## What is not known yet
 
-From the open questions of the overview,
-progression and travel,
+From the open questions of the [overview](../../spec-quests/overview/),
+[progression](../../spec-quests/progression/) and [travel](../../spec-quests/travel/),
 and the points not confirmed by a run:
 
 - **Not run:** the kill steps the logs do not hold (party credit, the region tests, most log-step writes), boss events
@@ -565,11 +565,11 @@ and the points not confirmed by a run:
 
 ## Where to read more
 
-- The specs: the quests and travel overview,
-  quest progression with its
-  reimplementation notes, and
-  travel with its draws by event kind
-  and reimplementation notes.
+- The specs: the [quests and travel overview](../../spec-quests/overview/#purpose),
+  [quest progression](../../spec-quests/progression/#purpose) with its
+  [reimplementation notes](../../spec-quests/progression/#reimplementation-notes), and
+  [travel](../../spec-quests/travel/#purpose) with its [draws by event kind](../../spec-quests/travel/#draws-by-event-kind)
+  and [reimplementation notes](../../spec-quests/travel/#reimplementation-notes).
 - Related pages: [other item paths](../../items/items-other-paths/) (quest drops and NPC services), [saves](../../characters/saves/) (the stored
   records), [randomness](../../foundations/randomness/) (the seeds), [levels](../../world/levels/) (the collision grid and warps),
   [monsters](../../world/monsters/), [objects](../../world/objects/), and the [glossary](../../reference/glossary/).

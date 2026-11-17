@@ -8,9 +8,9 @@ This page follows a single-player character from the moment it is created to its
 follows the [mercenaries](../../reference/glossary/) a player can hire. It covers what a new character starts with (attributes, skills and
 the starting kit), how a kill turns into experience, what a level-up changes, how a kill's experience is shared in a party and what the number of players changes, how a seller's hire list is made,
 what a mercenary's stats are at each level, and how a saved mercenary comes back. It restates four reviewed
-specs: player, player/creation,
-player/party and
-hirelings. Skill effects, the skill tree and mercenary combat AI are not
+specs: [player](../../spec-player/overview/#purpose), [player/creation](../../spec-player/creation/#purpose),
+[player/party](../../spec-player/party/#purpose) and
+[hirelings](../../spec-hirelings/overview/#purpose). Skill effects, the skill tree and mercenary combat AI are not
 covered by those specs, so they are not covered here either; the mercenary's AI is on [monster AI](../../running/monster-ai/).
 
 ## The big picture
@@ -217,7 +217,7 @@ and a larger value is written as that maximum; the same runs' saves confirm it
 
 ## Other ways to gain or lose experience
 
-These are in player/creation § J.
+These are in [player/creation § J](../../spec-player/creation/#j-other-level-and-experience-changes).
 
 - **Starting in a later act.** With `-act 2` to `-act 5` the character is raised to level 16, 21, 27 or 33 before
   its items are made, so the starting items get that ilvl, and its right skill stays Attack. This was confirmed on
@@ -247,8 +247,8 @@ These are in player/creation § J.
 
 ## Parties and the player count
 
-This section restates player/party, which composes the rules of
-player/creation § G and § J with every place the
+This section restates [player/party](../../spec-player/party/#purpose), which composes the rules of
+[player/creation § G and § J](../../spec-player/creation/#j-other-level-and-experience-changes) with every place the
 game reads the number of players. Two words are used throughout. **Seen in play** means a game-made log of a real or
 test session showed it. **Read from the code** means the game's code was read, or run on its own under emulation with a
 declared memory image, and no session showed it; that tells what the code does with the bytes it reads, not how often
@@ -482,7 +482,7 @@ not covered.
 ## Worked examples
 
 **A new Sorceress**, copied from
-player/creation Example 1.
+[player/creation Example 1](../../spec-player/creation/#example-1-an-expansion-sorceress-staff-with-the-staff-mods-oracle).
 Every character of that batch starts from game seed `5389700c:0f9a1148`.
 
 | Step | What happens |
@@ -496,14 +496,14 @@ Every character of that batch starts from game seed `5389700c:0f9a1148`.
 
 The staff's [staff mods](../../reference/glossary/) roll was taken from the recording in that batch's check (its seed after the roll
 and its single-skill bonus are the logged ones). The roll itself is specified in
-affixes § I and is run by the project's chained tools,
+[affixes § I](../../spec-items/affixes/#i-staff-mods--items_rollstaffmods) and is run by the project's chained tools,
 but the batch's 11 staff-mods rolls were not re-run through it.
 
 A Barbarian from the same batch gets the same seeds for the player and for its first copies; it has one copy more
 (the buckler), so it ends after 17 steps at `2f6ab60b:58c69aea`.
 
 **A Barbarian levelling from 9 to 10**, copied from
-player/creation Example 3:
+[player/creation Example 3](../../spec-player/creation/#example-3-a-barbarian-level-up-9--10-built-save-lvbarb-session-34421):
 
 | Step | Values |
 |---|---|
@@ -513,7 +513,7 @@ player/creation Example 3:
 | seeds | game seed and player seed unchanged |
 
 **A hire list at Qual-Kehk**, copied from
-hirelings Example 1
+[hirelings Example 1](../../spec-hirelings/overview/#1-a-hire-list-session-3302-expansion-normal-player-level-30)
 (expansion, Normal, player level 30). The store seed draws 67 name seeds, then picks 5, 48, 20, 1, 4, 55, 29, 19,
 16, 57 over the 67 names, with no collision. Three of the listed entries:
 
@@ -528,7 +528,7 @@ rounds its strength down to 95, while the hired mercenary at the same level woul
 dexterity 59 against 60, and resistances 56 in the list against 51 in the world.
 
 **A mercenary loaded from a save**, copied from
-hirelings Example 2:
+[hirelings Example 2](../../spec-hirelings/overview/#2-a-mercenary-loaded-from-a-save-session-3330-mercnova-expansion-normal):
 seed 12345, name 3, Id 0 (a fire Rogue), experience 2 790 000. The level is 30, because `31 × 900 × 100` =
 2 790 000 is reached and `32 × 961 × 100` = 3 075 200 is not. With `d` = 27 in band 3: strength 68, dexterity 99,
 life 288, defense 231, attack rating 334, damage 7–9, resistances 54, and Inner Sight and Fire Arrow at level 9.
@@ -536,14 +536,14 @@ The same mercenary block in another test save showed level 30, life 288 and resi
 
 ## What is not known yet
 
-From player/creation § Open questions:
+From [player/creation § Open questions](../../spec-player/creation/):
 
 - the first save's appearance bytes are not predicted.
 
 Also read from the code only, not run: party sharing with three or more members, a far or dead killer in a party, the Ancients' reward in Nightmare
 and Hell, picking up a corpse, and the edge cases of kill experience listed above.
 
-From hirelings § Open questions:
+From [hirelings § Open questions](../../spec-hirelings/overview/):
 
 - not reached by a run: a classic hire at Greiz, the Act III gift, resurrection at Greiz, Asheara and Tyrael, a
   mercenary at the level-98 bound, a second player hiring from the shared table, and two details of mercenaries in
@@ -553,9 +553,9 @@ From hirelings § Open questions:
 
 ## Where to read more
 
-- The specs: player, player/creation,
-  player/party and
-  hirelings, with their *Reimplementation notes*.
+- The specs: [player](../../spec-player/overview/#files), [player/creation](../../spec-player/creation/#algorithm),
+  [player/party](../../spec-player/party/#algorithm) and
+  [hirelings](../../spec-hirelings/overview/#algorithm), with their *Reimplementation notes*.
 - How the first save and a mercenary's header are stored: the [saves](../saves/) page and
   save/d2s § D.
 - The seeds behind all of this: the [randomness](../../foundations/randomness/) page.

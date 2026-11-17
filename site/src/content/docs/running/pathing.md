@@ -8,7 +8,7 @@ A unit that moves, or a missile that needs a route, holds a path record with a *
 the plan, takes that record, checks the request, takes the unit's own marks off the [collision grid](../../reference/glossary/),
 calls the type's planner, puts the marks back and aims the path at the first point it got. This page explains that
 routine, the planners behind it, the grid they read and the few draws they make. It restates the
-path overview and the path search, and for corpses
+[path overview](../../spec-path/overview/#purpose) and the [path search](../../spec-path/search/#purpose), and for corpses
 collision § F5.
 
 Who asks for a plan and why is each caller's. The per-frame
@@ -18,7 +18,7 @@ step along the points is [animation and timing](../animation/#the-step). What th
 ## How sure each statement is
 
 This page names its ground at each statement, because the kinds differ and they do not add up. The specs' own words on
-what their confirmed tags cover are in the search's purpose.
+what their confirmed tags cover are in [the search's purpose](../../spec-path/search/#purpose).
 
 | Kind | What it is | Where it stops |
 |---|---|---|
@@ -34,7 +34,7 @@ unless it says stock.
 
 ## The big picture
 
-The order of the checks is overview § C's; the steps below say how sure each one is.
+The order of the checks is [overview § C](../../spec-path/overview/#c-pathplan)'s; the steps below say how sure each one is.
 
 ```mermaid
 flowchart TD
@@ -188,7 +188,7 @@ Every planner that reads the grid tests a cell the same way. The unit's footprin
 the cell, patterns 1, 3 and 5 a plus, patterns 2 and 4 a 3×3 rectangle, and any other is blocked. No room at the cell (for a plus, at
 its centre) is blocked. A cell in a room
 outside the near list of the planner's room counts as blocked, however large the search's rectangle (emulated:
-search § A1). **The limit** that several planners use is a byte of the path record: at most 77, and 73 for a
+[search § A1](../../spec-path/search/#a1-a-cell-read-blocked)). **The limit** that several planners use is a byte of the path record: at most 77, and 73 for a
 player and 14 for a monster at creation. That 77 is the most any writer of the path
 module or any immediate gives is checked by a second reading; that the stores outside the module whose base is not traced give no more is read from the
 code.
@@ -199,7 +199,7 @@ The planner first tests a straight line from the unit's position to the target. 
 is within the refresh distance of it, the plan is that one point. Otherwise it walks from the line's end, at most the
 limit in steps. Each step tries the three directions toward the target, in order. A walk ends at the target, when all three are
 blocked, or when the step found would reverse the last one, and it writes a point at each turn
-(search § B; emulated, and seen in the game's plans).
+([search § B](../../spec-path/search/#b-the-greedy-planner-types-2-and-13); emulated, and seen in the game's plans).
 
 Its quirks are behaviour to keep. A walk whose last step turned ends one step short. The first point is written twice
 when the walk turns at once. At most limit + 1 points, so 78 at limit 77, which only the emulation reached; the game's
@@ -228,7 +228,7 @@ squared distance of 324 or less (all 317 or less) switched to best-first, and th
 The distance is half the path's knockback byte, rounded down, plus 1. The point lies that far from the start, away from the
 target unit, by truncating division; with no target unit it is the plan's target. A line test from the start cuts it to the last free
 point. **The plan clears the path's target unit**, whether or not it finds a point, and returns 0 if the point is the start
-(search § E; emulated and seen, in the game monsters' plans with 2
+([search § E](../../spec-path/search/#e-the-knockback-planner-type-8); emulated and seen, in the game monsters' plans with 2
 player plans in the second run). A unit standing on its target gets the start as the point, and so a return of 0 (read from
 the code).
 
@@ -239,7 +239,7 @@ branch, one point each. The refusal branch rests on the emulation.
 
 ### Best-first: type 1
 
-A best-first search over a pool of 200 nodes (search § G,
+A best-first search over a pool of 200 nodes ([search § G](../../spec-path/search/#g-type-1-best-first-over-a-pool-of-200),
 emulated to its return, and in the game through type 7's switch).
 
 - With a target unit, if all 8 cells two away from the target are blocked, it returns 0 and writes nothing else.
@@ -257,7 +257,7 @@ One that comes back onto the line is spliced in. One that meets the other's trai
 block. When one stops, the nearer end to the target is taken unless the start is nearer still. The list is then reduced: a
 point whose step equals the last is dropped, and, with nothing dropped since, a point where both coordinates of the step
 change. So east, south, east, south loses every other corner, and east, south-east, east, south-east loses none
-(search § H; emulated, and seen). **Most plans end at
+([search § H](../../spec-path/search/#h-type-15-a-line-with-two-wall-followers); emulated, and seen). **Most plans end at
 0:** 2 273 of the second run's 3 309, the planner's own refusal or a free line of too few cells. A limit above 80 is reached only with
 bytes no writer of the path module gives (checked by a second reading). A monster with its creation's limit of 14 and a target unit reaches 39 subtiles
 here where its other plans have 14 (read from the code).
@@ -343,7 +343,7 @@ that section's H4 gives, on this image, element by element, 64 of 64, with no cl
 snapping to the aim once it is reached or passed, is called only from the client's per-unit updates. The server's walk aims
 the facing at the next point after every move step, which sets only the direction to turn to and the step; a player's or
 monster's facing itself changes on the server only when code sets it outright. That rests on the client update passes
-being the turn's only callers (overview § H, H5).
+being the turn's only callers ([overview § H](../../spec-path/overview/#h-the-aim-and-the-facing-step), H5).
 
 ## The grid a planner reads
 
@@ -393,7 +393,7 @@ raises nothing either: each rule below rests on its own bit or line.
 
 The operations behind the target, the act change and the landing are at
 collision § F6, and the rows above at
-overview § F4.
+[overview § F4](../../spec-path/overview/#f4-each-grid-rule-at-its-tag).
 
 ## Corpses
 
@@ -535,7 +535,7 @@ From the specs' open questions:
 
 ## Where to read more
 
-- The specs: path overview and path search,
+- The specs: [path overview](../../spec-path/overview/#reimplementation-notes) and [path search](../../spec-path/search/#reimplementation-notes),
   whose *Reimplementation notes* list the traps, and the collision grid for the marks.
 - The [glossary](../../reference/glossary/) for D2 terms.
 - Related wiki pages: [animation and timing](../animation/#movement) (the step along the points, speeds, knockback's length),

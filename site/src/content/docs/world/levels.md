@@ -8,9 +8,9 @@ Every map you walk in Diablo II comes out of the [DRLG](../../reference/glossary
 follows it from the top: an [act](../../reference/glossary/) is laid out, each level is built from a [seed](../../reference/glossary/) by one of three
 generators (preset, maze or outdoor), the level is cut into rooms, and each room gets its floor and wall tiles, its
 preset monsters and objects, its warps and finally a [collision grid](../../reference/glossary/) that monster spawning and object placement read.
-It restates the reviewed DRLG specs: the overview, room tiles,
-preset units, the maze and outdoor
-generators, warps and the collision grid. Where you want the
+It restates the reviewed DRLG specs: the [overview](../../spec-drlg/overview/), room tiles,
+[preset units](../../spec-drlg/preset/), the [maze](../../spec-drlg/maze/) and [outdoor](../../spec-drlg/outdoor/)
+generators, [warps](../../spec-drlg/warps/) and the collision grid. Where you want the
 exact order of every random [draw](../../reference/glossary/), follow the links.
 
 ## The big picture
@@ -145,7 +145,7 @@ reads the map before making the rooms and makes the preset's **[keep/drop rolls]
 ## Maze levels
 
 Caves, crypts, the Jail, the Catacombs, sewers, tombs and the other level types listed in
-maze § F are mazes. The generator works with [maze rooms](../../reference/glossary/), all of one
+[maze § F](../../spec-drlg/maze/#f-the-chain-per-level-type) are mazes. The generator works with [maze rooms](../../reference/glossary/), all of one
 `LvlMaze` size (24 × 24 tiles in the Den of Evil), and builds a graph of them before any real room exists.
 
 ```mermaid
@@ -179,7 +179,7 @@ type, for example, is record 53, `Cave W`.
 pass places the level's Prev and Next stairs, waypoint and quest rooms. Each special replaces a dead end facing the
 right way if one exists; otherwise a new room is attached. On most level types a single draw `r` picks the starting
 entry of the special tables (the tombs take it from their start shape instead, with no draw), and each following special moves to the next entry, so consecutive specials face different directions. Which specials
-each level type places is a table in maze § F, and every row of
+each level type places is a table in [maze § F](../../spec-drlg/maze/#f-the-chain-per-level-type), and every row of
 it was built in runs and matched room for room, the tombs' Tal Rasha and Kaa entries and Lair 64 included, with two
 kinds of exception. Levels 133 and 135 have no build in the stock game. Tombs 69 and 72 were not built, but the code
 gives a tomb no path of its own: it follows the tomb's role (true tomb, Kaa's or plain), and all three roles were
@@ -205,11 +205,11 @@ then freed, so a maze level's real rooms are all preset rooms.
 
 [Step through drlg-maze-level36](../../illustrations/drlg-maze-level36/index.html)
 
-Catacombs Level 3 (level 36) built room by room. A level draw picks the start shape's two arms on the locked first room (maze § E3); growth then picks a parent room with a level draw and a side with a draw on that parent's own seed, and each new room may link to the rooms it shares an edge with by a Merge roll on their seeds (§ C, § B); each room's Def is the level type's base plus its exit bits (§ B); each special takes a dead end facing the right way or attaches a new room, then the theme pass locks up to max(2, rooms ÷ 5 + 1) rooms as their Theme records (§ D, § H). The last steps convert the rooms newest first and name each room's preset file as the overview's step 9 picks it: each instance first draws an index over `Files` on the level seed (9a); a forced index replaces it if the room has one, else, for a Def strictly between the level type's rotation base and base + 16, the level type's per-build file rotation does (9b) (drlg overview, steps 9a and 9b). Seed: illustrative, an input of our own. Every value shown is computed by our model, not observed in the game.
+Catacombs Level 3 (level 36) built room by room. A level draw picks the start shape's two arms on the locked first room (maze § E3); growth then picks a parent room with a level draw and a side with a draw on that parent's own seed, and each new room may link to the rooms it shares an edge with by a Merge roll on their seeds (§ C, § B); each room's Def is the level type's base plus its exit bits (§ B); each special takes a dead end facing the right way or attaches a new room, then the theme pass locks up to max(2, rooms ÷ 5 + 1) rooms as their Theme records (§ D, § H). Every value shown is computed by our replay model, not observed in the game, and the seed is an illustrative input, not a level seed a game produces. The last steps convert the rooms newest first and name each room's preset file as the overview's step 9 picks it: each instance first draws an index over `Files` on the level seed (9a); a forced index replaces it if the room has one, else, for a Def strictly between the level type's rotation base and base + 16, the level type's per-build file rotation does (9b) (drlg overview, steps 9a and 9b). Seed: illustrative, an input of our own. Every value shown is computed by our model, not observed in the game.
 
 ## Outdoor levels
 
-The outdoor levels are those listed per act in outdoor § A: Act I's
+The outdoor levels are those listed per act in [outdoor § A](../../spec-drlg/outdoor/#a-the-window): Act I's
 wilderness (levels 2–7), the Burial Grounds and the Moo Moo Farm, Act II's 41–46, Act III's jungle 76–83, Act IV's
 104–106 and 108, and Act V's 110–112 and 117. The level is a grid of [outdoor cells](../../reference/glossary/), each
 8 × 8 tiles. Each act has its own generator, which marks what each cell is: border, [seam opening](../../reference/glossary/),
@@ -464,7 +464,7 @@ calls its tests is fixed, and a test that fails skips the later ones.
 
 A level is built once, but its rooms are not kept active all the time. The server activates the rooms around each
 player and releases rooms nobody has been near for a while; when a released room comes back, its monsters, objects
-and ground items are re-created from what the release saved. The room lifecycle spec
+and ground items are re-created from what the release saved. The [room lifecycle spec](../../spec-drlg/lifecycle/)
 has the rules; this section tells them in order. Where these passes fall in a frame is [the server frame](../../running/server-frame/#rooms-in-the-frame).
 
 ```mermaid
@@ -579,7 +579,7 @@ maximum hit points, the item came back with an expiry of 21 570, and the object 
 All numbers below are copied from the specs' worked examples; seeds are written `low:high` in hex. The Den of Evil
 is level 8, a maze level (`DrlgType` 1) of level type 3, with a level seed base of `015B2E77`.
 
-**The maze** (maze § Worked example, example 1). `LvlMaze` gives `Rooms` 1 in
+**The maze** ([maze § Worked example](../../spec-drlg/maze/#worked-example), example 1). `LvlMaze` gives `Rooms` 1 in
 every difficulty, 24 × 24 rooms. With one room already there, growth makes no draw at all.
 
 | # | Draw | Seed after | Effect |
@@ -615,7 +615,7 @@ nothing. So k = 15, the seed after the last pick is `6CC2E5DB:673E363A`, and the
 
 ## A worked example: a keep/drop roll in the Catacombs
 
-From preset § Worked example: Catacombs Level 2 (level 35), preset record
+From [preset § Worked example](../../spec-drlg/preset/#worked-example): Catacombs Level 2 (level 35), preset record
 267, file `Act1\Catacomb\CatNE.ds1`, 12 × 12, so a single room. Its `Scan` and `Pops` are 0, so the room rolls on its
 creation seed, `653A205E:685C5276`. The file holds two candles, a pool of blood and one `place_group50`. The roll walks
 from the last entry, so `place_group50` is first: the draw gives `F5001ACC`, the test keeps it only if the lowest bit
@@ -710,10 +710,10 @@ section.
 
 ## Where to read more
 
-- The specs: overview, room tiles,
-  preset units, maze,
-  outdoor, warps and
-  collision, and the room lifecycle. Each has a *Reimplementation notes* section listing the traps.
+- The specs: [overview](../../spec-drlg/overview/#algorithm), room tiles,
+  [preset units](../../spec-drlg/preset/#algorithm), [maze](../../spec-drlg/maze/#algorithm),
+  [outdoor](../../spec-drlg/outdoor/#algorithm), [warps](../../spec-drlg/warps/#algorithm) and
+  collision, and the [room lifecycle](../../spec-drlg/lifecycle/#algorithm). Each has a *Reimplementation notes* section listing the traps.
 - The [glossary](../../reference/glossary/) for every term linked above.
 - Related wiki pages: [randomness](../../foundations/randomness/) (the seed tree behind the level and room seeds),
   [monsters](../monsters/) (the population pass that uses the logic boxes and the collision grid),

@@ -9,16 +9,16 @@ Much of what Diablo II does is driven by tables: which monsters a [level](../../
 MonStats, TreasureClassEx, Weapons and about eighty more), in three string tables that hold the names and text
 shown on screen, and in small compiled formulas that some table cells carry instead of a plain number. This page explains how the game finds and loads
 those files, how a record is addressed, how one table points at another, how a stored number becomes a name on
-screen, and how a formula is run. It restates four specs: the data overview,
-excel tables, string tables and
-calc formulas. The loading happens once, at program start, before any game exists, and it
+screen, and how a formula is run. It restates four specs: the [data overview](../../spec-data/overview/),
+[excel tables](../../spec-data/excel/), string tables and
+[calc formulas](../../spec-data/calc/). The loading happens once, at program start, before any game exists, and it
 draws no random number; formulas are evaluated later, when the game needs a value, and only a formula's `rand` can
 draw (below).
 
 ## The big picture
 
-The diagram is a simplified copy of the data flow and the
-excel algorithm; the text below is what counts.
+The diagram is a simplified copy of the [data flow](../../spec-data/overview/#data-flow) and the
+[excel algorithm](../../spec-data/excel/#algorithm); the text below is what counts.
 
 ```mermaid
 flowchart TD
@@ -45,13 +45,7 @@ priority; a lookup walks that list and the first archive that has the file wins.
 `patch_d2`, then `d2exp`, then `d2kfixup`, then `d2delta`, then `d2data`. `d2exp` is opened whenever it exists,
 even for a classic game, so classic and expansion games read the same tables.
 
-Loose files on disk are only looked at when the game runs with `-direct` (or when no archive is open at all), and
-then they beat every archive. In a
-normal run a loose file never overrides an archive. This is confirmed in runs that put a debugger on the game before
-its start-up code: the archive opens, the sorted list after each open and every file lookup match these rules, a run
-with loose files but no `-direct` read none of them, and the same kind of files with `-direct` were read from disk.
-Only the place of the two optional archives in the middle of the list (the install has neither) and the case with no
-archive open (no lookup ran before the first open) are read from the code. The video archive is opened later, when a cinematic is played, and goes to the front of its priority group.
+Loose files on disk are only looked at when the game runs with `-direct` (or when no archive is open at all), and then they beat every archive. In a normal run a loose file never overrides an archive. Only the place of the two optional archives in the middle of the list (the install has neither) and the case with no archive open (no lookup ran before the first open) are read from the code. The video archive is opened later, when a cinematic is played, and goes to the front of its priority group.
 
 ## The game reads the .bin, not the .txt
 
@@ -139,7 +133,7 @@ While loading TreasureClassEx, the game also resolves each `ItemN` cell. A name 
 as an item code first; failing that, it is looked up as a TC name, then as a unique item name, then as a set item
 name; a name that matches nothing is dropped. So a short TC name that equals an item code means the item. A unique or
 set entry keeps two numbers: the base item of the named row and the row itself, which item creation later uses to make
-that exact unique or set item (read from the code, excel G4). The loader
+that exact unique or set item (read from the code, [excel G4](../../spec-data/excel/#g-treasure-classes)). The loader
 stops reading a row's items at the first empty `ItemN`, so an item after a blank cell is ignored; a
 [Picks](../../reference/glossary/) of 0 becomes 1; and a cell with a probability below 1 is skipped. A replay of the logged
 drops confirms the numbering, the item-code-first rule and the resolution of every logged cell; the three rules just
@@ -183,7 +177,7 @@ A short guide to the values inside a `.bin` record, all checked against every ce
 | formula | offset into a formula pool | −1 |
 
 The `.txt` compiler that produced these values (header matching, defaults for a missing column, the quirks above) is
-described in excel § J. Only a reimplementation that compiles
+described in [excel § J](../../spec-data/excel/#j-compiling-a-txt--txt-only). Only a reimplementation that compiles
 `.txt` itself needs it.
 
 ## String tables: from a number to text
@@ -328,7 +322,7 @@ which store −1 (confirmed under the emulator).
 
 ## Worked examples
 
-**Excel references**, copied from the excel worked example (values from the
+**Excel references**, copied from the [excel worked example](../../spec-data/excel/#worked-example) (values from the
 shipped `.bin` files):
 
 1. MonStats record 0 (`skeleton1`) has `TreasureClass1` = 430. Since 430 ≥ 161, that is TreasureClassEx record
@@ -354,7 +348,7 @@ The index is 20000 + 925 = **20925**, and the text is `of Amianthus`. In the sam
 `CHARACTER` (expansionstring entry 1796, logged in a classic game with the expansion archive present), and index
 5382 shows `an evil force` (the `dummy` entry, also logged once).
 
-**A formula**, copied from the calc worked example: Raise Skeleton's
+**A formula**, copied from the [calc worked example](../../spec-data/calc/#worked-example): Raise Skeleton's
 `petmax`, `(lvl < 4) ?lvl:(2+lvl/3)`, evaluated at skill level 3 (logged 52 times, result 3):
 
 | # | Action | Stack after |
@@ -376,8 +370,8 @@ level 4 takes the else-branch, 2 + 4 ÷ 3 = 3, also logged as 3.
 
 ## What is not known yet
 
-From the open questions of excel,
-strings and calc:
+From the open questions of [excel](../../spec-data/excel/),
+strings and [calc](../../spec-data/calc/):
 
 - The place of the two optional archives in the search order is read from the code only; the install has neither.
 - Whether anything reads two MonStats padding bytes during a game is open; nothing writes them between the load and
@@ -392,8 +386,8 @@ strings and calc:
 
 ## Where to read more
 
-- The specs: data overview, excel tables,
-  string tables, calc formulas.
+- The specs: [data overview](../../spec-data/overview/#files), [excel tables](../../spec-data/excel/#algorithm),
+  string tables, [calc formulas](../../spec-data/calc/#algorithm).
 - The [glossary](../../reference/glossary/) for TC index, item index, string index and key, and calc formula.
 - Related wiki pages: [randomness](../randomness/) for `rand` and seeds; [items](../../items/items/), [monsters](../../world/monsters/)
   and [levels](../../world/levels/) for what the game does with these tables.

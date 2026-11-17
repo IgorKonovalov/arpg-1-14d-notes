@@ -7,7 +7,7 @@ sidebar:
 This page is a reader's tour of the project's list of quirks. A quirk here is behaviour of the 1.14d game that a
 careful programmer would "fix" by accident: a divide made signed, a random draw skipped because its result is thrown
 away, a "less than or equal" turned into "less than", a table edge read the sensible way. The reviewed specs each
-state their own traps in their notes. The quirks index gathers them in one place,
+state their own traps in their notes. The [quirks index](../../spec-quirks/overview/#purpose) gathers them in one place,
 538 entries in nine classes, so that a rebuild can be checked against the whole list. This page makes no claim of its
 own. It tells you what kinds of trap the game holds, shows a few of the most striking, and points into the index. The
 one-line entries of the index leave out conditions, so read the owning spec section an entry links before you rely on
@@ -40,7 +40,7 @@ changes the result for large or negative values. The random number generator's r
 signed rebuild goes wrong once the low word reaches 2^31. Experience is unsigned all the way up. The string-table hash
 reads key bytes as signed characters, so a byte of 0x80 or more lands in another slot than the textbook hash gives.
 Trade prices divide one sum signed and another unsigned by a stackable item's stack size, so with a stack size above 1 a negative stat sum divides as a huge number. Objects with a negative spacing in the table step 249 to 255 subtiles, not backwards.
-Entries: class 1.
+Entries: [class 1](../../spec-quirks/overview/#1-arithmetic-width-and-sign).
 
 ### 2. Rounding and float
 
@@ -50,7 +50,7 @@ rounded percentages people quote. The chance to hit truncates its first quotient
 so one combined expression gives other numbers. Trade prices carry three running values through every step, including
 the steps whose result a mode throws away, and the order of terms matters through later truncations. The treasure
 class "no drop" weight is recomputed per pick in double precision.
-Entries: class 2.
+Entries: [class 2](../../spec-quirks/overview/#2-rounding-and-float).
 
 ### 3. Wrap and overflow
 
@@ -58,14 +58,14 @@ Some values wrap around instead of saturating. A level's seed is a 32-bit sum th
 seed, and the multiply-divide helper keeps the low 32 bits of a quotient that does not fit. This class also holds
 three paths that the specs read in the code and that would crash or hang the game (an integer divide that overflows,
 in two places, and a progressive ring whose step count is never tested); all three are read from the code only and were
-not provoked. Entries: class 3.
+not provoked. Entries: [class 3](../../spec-quirks/overview/#3-wrap-and-overflow).
 
 ### 4. Bounds, comparisons and table edges
 
 The edge of a range is where rebuilds drift. The to-hit clamp tests "5 or less" and "95 or more", so a rolled attack is
 never certain and never impossible. A damage maximum is exclusive: the roll never reaches it. Life below 256 internal units
 counts as zero, so a hit that leaves less than one life point kills. The command-line seed 0 cannot be asked for,
-because 0 means "use the clock". Entries: class 4.
+because 0 means "use the clock". Entries: [class 4](../../spec-quirks/overview/#4-bounds-comparisons-and-table-edges).
 
 ### 5. Draw order and dead draws
 
@@ -74,7 +74,7 @@ happen in the same place even when its result is discarded, and must not happen 
 helpers return 0 without drawing for a count below 1, but others (and draws written inline with a constant modulus)
 have no such guard and step the seed anyway. Maps derive from one seed and server units from another, and a room that
 wakes re-seeds from its own field, so carrying the generation seed over is wrong. The Act II tomb loop uses an
-unguarded modulus and in principle has no bound. Entries: class 5.
+unguarded modulus and in principle has no bound. Entries: [class 5](../../spec-quirks/overview/#5-draw-order-and-dead-draws).
 
 ### 6. Data-dependent branches
 
@@ -82,7 +82,7 @@ Behaviour that depends on which row, flag or value is in play. A monster's criti
 physical and elemental, while a player's critical or deadly strike doubles only the physical part. Leech uses the reduced, life-capped physical damage, and elemental damage never
 leeches. A monster with few hit points has no regeneration at all, because the product rounds to 0 (read from the code). A formula the game
 cannot compile is stored as an error and evaluates to 0, where a forgiving parser would succeed. Entries:
-class 6.
+[class 6](../../spec-quirks/overview/#6-data-dependent-branches).
 
 ### 7. Timing and frame edges
 
@@ -90,7 +90,7 @@ When things happen, in frames. A scheduled action ends a number of frames after 
 breakpoint tables count one less. A scheduled action does not follow a rate change made after it starts, while an every-frame monster takes the new rate at its next advance. A monster's attack
 rolls its extra-damage draws when the attack begins, and the to-hit and damage at the hit frame, with the monster's
 own thinking drawing in between. Eleven of the class's 28 entries are read from the code only. Entries:
-class 7.
+[class 7](../../spec-quirks/overview/#7-timing-and-frame-edges).
 
 ### 8. Multiplayer edges
 
@@ -98,7 +98,7 @@ What the number of players and the game type change. The player count is fixed w
 it later changes nothing on live monsters. The `/players` setting is a floor, not an addition, in single player and on
 a host. A server rebuild seeds units from the game seed, because the room-seed rule belongs to the client. The saved
 map seed survives only in single player. A party's shared kill experience measures distance from the killed monster,
-not from the killer. Entries: class 8.
+not from the killer. Entries: [class 8](../../spec-quirks/overview/#8-multiplayer-edges).
 
 ### 9. Deliberate oddities that look like bugs
 
@@ -107,7 +107,7 @@ generator takes the remainder directly, with no correction for bias. The two pla
 and one quarter, the reverse of what the names suggest. Rares have 3 to 6 affixes, not 2 to 6. Magic find is linear up
 to 10. With one player, crushing blow takes a quarter of the defender's current life on uniques and champions, not an eighth; more players raise the divisor. A hireling's
 experience curve is cubic, not quadratic. Keep them all. Entries:
-class 9.
+[class 9](../../spec-quirks/overview/#9-deliberate-oddities-that-look-like-bugs).
 
 ## Crash and hang paths
 
@@ -125,7 +125,7 @@ knowledge comes from older versions. Each claim that holds is listed as an ordin
 those are read from the code only: of their 21 entries, 5 are confirmed and 16 are not.
 
 The claims that do not hold are
-listed in the index. A rebuild must not restore them.
+[listed in the index](../../spec-quirks/overview/#community-claims-that-do-not-hold). A rebuild must not restore them.
 
 - **Monsters with life, mana or stamina steal do not do double melee damage.** A monster's life drain, a hireling's
   aside, is one term added to the physical damage, which it does not repeat. Mana and stamina drains are not in that

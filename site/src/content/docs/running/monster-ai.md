@@ -9,7 +9,7 @@ frame or is called when a mode ends. One event runs a few checks, looks for a ta
 **[think function](../../reference/glossary/)**, chosen from a table by the MonStats `AI` column and the unit's AI state. The think draws on
 the unit's own seed and gives one command: a mode, a skill, a path request, or a wait until the next event. This page explains
 that system and how much of it has been checked. It restates the overview, the
-machinery and, for row detail it does not repeat, the
+[machinery](../../spec-monster-ai/machinery/#purpose) and, for row detail it does not repeat, the
 catalogue.
 
 The mode's frames are [animation and timing](../animation/). The skill behind a command is [skills and missiles](../../characters/skills/). The
@@ -307,7 +307,7 @@ which is all their logs can say, and 330 of them are of classes 58 and 59.
 
 ## The 18 tier AIs
 
-Each has a full entry at machinery § T, with its draw order as pseudocode. **The third column is
+Each has a full entry at [machinery § T](../../spec-monster-ai/machinery/#t-the-tier-ais), with its draw order as pseudocode. **The third column is
 read from the code**, a short gloss, and it leaves out most branches. All run only with a target except rows 61 and 67, which run without a search.
 Only rows 29 and 61 have an alt. The last three columns are the first run's first-call comparison:
 decisions, how many distinct first calls the map predicted, and how the map was made. "By hand" means
@@ -497,7 +497,7 @@ What the runs did not reach, each stated as it stands. Each is open in what it l
 - **State 13, The Countess's state.** Played by hand: 160 of her decisions follow the catalogue's block on the branches reached, and her Firewall goes through the four points of her preset's path, in the first of its two files. What sets the state was not seen, since the logging began after she was created. States 2, 3, 8, 9, 14 and 17 are not called dead.
 - **Duriel in melee range.** Played by hand, Normal: 308 decisions, Smite 102, Jab 116, first attack 90, each one's choice following from three fresh draws on the seed logged for it. The frequencies stay arithmetic on that, **Smite 33 %, Jab 33.5 %, first attack 33.5 %**, and a community page's **17 % first attack, 50 % Jab** fall outside what was measured. Über Duriel, the same think and the same slots, is not played.
 - **A champion corpse and the Greater Mummy.** A community page lists champions as an exception to its raising. By the reading, its search tests the unique flag only, so a champion corpse in range becomes its corpse, and the skill's own target test is not read for champions. No natural champion was logged. A built state cannot count, since the logging never writes game memory, so it needs a forced mode that writes nothing.
-- **The Uber forced cases.** Four named cases, G1, G2, G3 and G5, forced setups for a session played by hand. Not run.
+- **The Uber forced cases.** Four named cases, forced setups for a session played by hand. Not run.
 - **Row 23's mismatches.** Past the first call, the revision 4 logs hold 8 for this row, with the logging's call limit as the cause read. The revision 6 logs have the row at 256 decisions with 0 mismatches, but only 2 of the lines that would test that cause are this row's, so the reading is untested.
 - **The other gaps.** [The 8 and the 330](#draws-and-seeds).
 
@@ -517,6 +517,6 @@ From the specs' open questions:
 
 ## Where to read more
 
-- The specs: overview, machinery and catalogue, whose *Reimplementation notes* list the traps.
+- The specs: overview, [machinery](../../spec-monster-ai/machinery/#reimplementation-notes) and catalogue, whose *Reimplementation notes* list the traps.
 - The [glossary](../../reference/glossary/) for D2 terms and `aip`.
 - Related wiki pages: [monsters](../../world/monsters/) (how a monster is created and what its stats are), [skills and missiles](../../characters/skills/) (what a skill command does), [pathing](../pathing/) (the planners behind a request), [the server frame](../server-frame/) (the order of events in a frame), [animation and timing](../animation/) (a mode's frames and the step), [characters and hirelings](../../characters/characters/), [randomness](../../foundations/randomness/) (unit seeds and draws) and [how we know](../../reading-the-tags/).

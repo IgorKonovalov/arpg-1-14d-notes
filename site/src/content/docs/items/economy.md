@@ -6,7 +6,7 @@ sidebar:
 
 This page explains what an item costs to buy, sell, gamble and repair, how gold is paid, capped, dropped and lost,
 and how items wear out in a fight and come back. It restates one reviewed spec,
-item economy, which was checked by two runs of the game: every logged price call in them, 33 901 in all, is
+[item economy](../../spec-items/economy/#purpose), which was checked by two runs of the game: every logged price call in them, 33 901 in all, is
 reproduced by the spec's arithmetic.
 
 Two facts frame everything below. First, one function prices everything an NPC trades, with four modes: buy, sell,
@@ -73,7 +73,7 @@ flowchart TD
   Q --> C["max buy caps the sell value; floor 1"]
 ```
 
-**Example** (the spec's worked example 1).
+**Example** (the spec's [worked example 1](../../spec-items/economy/)).
 A magic amulet with an all-resistance prefix, sold to Halbu in Normal. The base is 2400. The prefix adds
 `2400 × 1280 ÷ 1024 + 16 000 = 19 000`. Each of the four resistance stats adds 371, computed on 2400, so 1484. The
 value is `2400 + 1484 + 19 000 = 22 884`. Halbu's *buy mult* is 512 (a half), so he pays 11 442, under his cap of
@@ -110,7 +110,7 @@ So the same item costs more as you level, mostly because a higher level makes an
 A character below level 5 is priced as level 5 in the level term and the factor; a run at level 3 confirmed it on
 125 prices. The *reduced prices* stat applies.
 
-**Example** (the spec's worked example 4).
+**Example** (the spec's [worked example 4](../../spec-items/economy/)).
 A small shield gambled at level 75: the exceptional upgrade weight is 1901 and the elite 351 (out of 10 000), the
 average cost 5262, the level term 6083, the factor 70, and the price `(6083 + 5262) × 70 ÷ 15 = 52 943`, as logged.
 
@@ -144,7 +144,7 @@ cannot be repaired. An imbued cap, created unidentified, kept its damage; an imb
 came back at full durability. Why one comes out identified and the other not is not known. No
 quest script repairs anything else; that comes from a search of the code, not from a run.
 
-**Example** (the spec's worked example 3).
+**Example** (the spec's [worked example 3](../../spec-items/economy/#3-two-repair-prices-at-halbu-session-4311-normal)).
 A Shako worth 56 307 at durability 3 of 12: `9/12` of it is 42 230, and Halbu's *rep mult* of 128 (an eighth) makes
 it 5278.
 
@@ -178,7 +178,7 @@ item level, on the pile's own seed, at least 1. A monster's drop is then scaled 
 where there is one (read from the code), and by gold find:
 `amount × (100 + killer's gold find + gold find of the killer's owner) ÷ 100`. Gold find has no difficulty term.
 
-**Example** (the spec's worked example 7).
+**Example** (the spec's [worked example 7](../../spec-items/economy/#7-a-gold-pile-from-a-monster-session-4391-normal-gold-find-440)).
 An item-level 5 pile draws 19 from `0 … 24`, so it holds 24; with 440 gold find it becomes `24 × 540 ÷ 100 = 129`.
 
 Other gold:
@@ -198,7 +198,7 @@ touched. What you carry beyond the loss is dropped on the ground as piles; the l
 this on 20 single-player softcore deaths. Deaths to another player and other game types are read from the code only,
 and the code makes no exception for hardcore.
 
-**Example** (the spec's worked example 5).
+**Example** (the spec's [worked example 5](../../spec-items/economy/#5-death-losses-sessions-4351-and-4359-hell-single-player-game-type-3)).
 A level-30 character with 199 250 gold and 500 000 in the stash loses 20 % of 699 250, that is 139 850; 59 400 is
 dropped and the stash keeps 500 000. With 14 000 and 1000 instead, keeping `500 × 30 = 15 000` of 15 000 leaves a
 loss of 0.
@@ -231,7 +231,7 @@ So a melee hit costs the defender three draws (two picks and the roll), two if t
 none if no armour is worn; the weapon costs the attacker one (none if it has no durability). An indestructible item makes no roll at all. These draws
 share the unit's seed with the combat rolls, so wear changes what the next hit rolls.
 
-**Example** (the spec's worked example 8).
+**Example** (the spec's [worked example 8](../../spec-items/economy/#8-one-melee-hit-taken-and-one-given-session-4381-normal-a-barbarian)).
 A Barbarian wearing six armour pieces has a total weight of 18. The start draw gives slot 4 (the belt) and the offset
 draw 0, which falls inside the belt's 2, so the belt rolls: 80, not below 10, no loss.
 
@@ -256,7 +256,7 @@ between ticks, and the same timer for *replenish quantity* are read from the cod
 
 ## What is not known yet
 
-From the spec's open questions and its points not confirmed by a run:
+From the spec's [open questions](../../spec-items/economy/) and its points not confirmed by a run:
 
 - **Never run, no run planned:** ears and body parts, stats priced by time of day, very old items, the recharge cost,
   charges used, skills that wear weapons, Baal's gold, the gold caps, pickup and the stash moves, deaths to another
@@ -276,9 +276,9 @@ From the spec's open questions and its points not confirmed by a run:
 
 ## Where to read more
 
-- The spec: item economy, its
-  worked examples and
-  reimplementation notes.
+- The spec: [item economy](../../spec-items/economy/#purpose), its
+  [worked examples](../../spec-items/economy/#worked-example) and
+  [reimplementation notes](../../spec-items/economy/#reimplementation-notes).
 - Related pages: [other item paths](../items-other-paths/) (vendor stock, gambling, the quest services),
   [using items and the inventory](../inventory/) (potions, stacks, pickup and the ground),
   [characters and hirelings](../../characters/characters/), [combat](../../characters/combat/), and the [glossary](../../reference/glossary/).

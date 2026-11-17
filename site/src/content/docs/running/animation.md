@@ -8,8 +8,8 @@ This page explains how long a unit's actions take on the server, and how far a m
 Every mode a unit enters (a swing, a cast, a hit recovery, a block, a walk) has an animation record. The record, the
 unit's stats and its weapon give a rate, and the rate decides on which game frames the mode's events fire and when the
 mode ends. This is where "frames per cast", "attack speed breakpoints" and "walk speed" come from. The page restates
-the reviewed specs: the overview in anim, the timing machinery in
-anim/timing and movement in anim/movement. The
+the reviewed specs: the overview in [anim](../../spec-anim/overview/#purpose), the timing machinery in
+[anim/timing](../../spec-anim/timing/#purpose) and movement in [anim/movement](../../spec-anim/movement/#purpose). The
 specs carry the exact arithmetic, the addresses and the evidence; this page tells the story and says where the specs
 are less sure. Terms are in the [glossary](../../reference/glossary/).
 
@@ -18,7 +18,7 @@ presentation and stay out. Which mode a unit is asked to enter, and when, is an 
 for a player it is the request from the client, for a monster the AI's command
 (not yet specified), and the path a unit follows is the planner's. The specs were compared against recorded runs
 (tens of thousands of logged mode starts, schedules and steps, no mismatch in the closing check); the
-evidence sections list the runs. Where a statement is read from the code but no
+[evidence sections](../../spec-anim/timing/#evidence) list the runs. Where a statement is read from the code but no
 run separates it, this page says so.
 
 ## The big picture
@@ -195,14 +195,14 @@ frames; at 7% FHR it is 9. The logs hold the 0 FHR case on a record with the sam
 - **The do frame.** For a player, the first event with code 1 or 2 runs the used skill's do function, provided the
   unit's action-done bit is still clear (most do functions set it). A normal attack's hit test, damage build and
   delivery all happen in that call. A skill's missile is created in the same call, after the do function. The detail is
-  in [skills and missiles](../../characters/skills/) and timing § L (partly read
+  in [skills and missiles](../../characters/skills/) and [timing § L](../../spec-anim/timing/#l-the-frame-events-as-gates) (partly read
   from the code).
 - **The skill delay** runs from the do frame, not from the mode's start: with Frozen Orb held, the next cast started
   at the delay-state frame plus the delay in 72 of 73 cases (one 3 frames later).
 - **A monster's attack** without a used skill strikes on a scheduled event with code 1: such an event was followed in
   its frame by the attacker's hit in 18 160 of 18 637 logged cases. An event with code 2 was followed by no hit in all
   2 248 logged cases, though which test drops it is not read; codes 3 and 4 are untested. An every-frame mode strikes
-  on frames whose event byte is 1 (timing § I2, read from the code).
+  on frames whose event byte is 1 ([timing § I2](../../spec-anim/timing/#i-the-mode-machines), read from the code).
 - **Object animation.** An object takes its frame count, start frame and rate from its Objects row, not the record.
   When the row's `Sync` is 0, its start draws `RangeB(FrameDelta >> 3)` on the object's own seed to vary the rate
   (490 logged starts agreed, 235 with `Sync` set drew nothing). A chest's "opened" mode is set without an animation
@@ -256,7 +256,7 @@ Barbarian and the Paladin).
   chain). A monster that is not allowed the get-hit mode at all is never staggered (28 logged calls separate it). The
   band chances are worked out from the draws, read from the code.
 - **Stun** sets a state until a frame (capped at 250, 13 for a hireling from level 12 up). A monster's next AI event
-  after a stun comes 45 frames later (timing § M5, read from the code).
+  after a stun comes 45 frames later ([timing § M5](../../spec-anim/timing/#m-hit-recovery-the-block-the-get-hit-roll-the-mode-tests-stun-and-the-hit-class), read from the code).
 - The **hit class** is a code in the damage packet (a weapon's or a monster's `hit class`, with an element nibble
   added by delivery). The server gate found on it is the roll's divisor; the rest is client presentation.
 - A **player's knockback**: 12 of Blood Raven's 13 knockback results left the player in neutral in the hit's own
@@ -276,7 +276,7 @@ unchanged and none was under the state.
 ## Movement
 
 How fast a unit moves is a second use of the same rate function; the step itself is in
-anim/movement, and the points it follows are the [planners'](../pathing/). Positions are 16.16 subtiles.
+[anim/movement](../../spec-anim/movement/#purpose), and the points it follows are the [planners'](../pathing/). Positions are 16.16 subtiles.
 
 ```mermaid
 flowchart LR
@@ -292,7 +292,7 @@ flowchart LR
 
 - **A player's path speed** is the character's `WalkVelocity` (in 1/256 subtile units) times the factor in percent.
   The factor is the faster run/walk bonus plus stat 67, never under 25. Walk is 1 536 and run 2 304 for every class
-  at the standard factors (movement § A1, compared with the run).
+  at the standard factors ([movement § A1](../../spec-anim/movement/#a-speeds), compared with the run).
 - **The run is a stat, not a base.** A run is a walk with a +50 stat-67 list added for the run's duration
   (`RunVelocity * 100 / WalkVelocity - 100`, 50 on stock data) and dropped at the next mode change. The animation
   paces on a separate base (101 in run, 213 otherwise), which only affects the animation rate.
@@ -300,7 +300,7 @@ flowchart LR
   units with no mod); champion and possessed monsters start at 95, fast ones at a clamp and the two logged fanatic
   ones at 175, and 74 logged units fit none of these values. A monster's walk and run share the same path base, so a
   monster runs faster than it walks only if the AI's command carries a velocity, which is written into stat 67 until
-  the next mode change (movement § A3, read from the code; the 33 067 logged
+  the next mode change ([movement § A3](../../spec-anim/movement/#a-speeds), read from the code; the 33 067 logged
   rate calls after such a command reproduce with the stat 67 they carry).
 - **Walk and run animation bases of a monster** are worked out at load from its records and scaled to its base class
   (compared at all logged moving and knockback calls, 54 classes with a run scaling).
@@ -391,8 +391,8 @@ From the specs' open questions:
 
 ## Where to read more
 
-- The specs: anim overview,
-  timing and movement.
+- The specs: [anim overview](../../spec-anim/overview/#reimplementation-notes),
+  [timing](../../spec-anim/timing/#reimplementation-notes) and [movement](../../spec-anim/movement/#reimplementation-notes).
   Each *Reimplementation notes* section lists the traps for someone rebuilding the system.
 - The animdata format and the [glossary](../../reference/glossary/) for D2 terms.
 - Related wiki pages: [skills and missiles](../../characters/skills/) (the request, the do frame and the skill delay),

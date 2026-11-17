@@ -9,7 +9,7 @@ room's map pieces, and a random set chosen from the level's object groups. This 
 dice they roll when they are created (is this chest trapped? locked? which shrine is this?), what happens when a
 player clicks a chest, urn or barrel, and where the chest hands over to the drop tables. It also names the timer
 events and the quest objects. It restates the reviewed objects spec, plus the
-short part of the treasure class spec that picks a chest's drop
+short part of the [treasure class spec](../../spec-items/tc/#j-object-drops-named-only) that picks a chest's drop
 table. What a shrine, a well or a trap actually *does* to the player is game simulation and is out of scope: the spec
 only names it.
 
@@ -255,7 +255,7 @@ the flag it starts from is the level's `SaveMonsters` column. Neither run met an
 object refused for its sparkle flag, or one whose level flag and placed-by-preset flag were both clear, so those two
 refusals are read from the code only. The room and game seeds at a revisit are still taken from the recording in the
 objects model: the monster and item restores that come before the objects are described by the
-room lifecycle spec.
+[room lifecycle spec](../../spec-drlg/lifecycle/#h-the-restore).
 
 ## Operating chests, urns and barrels
 
@@ -468,7 +468,7 @@ inputs list:
 
 - The full rules, with exact draw order: objects spec, and its
   notes for a reimplementer.
-- What happens after the hand-off: treasure class spec § J and the
+- What happens after the hand-off: [treasure class spec § J](../../spec-items/tc/#j-object-drops-named-only) and the
   [items page](../../items/items/).
 - How rooms and map pieces come to exist: [levels](../levels/). The monster pass that follows the object window:
   [monsters](../monsters/). Seeds and draws: [randomness](../../foundations/randomness/). Quest scripts, waypoints and portals:
