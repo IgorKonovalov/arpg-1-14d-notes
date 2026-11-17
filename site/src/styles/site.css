@@ -1,0 +1,4 @@
+/* A wider main column than Starlight's 45rem default: the pages carry tables and diagrams. */
+:root {
+  --sl-content-width: 60rem;
+}

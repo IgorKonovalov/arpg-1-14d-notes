@@ -1,0 +1,876 @@
+{
+ "schematic_only": "schematic-only/1",
+ "steps": [
+  {
+   "text": "Drop of andariel in Hell, seed 0xc0ffee (illustrative input).",
+   "calc": [
+    "Source: andariel; difficulty Hell; PlayerCount 1, party 1 (killer alone); magic find 200; expansion game.",
+    "Seed 0xc0ffee is an illustrative input: src.seed = {00c0ffee:0000029a}; the game would derive it (rng/seeds).",
+    "monster level 75 = MonStats Level column of the difficulty (tc.md B1: ilvl = the monster's stat 12); the game takes Levels.MonLvl*Ex for non-boss monsters in expansion Nightmare/Hell: not modelled here",
+    "quest TC (TreasureClass4, tc.md B6) needs the killer's quest state: not modelled here"
+   ]
+  },
+  {
+   "text": "Base TC: 'Andariel (H)'.",
+   "calc": [
+    "tc.md B: MonStats TreasureClass1 of the difficulty (tc.md B5) -> TC 832 'Andariel (H)'.",
+    "tc.md B1: ilvl = the monster's level (stat 12) = 75."
+   ]
+  },
+  {
+   "text": "Resolving TC 'Andariel (H)'.",
+   "calc": [
+    "tc.md C1: the level upgrade gate is closed (expansion, difficulty > 0, monster source, not noRatio, not boss): lvl = 0.",
+    "tc.md C2: GetByIndex(832 'Andariel (H)', lvl 0): while lvl >= the next TC's level in the same group, move to the next TC (the base TC is kept even above lvl)."
+   ]
+  },
+  {
+   "text": "The resolver starts at 'Andariel (H)': 7 picks, NoDrop 19, expansion total 49.",
+   "calc": [
+    "tc.md D1: frame 0 = {TC, picksLeft = max(1, |Picks|), the TC's ratio words}; max = 6 for a monster drop (max 0 becomes 6).",
+    "'Andariel (H)': Picks 7 (a negative Picks takes every entry in order with no draw, tc.md D3), NoDrop 19, 5 entries, total 49 (tc.md A).",
+    "All draws below are on the source unit's seed {00c0ffee:0000029a}, one Step per draw (tc.md D4)."
+   ]
+  },
+  {
+   "text": "Pick in 'Andariel (H)': roll 28 of 68 -> item 'gold'.",
+   "calc": [
+    "tc.md F2: n = party + (PlayerCount - party) / 2 = 1; n <= 1: NoDrop stays 19.",
+    "tc.md D4: roll = Range(src.seed, total + NoDrop' = 68) = 28; seed after {a28ed4c0:00507fab}.",
+    "tc.md D4: roll - NoDrop' = 28 - 19 = 9, in 0..48.",
+    "tc.md E1: entry i with cumExp_i <= roll < cumExp_i + Prob_i.",
+    "Entry 0: gold, Prob 11, cumExp 0 (tc.md E1).",
+    "tc.md H1: an item entry: quality roll, creation (H4-H7)."
+   ]
+  },
+  {
+   "text": "Quality roll for 'gold': early return, the item type's Normal flag is set: quality 2 (quality 2).",
+   "calc": [
+    "quality.md Inputs: item 'gld' (qlvl 0), ilvl 75, TC frame ratio words [1024, 983, 983, 983, 0, 0], magic find 200, source seed {a28ed4c0:00507fab}.",
+    "quality.md A: early returns draw nothing and read no itemratio row (normal-type)."
+   ]
+  },
+  {
+   "text": "Item creation for 'gold' (quality 2, normal): item seed {d3de83b9:0000029a}.",
+   "calc": [
+    "uniques-sets.md A1-A2: DropCreateItem draws two Steps on the game seed (unit seed, then item.start); item.seed = {start, 666} = {d3de83b9, 666}. The game seed here is derived from the illustrative input.",
+    "tc.md H7: creation does not touch src.seed (seed stays {a28ed4c0:00507fab}).",
+    "Creation record for drops: item version 101, ladder 0, record quality 2, record row 0 (uniques-sets.md A, B)."
+   ]
+  },
+  {
+   "text": "The normal builder for 'gold': success.",
+   "calc": [
+    "affixes.md H: the normal builder runs on item seed {d3de83b9:0000029a}.",
+    "affixes.md H1: for a base other than a charm, body part, scroll or book the normal builder draws nothing of its own on the item seed (a charm takes the forced-affix pair, an inferred path).",
+    "Result: success.",
+    "ItemApplyProps draws (property values) are applied to the seed by our property model; the values are not shown."
+   ]
+  },
+  {
+   "text": "Item complete: gold.",
+   "calc": [
+    "Result of the model: quality 2 (normal).",
+    "Name card: coloured by quality, no icon (schematic mode).",
+    "Not modelled here: gold amount and gold find (tc.md H8-H9), ItemInitStats values, the ethereal and socket rolls, the automagic pick after them (affixes.md J), the durability fix of a failed unique or set, property values."
+   ]
+  },
+  {
+   "text": "Pick in 'Andariel (H)': roll 31 of 68 -> sub-TC 'Act 2 (H) Equip A'.",
+   "calc": [
+    "tc.md F2: n = party + (PlayerCount - party) / 2 = 1; n <= 1: NoDrop stays 19.",
+    "tc.md D4: roll = Range(src.seed, total + NoDrop' = 68) = 31; seed after {7c66376b:43cd3a7d}.",
+    "tc.md D4: roll - NoDrop' = 31 - 19 = 12, in 0..48.",
+    "tc.md E1: entry i with cumExp_i <= roll < cumExp_i + Prob_i.",
+    "Entry 1: Act 2 (H) Equip A, Prob 19, cumExp 11 (tc.md E1).",
+    "tc.md G: the entry is a TC (flag 0x04): the pick is consumed and the resolver pushes a frame for the sub-TC 'Act 2 (H) Equip A' (1 picks, NoDrop 0); its ratio words become the max of the two frames."
+   ]
+  },
+  {
+   "text": "Pick in 'Act 2 (H) Equip A': roll 168 of 1566 -> sub-TC 'Act 1 (H) Equip B'.",
+   "calc": [
+    "tc.md D4: NoDrop 0: the range is the total 1566.",
+    "tc.md D4: roll = Range(src.seed, total + NoDrop' = 1566) = 168; seed after {a8640fd4:33e2d05a}.",
+    "tc.md D4: roll - NoDrop' = 168 - 0 = 168, in 0..1565.",
+    "tc.md E1: entry i with cumExp_i <= roll < cumExp_i + Prob_i.",
+    "Entry 8: Act 1 (H) Equip B, Prob 1530, cumExp 36 (tc.md E1).",
+    "tc.md G: the entry is a TC (flag 0x04): the pick is consumed and the resolver tail-continues into the sub-TC 'Act 1 (H) Equip B' (1 picks, NoDrop 0); its ratio words become the max of the two frames."
+   ]
+  },
+  {
+   "text": "Pick in 'Act 1 (H) Equip B': roll 1008 of 1566 -> sub-TC 'Act 1 (H) Equip A'.",
+   "calc": [
+    "tc.md D4: NoDrop 0: the range is the total 1566.",
+    "tc.md D4: roll = Range(src.seed, total + NoDrop' = 1566) = 1008; seed after {17c23e7e:463c0b2c}.",
+    "tc.md D4: roll - NoDrop' = 1008 - 0 = 1008, in 0..1565.",
+    "tc.md E1: entry i with cumExp_i <= roll < cumExp_i + Prob_i.",
+    "Entry 8: Act 1 (H) Equip A, Prob 1530, cumExp 36 (tc.md E1).",
+    "tc.md G: the entry is a TC (flag 0x04): the pick is consumed and the resolver tail-continues into the sub-TC 'Act 1 (H) Equip A' (1 picks, NoDrop 0); its ratio words become the max of the two frames."
+   ]
+  },
+  {
+   "text": "Pick in 'Act 1 (H) Equip A': roll 287 of 1827 -> sub-TC 'Act 5 (N) Equip C'.",
+   "calc": [
+    "tc.md D4: NoDrop 0: the range is the total 1827.",
+    "tc.md D4: roll = Range(src.seed, total + NoDrop' = 1827) = 287; seed after {53510222:09e8db8c}.",
+    "tc.md D4: roll - NoDrop' = 287 - 0 = 287, in 0..1826.",
+    "tc.md E1: entry i with cumExp_i <= roll < cumExp_i + Prob_i.",
+    "Entry 8: Act 5 (N) Equip C, Prob 1785, cumExp 42 (tc.md E1).",
+    "tc.md G: the entry is a TC (flag 0x04): the pick is consumed and the resolver tail-continues into the sub-TC 'Act 5 (N) Equip C' (1 picks, NoDrop 0); its ratio words become the max of the two frames."
+   ]
+  },
+  {
+   "text": "Pick in 'Act 5 (N) Equip C': roll 588 of 1566 -> sub-TC 'Act 5 (N) Equip B'.",
+   "calc": [
+    "tc.md D4: NoDrop 0: the range is the total 1566.",
+    "tc.md D4: roll = Range(src.seed, total + NoDrop' = 1566) = 588; seed after {72be9fb6:22c02aa7}.",
+    "tc.md D4: roll - NoDrop' = 588 - 0 = 588, in 0..1565.",
+    "tc.md E1: entry i with cumExp_i <= roll < cumExp_i + Prob_i.",
+    "Entry 8: Act 5 (N) Equip B, Prob 1530, cumExp 36 (tc.md E1).",
+    "tc.md G: the entry is a TC (flag 0x04): the pick is consumed and the resolver tail-continues into the sub-TC 'Act 5 (N) Equip B' (1 picks, NoDrop 0); its ratio words become the max of the two frames."
+   ]
+  },
+  {
+   "text": "Pick in 'Act 5 (N) Equip B': roll 445 of 1785 -> sub-TC 'Act 5 (N) Equip A'.",
+   "calc": [
+    "tc.md D4: NoDrop 0: the range is the total 1785.",
+    "tc.md D4: roll = Range(src.seed, total + NoDrop' = 1785) = 445; seed after {8c0b71b5:2fdbee74}.",
+    "tc.md D4: roll - NoDrop' = 445 - 0 = 445, in 0..1784.",
+    "tc.md E1: entry i with cumExp_i <= roll < cumExp_i + Prob_i.",
+    "Entry 8: Act 5 (N) Equip A, Prob 1743, cumExp 42 (tc.md E1).",
+    "tc.md G: the entry is a TC (flag 0x04): the pick is consumed and the resolver tail-continues into the sub-TC 'Act 5 (N) Equip A' (1 picks, NoDrop 0); its ratio words become the max of the two frames."
+   ]
+  },
+  {
+   "text": "Pick in 'Act 5 (N) Equip A': roll 461 of 1481 -> sub-TC 'Act 4 (N) Equip B'.",
+   "calc": [
+    "tc.md D4: NoDrop 0: the range is the total 1481.",
+    "tc.md D4: roll = Range(src.seed, total + NoDrop' = 1481) = 461; seed after {489e3ebd:3a695d21}.",
+    "tc.md D4: roll - NoDrop' = 461 - 0 = 461, in 0..1480.",
+    "tc.md E1: entry i with cumExp_i <= roll < cumExp_i + Prob_i.",
+    "Entry 8: Act 4 (N) Equip B, Prob 1445, cumExp 36 (tc.md E1).",
+    "tc.md G: the entry is a TC (flag 0x04): the pick is consumed and the resolver tail-continues into the sub-TC 'Act 4 (N) Equip B' (1 picks, NoDrop 0); its ratio words become the max of the two frames."
+   ]
+  },
+  {
+   "text": "Pick in 'Act 4 (N) Equip B': roll 446 of 1396 -> sub-TC 'Act 4 (N) Equip A'.",
+   "calc": [
+    "tc.md D4: NoDrop 0: the range is the total 1396.",
+    "tc.md D4: roll = Range(src.seed, total + NoDrop' = 1396) = 446; seed after {e7a7f492:1e49d96f}.",
+    "tc.md D4: roll - NoDrop' = 446 - 0 = 446, in 0..1395.",
+    "tc.md E1: entry i with cumExp_i <= roll < cumExp_i + Prob_i.",
+    "Entry 8: Act 4 (N) Equip A, Prob 1360, cumExp 36 (tc.md E1).",
+    "tc.md G: the entry is a TC (flag 0x04): the pick is consumed and the resolver tail-continues into the sub-TC 'Act 4 (N) Equip A' (1 picks, NoDrop 0); its ratio words become the max of the two frames."
+   ]
+  },
+  {
+   "text": "Pick in 'Act 4 (N) Equip A': roll 509 of 1572 -> sub-TC 'Act 3 (N) Equip B'.",
+   "calc": [
+    "tc.md D4: NoDrop 0: the range is the total 1572.",
+    "tc.md D4: roll = Range(src.seed, total + NoDrop' = 1572) = 509; seed after {79072dc9:609f3a2c}.",
+    "tc.md D4: roll - NoDrop' = 509 - 0 = 509, in 0..1571.",
+    "tc.md E1: entry i with cumExp_i <= roll < cumExp_i + Prob_i.",
+    "Entry 8: Act 3 (N) Equip B, Prob 1530, cumExp 42 (tc.md E1).",
+    "tc.md G: the entry is a TC (flag 0x04): the pick is consumed and the resolver tail-continues into the sub-TC 'Act 3 (N) Equip B' (1 picks, NoDrop 0); its ratio words become the max of the two frames."
+   ]
+  },
+  {
+   "text": "Pick in 'Act 3 (N) Equip B': roll 291 of 1487 -> sub-TC 'Act 3 (N) Equip A'.",
+   "calc": [
+    "tc.md D4: NoDrop 0: the range is the total 1487.",
+    "tc.md D4: roll = Range(src.seed, total + NoDrop' = 1487) = 291; seed after {305c85d9:327ad8f4}.",
+    "tc.md D4: roll - NoDrop' = 291 - 0 = 291, in 0..1486.",
+    "tc.md E1: entry i with cumExp_i <= roll < cumExp_i + Prob_i.",
+    "Entry 8: Act 3 (N) Equip A, Prob 1445, cumExp 42 (tc.md E1).",
+    "tc.md G: the entry is a TC (flag 0x04): the pick is consumed and the resolver tail-continues into the sub-TC 'Act 3 (N) Equip A' (1 picks, NoDrop 0); its ratio words become the max of the two frames."
+   ]
+  },
+  {
+   "text": "Pick in 'Act 3 (N) Equip A': roll 281 of 1226 -> sub-TC 'Act 2 (N) Equip B'.",
+   "calc": [
+    "tc.md D4: NoDrop 0: the range is the total 1226.",
+    "tc.md D4: roll = Range(src.seed, total + NoDrop' = 1226) = 281; seed after {d4cde8f1:142bd254}.",
+    "tc.md D4: roll - NoDrop' = 281 - 0 = 281, in 0..1225.",
+    "tc.md E1: entry i with cumExp_i <= roll < cumExp_i + Prob_i.",
+    "Entry 8: Act 2 (N) Equip B, Prob 1190, cumExp 36 (tc.md E1).",
+    "tc.md G: the entry is a TC (flag 0x04): the pick is consumed and the resolver tail-continues into the sub-TC 'Act 2 (N) Equip B' (1 picks, NoDrop 0); its ratio words become the max of the two frames."
+   ]
+  },
+  {
+   "text": "Pick in 'Act 2 (N) Equip B': roll 897 of 1141 -> sub-TC 'Act 2 (N) Equip A'.",
+   "calc": [
+    "tc.md D4: NoDrop 0: the range is the total 1141.",
+    "tc.md D4: roll = Range(src.seed, total + NoDrop' = 1141) = 897; seed after {9e0da3c9:58c2520d}.",
+    "tc.md D4: roll - NoDrop' = 897 - 0 = 897, in 0..1140.",
+    "tc.md E1: entry i with cumExp_i <= roll < cumExp_i + Prob_i.",
+    "Entry 8: Act 2 (N) Equip A, Prob 1105, cumExp 36 (tc.md E1).",
+    "tc.md G: the entry is a TC (flag 0x04): the pick is consumed and the resolver tail-continues into the sub-TC 'Act 2 (N) Equip A' (1 picks, NoDrop 0); its ratio words become the max of the two frames."
+   ]
+  },
+  {
+   "text": "Pick in 'Act 2 (N) Equip A': roll 394 of 1275 -> sub-TC 'Act 1 (N) Equip B'.",
+   "calc": [
+    "tc.md D4: NoDrop 0: the range is the total 1275.",
+    "tc.md D4: roll = Range(src.seed, total + NoDrop' = 1275) = 394; seed after {8cd86bba:41ec3dbf}.",
+    "tc.md D4: roll - NoDrop' = 394 - 0 = 394, in 0..1274.",
+    "tc.md E1: entry i with cumExp_i <= roll < cumExp_i + Prob_i.",
+    "Entry 8: Act 1 (N) Equip B, Prob 1233, cumExp 42 (tc.md E1).",
+    "tc.md G: the entry is a TC (flag 0x04): the pick is consumed and the resolver tail-continues into the sub-TC 'Act 1 (N) Equip B' (1 picks, NoDrop 0); its ratio words become the max of the two frames."
+   ]
+  },
+  {
+   "text": "Pick in 'Act 1 (N) Equip B': roll 393 of 1147 -> sub-TC 'Act 1 (N) Equip A'.",
+   "calc": [
+    "tc.md D4: NoDrop 0: the range is the total 1147.",
+    "tc.md D4: roll = Range(src.seed, total + NoDrop' = 1147) = 393; seed after {b6ebc3e1:3abedba4}.",
+    "tc.md D4: roll - NoDrop' = 393 - 0 = 393, in 0..1146.",
+    "tc.md E1: entry i with cumExp_i <= roll < cumExp_i + Prob_i.",
+    "Entry 8: Act 1 (N) Equip A, Prob 1105, cumExp 42 (tc.md E1).",
+    "tc.md G: the entry is a TC (flag 0x04): the pick is consumed and the resolver tail-continues into the sub-TC 'Act 1 (N) Equip A' (1 picks, NoDrop 0); its ratio words become the max of the two frames."
+   ]
+  },
+  {
+   "text": "Pick in 'Act 1 (N) Equip A': roll 370 of 971 -> sub-TC 'Act 5 Equip C'.",
+   "calc": [
+    "tc.md D4: NoDrop 0: the range is the total 971.",
+    "tc.md D4: roll = Range(src.seed, total + NoDrop' = 971) = 370; seed after {466127c9:4c4b80e6}.",
+    "tc.md D4: roll - NoDrop' = 370 - 0 = 370, in 0..970.",
+    "tc.md E1: entry i with cumExp_i <= roll < cumExp_i + Prob_i.",
+    "Entry 8: Act 5 Equip C, Prob 935, cumExp 36 (tc.md E1).",
+    "tc.md G: the entry is a TC (flag 0x04): the pick is consumed and the resolver tail-continues into the sub-TC 'Act 5 Equip C' (1 picks, NoDrop 0); its ratio words become the max of the two frames."
+   ]
+  },
+  {
+   "text": "Pick in 'Act 5 Equip C': roll 523 of 868 -> sub-TC 'Act 5 Equip B'.",
+   "calc": [
+    "tc.md D4: NoDrop 0: the range is the total 868.",
+    "tc.md D4: roll = Range(src.seed, total + NoDrop' = 868) = 523; seed after {1ae62e93:1d5ad16b}.",
+    "tc.md D4: roll - NoDrop' = 523 - 0 = 523, in 0..867.",
+    "tc.md E1: entry i with cumExp_i <= roll < cumExp_i + Prob_i.",
+    "Entry 8: Act 5 Equip B, Prob 833, cumExp 35 (tc.md E1).",
+    "tc.md G: the entry is a TC (flag 0x04): the pick is consumed and the resolver tail-continues into the sub-TC 'Act 5 Equip B' (1 picks, NoDrop 0); its ratio words become the max of the two frames."
+   ]
+  },
+  {
+   "text": "Pick in 'Act 5 Equip B': roll 452 of 766 -> sub-TC 'Act 5 Equip A'.",
+   "calc": [
+    "tc.md D4: NoDrop 0: the range is the total 766.",
+    "tc.md D4: roll = Range(src.seed, total + NoDrop' = 766) = 452; seed after {2e61588a:0b382c87}.",
+    "tc.md D4: roll - NoDrop' = 452 - 0 = 452, in 0..765.",
+    "tc.md E1: entry i with cumExp_i <= roll < cumExp_i + Prob_i.",
+    "Entry 8: Act 5 Equip A, Prob 731, cumExp 35 (tc.md E1).",
+    "tc.md G: the entry is a TC (flag 0x04): the pick is consumed and the resolver tail-continues into the sub-TC 'Act 5 Equip A' (1 picks, NoDrop 0); its ratio words become the max of the two frames."
+   ]
+  },
+  {
+   "text": "Pick in 'Act 5 Equip A': roll 91 of 670 -> sub-TC 'Act 4 Equip B'.",
+   "calc": [
+    "tc.md D4: NoDrop 0: the range is the total 670.",
+    "tc.md D4: roll = Range(src.seed, total + NoDrop' = 670) = 91; seed after {1caaeeb9:1358482e}.",
+    "tc.md D4: roll - NoDrop' = 91 - 0 = 91, in 0..669.",
+    "tc.md E1: entry i with cumExp_i <= roll < cumExp_i + Prob_i.",
+    "Entry 8: Act 4 Equip B, Prob 629, cumExp 41 (tc.md E1).",
+    "tc.md G: the entry is a TC (flag 0x04): the pick is consumed and the resolver tail-continues into the sub-TC 'Act 4 Equip B' (1 picks, NoDrop 0); its ratio words become the max of the two frames."
+   ]
+  },
+  {
+   "text": "Pick in 'Act 4 Equip B': roll 99 of 532 -> sub-TC 'Act 4 Equip A'.",
+   "calc": [
+    "tc.md D4: NoDrop 0: the range is the total 532.",
+    "tc.md D4: roll = Range(src.seed, total + NoDrop' = 532) = 99; seed after {86400c8b:0bf50343}.",
+    "tc.md D4: roll - NoDrop' = 99 - 0 = 99, in 0..531.",
+    "tc.md E1: entry i with cumExp_i <= roll < cumExp_i + Prob_i.",
+    "Entry 8: Act 4 Equip A, Prob 500, cumExp 32 (tc.md E1).",
+    "tc.md G: the entry is a TC (flag 0x04): the pick is consumed and the resolver tail-continues into the sub-TC 'Act 4 Equip A' (1 picks, NoDrop 0); its ratio words become the max of the two frames."
+   ]
+  },
+  {
+   "text": "Pick in 'Act 4 Equip A': roll 426 of 463 -> sub-TC 'Act 3 Equip C'.",
+   "calc": [
+    "tc.md D4: NoDrop 0: the range is the total 463.",
+    "tc.md D4: roll = Range(src.seed, total + NoDrop' = 463) = 426; seed after {a3ceda3a:37fea6a6}.",
+    "tc.md D4: roll - NoDrop' = 426 - 0 = 426, in 0..462.",
+    "tc.md E1: entry i with cumExp_i <= roll < cumExp_i + Prob_i.",
+    "Entry 8: Act 3 Equip C, Prob 430, cumExp 33 (tc.md E1).",
+    "tc.md G: the entry is a TC (flag 0x04): the pick is consumed and the resolver tail-continues into the sub-TC 'Act 3 Equip C' (1 picks, NoDrop 0); its ratio words become the max of the two frames."
+   ]
+  },
+  {
+   "text": "Pick in 'Act 3 Equip C': roll 368 of 376 -> sub-TC 'Act 3 Equip B'.",
+   "calc": [
+    "tc.md D4: NoDrop 0: the range is the total 376.",
+    "tc.md D4: roll = Range(src.seed, total + NoDrop' = 376) = 368; seed after {6dc93548:4452b4fb}.",
+    "tc.md D4: roll - NoDrop' = 368 - 0 = 368, in 0..375.",
+    "tc.md E1: entry i with cumExp_i <= roll < cumExp_i + Prob_i.",
+    "Entry 8: Act 3 Equip B, Prob 340, cumExp 36 (tc.md E1).",
+    "tc.md G: the entry is a TC (flag 0x04): the pick is consumed and the resolver tail-continues into the sub-TC 'Act 3 Equip B' (1 picks, NoDrop 0); its ratio words become the max of the two frames."
+   ]
+  },
+  {
+   "text": "Pick in 'Act 3 Equip B': roll 103 of 236 -> sub-TC 'Act 3 Equip A'.",
+   "calc": [
+    "tc.md D4: NoDrop 0: the range is the total 236.",
+    "tc.md D4: roll = Range(src.seed, total + NoDrop' = 236) = 103; seed after {f3d13563:2dca77c4}.",
+    "tc.md D4: roll - NoDrop' = 103 - 0 = 103, in 0..235.",
+    "tc.md E1: entry i with cumExp_i <= roll < cumExp_i + Prob_i.",
+    "Entry 8: Act 3 Equip A, Prob 200, cumExp 36 (tc.md E1).",
+    "tc.md G: the entry is a TC (flag 0x04): the pick is consumed and the resolver tail-continues into the sub-TC 'Act 3 Equip A' (1 picks, NoDrop 0); its ratio words become the max of the two frames."
+   ]
+  },
+  {
+   "text": "Pick in 'Act 3 Equip A': roll 19 of 136 -> sub-TC 'weap21'.",
+   "calc": [
+    "tc.md D4: NoDrop 0: the range is the total 136.",
+    "tc.md D4: roll = Range(src.seed, total + NoDrop' = 136) = 19; seed after {c4623cf3:65b1bdcb}.",
+    "tc.md D4: roll - NoDrop' = 19 - 0 = 19, in 0..135.",
+    "tc.md E1: entry i with cumExp_i <= roll < cumExp_i + Prob_i.",
+    "Entry 4: weap21, Prob 14, cumExp 12 (tc.md E1).",
+    "tc.md G: the entry is a TC (flag 0x04): the pick is consumed and the resolver tail-continues into the sub-TC 'weap21' (1 picks, NoDrop 0); its ratio words become the max of the two frames."
+   ]
+  },
+  {
+   "text": "Pick in 'weap21': roll 10 of 24 -> item 'Long Sword'.",
+   "calc": [
+    "tc.md D4: NoDrop 0: the range is the total 24.",
+    "tc.md D4: roll = Range(src.seed, total + NoDrop' = 24) = 10; seed after {898554ca:51e90046}.",
+    "tc.md D4: roll - NoDrop' = 10 - 0 = 10, in 0..23.",
+    "tc.md E1: entry i with cumExp_i <= roll < cumExp_i + Prob_i.",
+    "Entry 4: Long Sword, Prob 3, cumExp 10 (tc.md E1).",
+    "tc.md H1: an item entry: quality roll, creation (H4-H7)."
+   ]
+  },
+  {
+   "text": "Unique test for 'Long Sword': chance 838, draw 786 -> lost.",
+   "calc": [
+    "quality.md Inputs: item 'lsd' (qlvl 20), ilvl 75, TC frame ratio words [1024, 983, 983, 983, 0, 0], magic find 200, source seed {898554ca:51e90046}.",
+    "quality.md B: ITEMRATIO_Select picks itemratio row 2 (version argument 100); d = ilvl - qlvl = 75 - 20 = 55 (quality.md C).",
+    "quality.md D4-D7: the chance after the base term and magic find (20928) is raised to the row minimum 6400 when not above it (D6), then c - ratio word 983 x c / 1024 (D7) = 838.",
+    "quality.md D: draw RangeB(src.seed, chance 838) = 786; the test is won when the draw < 128: lost."
+   ]
+  },
+  {
+   "text": "Set test for 'Long Sword': chance 282, draw 166 -> lost.",
+   "calc": [
+    "quality.md Inputs: item 'lsd' (qlvl 20), ilvl 75, TC frame ratio words [1024, 983, 983, 983, 0, 0], magic find 200, source seed {898554ca:51e90046}.",
+    "quality.md B: ITEMRATIO_Select picks itemratio row 2 (version argument 100); d = ilvl - qlvl = 75 - 20 = 55 (quality.md C).",
+    "quality.md D4-D7: the chance after the base term and magic find (7034) is raised to the row minimum 5600 when not above it (D6), then c - ratio word 983 x c / 1024 (D7) = 282.",
+    "quality.md D: draw RangeB(src.seed, chance 282) = 166; the test is won when the draw < 128: lost."
+   ]
+  },
+  {
+   "text": "Rare test for 'Long Sword': chance 150, draw 140 -> lost.",
+   "calc": [
+    "quality.md Inputs: item 'lsd' (qlvl 20), ilvl 75, TC frame ratio words [1024, 983, 983, 983, 0, 0], magic find 200, source seed {898554ca:51e90046}.",
+    "quality.md B: ITEMRATIO_Select picks itemratio row 2 (version argument 100); d = ilvl - qlvl = 75 - 20 = 55 (quality.md C).",
+    "quality.md D4-D7: the chance after the base term and magic find (3737) is raised to the row minimum 3200 when not above it (D6), then c - ratio word 983 x c / 1024 (D7) = 150.",
+    "quality.md D: draw RangeB(src.seed, chance 150) = 140; the test is won when the draw < 128: lost."
+   ]
+  },
+  {
+   "text": "Magic test for 'Long Sword': chance 0 -> won.",
+   "calc": [
+    "quality.md Inputs: item 'lsd' (qlvl 20), ilvl 75, TC frame ratio words [1024, 983, 983, 983, 0, 0], magic find 200, source seed {898554ca:51e90046}.",
+    "quality.md B: ITEMRATIO_Select picks itemratio row 2 (version argument 100); d = ilvl - qlvl = 75 - 20 = 55 (quality.md C).",
+    "quality.md D4-D7: the chance after the base term and magic find (682) is raised to the row minimum 192 when not above it (D6), then c - ratio word 1024 x c / 1024 (D7) = 0.",
+    "quality.md D: chance 0 < 1: the test is won with no draw."
+   ]
+  },
+  {
+   "text": "Quality 4 (magic) for 'Long Sword' after 3 draws; source seed now {35e2d3be:59d49c3e}.",
+   "calc": [
+    "quality.md Inputs: item 'lsd' (qlvl 20), ilvl 75, TC frame ratio words [1024, 983, 983, 983, 0, 0], magic find 200, source seed {898554ca:51e90046}.",
+    "quality.md B: ITEMRATIO_Select picks itemratio row 2 (version argument 100); d = ilvl - qlvl = 75 - 20 = 55 (quality.md C).",
+    "quality.md Test order: unique, set, rare, magic, superior, then normal or low; a won test ends the roll (exit label magic:win-nodraw).",
+    "quality.md Draw order: 3 draws on src.seed, seed after {35e2d3be:59d49c3e}."
+   ]
+  },
+  {
+   "text": "Item creation for 'Long Sword' (quality 4, magic): item seed {bf9ed1aa:0000029a}.",
+   "calc": [
+    "uniques-sets.md A1-A2: DropCreateItem draws two Steps on the game seed (unit seed, then item.start); item.seed = {start, 666} = {bf9ed1aa, 666}. The game seed here is derived from the illustrative input.",
+    "tc.md H7: creation does not touch src.seed (seed stays {35e2d3be:59d49c3e}).",
+    "Creation record for drops: item version 101, ladder 0, record quality 4, record row 0 (uniques-sets.md A, B)."
+   ]
+  },
+  {
+   "text": "The magic builder for 'Long Sword': success.",
+   "calc": [
+    "affixes.md D: the magic builder runs on item seed {bf9ed1aa:0000029a}.",
+    "affixes.md C: prefix pick (must 0): draw #1 bit 0 = 0, no affix.",
+    "affixes.md C: suffix pick: alvl 65, 70 candidates, W 252, draw 162 -> of Vileness (alvl from ilvl and qlvl, filter, weights, draw #2 = low % (W + 1)).",
+    "Result: success.",
+    "ItemApplyProps draws (property values) are applied to the seed by our property model; the values are not shown."
+   ]
+  },
+  {
+   "text": "Item complete: Long Sword of Vileness.",
+   "calc": [
+    "Result of the model: quality 4 (magic).",
+    "Name card: coloured by quality, no icon (schematic mode).",
+    "Not modelled here: gold amount and gold find (tc.md H8-H9), ItemInitStats values, the ethereal and socket rolls, the automagic pick after them (affixes.md J), the durability fix of a failed unique or set, property values."
+   ]
+  },
+  {
+   "text": "Pick in 'Andariel (H)': roll 44 of 68 -> sub-TC 'Act 2 (H) Equip A'.",
+   "calc": [
+    "tc.md F2: n = party + (PlayerCount - party) / 2 = 1; n <= 1: NoDrop stays 19.",
+    "tc.md D4: roll = Range(src.seed, total + NoDrop' = 68) = 44; seed after {d9706d74:1679b795}.",
+    "tc.md D4: roll - NoDrop' = 44 - 19 = 25, in 0..48.",
+    "tc.md E1: entry i with cumExp_i <= roll < cumExp_i + Prob_i.",
+    "Entry 1: Act 2 (H) Equip A, Prob 19, cumExp 11 (tc.md E1).",
+    "tc.md G: the entry is a TC (flag 0x04): the pick is consumed and the resolver pushes a frame for the sub-TC 'Act 2 (H) Equip A' (1 picks, NoDrop 0); its ratio words become the max of the two frames."
+   ]
+  },
+  {
+   "text": "Pick in 'Act 2 (H) Equip A': roll 7 of 1566 -> sub-TC 'weap63'.",
+   "calc": [
+    "tc.md D4: NoDrop 0: the range is the total 1566.",
+    "tc.md D4: roll = Range(src.seed, total + NoDrop' = 1566) = 7; seed after {574731d9:5ab1353d}.",
+    "tc.md D4: roll - NoDrop' = 7 - 0 = 7, in 0..1565.",
+    "tc.md E1: entry i with cumExp_i <= roll < cumExp_i + Prob_i.",
+    "Entry 2: weap63, Prob 6, cumExp 3 (tc.md E1).",
+    "tc.md G: the entry is a TC (flag 0x04): the pick is consumed and the resolver tail-continues into the sub-TC 'weap63' (1 picks, NoDrop 0); its ratio words become the max of the two frames."
+   ]
+  },
+  {
+   "text": "Pick in 'weap63': roll 6 of 22 -> item 'Reinforced Mace'.",
+   "calc": [
+    "tc.md D4: NoDrop 0: the range is the total 22.",
+    "tc.md D4: roll = Range(src.seed, total + NoDrop' = 22) = 6; seed after {f85aa13a:24672d0f}.",
+    "tc.md D4: roll - NoDrop' = 6 - 0 = 6, in 0..21.",
+    "tc.md E1: entry i with cumExp_i <= roll < cumExp_i + Prob_i.",
+    "Entry 3: Reinforced Mace, Prob 3, cumExp 6 (tc.md E1).",
+    "tc.md H1: an item entry: quality roll, creation (H4-H7)."
+   ]
+  },
+  {
+   "text": "Unique test for 'Reinforced Mace': chance 943, draw 533 -> lost.",
+   "calc": [
+    "quality.md Inputs: item '7ma' (qlvl 63), ilvl 75, TC frame ratio words [1024, 983, 983, 983, 0, 0], magic find 200, source seed {f85aa13a:24672d0f}.",
+    "quality.md B: ITEMRATIO_Select picks itemratio row 3 (version argument 100); d = ilvl - qlvl = 75 - 63 = 12 (quality.md C).",
+    "quality.md D4-D7: the chance after the base term and magic find (23537) is raised to the row minimum 6400 when not above it (D6), then c - ratio word 983 x c / 1024 (D7) = 943.",
+    "quality.md D: draw RangeB(src.seed, chance 943) = 533; the test is won when the draw < 128: lost."
+   ]
+  },
+  {
+   "text": "Set test for 'Reinforced Mace': chance 327, draw 209 -> lost.",
+   "calc": [
+    "quality.md Inputs: item '7ma' (qlvl 63), ilvl 75, TC frame ratio words [1024, 983, 983, 983, 0, 0], magic find 200, source seed {f85aa13a:24672d0f}.",
+    "quality.md B: ITEMRATIO_Select picks itemratio row 3 (version argument 100); d = ilvl - qlvl = 75 - 63 = 12 (quality.md C).",
+    "quality.md D4-D7: the chance after the base term and magic find (8145) is raised to the row minimum 5600 when not above it (D6), then c - ratio word 983 x c / 1024 (D7) = 327.",
+    "quality.md D: draw RangeB(src.seed, chance 327) = 209; the test is won when the draw < 128: lost."
+   ]
+  },
+  {
+   "text": "Rare test for 'Reinforced Mace': chance 193, draw 120 -> won.",
+   "calc": [
+    "quality.md Inputs: item '7ma' (qlvl 63), ilvl 75, TC frame ratio words [1024, 983, 983, 983, 0, 0], magic find 200, source seed {f85aa13a:24672d0f}.",
+    "quality.md B: ITEMRATIO_Select picks itemratio row 3 (version argument 100); d = ilvl - qlvl = 75 - 63 = 12 (quality.md C).",
+    "quality.md D4-D7: the chance after the base term and magic find (4812) is raised to the row minimum 3200 when not above it (D6), then c - ratio word 983 x c / 1024 (D7) = 193.",
+    "quality.md D: draw RangeB(src.seed, chance 193) = 120; the test is won when the draw < 128: won."
+   ]
+  },
+  {
+   "text": "Quality 6 (rare) for 'Reinforced Mace' after 3 draws; source seed now {54d551dc:36e661fd}.",
+   "calc": [
+    "quality.md Inputs: item '7ma' (qlvl 63), ilvl 75, TC frame ratio words [1024, 983, 983, 983, 0, 0], magic find 200, source seed {f85aa13a:24672d0f}.",
+    "quality.md B: ITEMRATIO_Select picks itemratio row 3 (version argument 100); d = ilvl - qlvl = 75 - 63 = 12 (quality.md C).",
+    "quality.md Test order: unique, set, rare, magic, superior, then normal or low; a won test ends the roll (exit label rare:win-draw).",
+    "quality.md Draw order: 3 draws on src.seed, seed after {54d551dc:36e661fd}."
+   ]
+  },
+  {
+   "text": "Item creation for 'Reinforced Mace' (quality 6, rare): item seed {51f6aaee:0000029a}.",
+   "calc": [
+    "uniques-sets.md A1-A2: DropCreateItem draws two Steps on the game seed (unit seed, then item.start); item.seed = {start, 666} = {51f6aaee, 666}. The game seed here is derived from the illustrative input.",
+    "tc.md H7: creation does not touch src.seed (seed stays {54d551dc:36e661fd}).",
+    "Creation record for drops: item version 101, ladder 0, record quality 6, record row 0 (uniques-sets.md A, B)."
+   ]
+  },
+  {
+   "text": "The rare builder for 'Reinforced Mace': success.",
+   "calc": [
+    "affixes.md E: the rare builder runs on item seed {51f6aaee:0000029a}.",
+    "affixes.md E: rare names first (prefix side, then suffix side): 'Stone' and 'Bar' (the RarePrefix / RareSuffix keys shown as their string-table text, strings.md D and C); count 4 (table g_RareAffixCountTable[low & 7] after one Step, or 3 + Range(item.seed, 2) for a jewel).",
+    "affixes.md C: prefix pick: alvl 51, 74 candidates, W 275, draw 113 -> Sharp (alvl from ilvl and qlvl, filter, weights, draw #2 = low % (W + 1)).",
+    "affixes.md C: suffix pick: alvl 51, 68 candidates, W 238, draw 26 -> of Frost (alvl from ilvl and qlvl, filter, weights, draw #2 = low % (W + 1)).",
+    "affixes.md C: prefix pick: alvl 51, 67 candidates, W 221, draw 159 -> Commander's (alvl from ilvl and qlvl, filter, weights, draw #2 = low % (W + 1)).",
+    "affixes.md C: prefix pick: alvl 51, 54 candidates, W 202, draw 175 -> Static (alvl from ilvl and qlvl, filter, weights, draw #2 = low % (W + 1)).",
+    "Result: success.",
+    "ItemApplyProps draws (property values) are applied to the seed by our property model; the values are not shown."
+   ]
+  },
+  {
+   "text": "Item complete: Stone Bar.",
+   "calc": [
+    "Result of the model: quality 6 (rare).",
+    "Name card: coloured by quality, no icon (schematic mode).",
+    "Not modelled here: gold amount and gold find (tc.md H8-H9), ItemInitStats values, the ethereal and socket rolls, the automagic pick after them (affixes.md J), the durability fix of a failed unique or set, property values."
+   ]
+  },
+  {
+   "text": "NoDrop: roll 9 of 68 is below NoDrop' 19 in 'Andariel (H)'.",
+   "calc": [
+    "tc.md F2: n = party + (PlayerCount - party) / 2 = 1; n <= 1: NoDrop stays 19.",
+    "tc.md D4: roll = Range(src.seed, total + NoDrop' = 68) = 9; seed after {e5422049:236220db}.",
+    "tc.md D4: roll 9 < NoDrop' 19: a NoDrop, the pick is consumed, nothing drops."
+   ]
+  },
+  {
+   "text": "NoDrop: roll 12 of 68 is below NoDrop' 19 in 'Andariel (H)'.",
+   "calc": [
+    "tc.md F2: n = party + (PlayerCount - party) / 2 = 1; n <= 1: NoDrop stays 19.",
+    "tc.md D4: roll = Range(src.seed, total + NoDrop' = 68) = 12; seed after {f3e40908:5f9f3428}.",
+    "tc.md D4: roll 12 < NoDrop' 19: a NoDrop, the pick is consumed, nothing drops."
+   ]
+  },
+  {
+   "text": "Pick in 'Andariel (H)': roll 24 of 68 -> item 'gold'.",
+   "calc": [
+    "tc.md F2: n = party + (PlayerCount - party) / 2 = 1; n <= 1: NoDrop stays 19.",
+    "tc.md D4: roll = Range(src.seed, total + NoDrop' = 68) = 24; seed after {9f5ea750:65b99808}.",
+    "tc.md D4: roll - NoDrop' = 24 - 19 = 5, in 0..48.",
+    "tc.md E1: entry i with cumExp_i <= roll < cumExp_i + Prob_i.",
+    "Entry 0: gold, Prob 11, cumExp 0 (tc.md E1).",
+    "tc.md H1: an item entry: quality roll, creation (H4-H7)."
+   ]
+  },
+  {
+   "text": "Quality roll for 'gold': early return, the item type's Normal flag is set: quality 2 (quality 2).",
+   "calc": [
+    "quality.md Inputs: item 'gld' (qlvl 0), ilvl 75, TC frame ratio words [1024, 983, 983, 983, 0, 0], magic find 200, source seed {9f5ea750:65b99808}.",
+    "quality.md A: early returns draw nothing and read no itemratio row (normal-type)."
+   ]
+  },
+  {
+   "text": "Item creation for 'gold' (quality 2, normal): item seed {e10f7f06:0000029a}.",
+   "calc": [
+    "uniques-sets.md A1-A2: DropCreateItem draws two Steps on the game seed (unit seed, then item.start); item.seed = {start, 666} = {e10f7f06, 666}. The game seed here is derived from the illustrative input.",
+    "tc.md H7: creation does not touch src.seed (seed stays {9f5ea750:65b99808}).",
+    "Creation record for drops: item version 101, ladder 0, record quality 2, record row 0 (uniques-sets.md A, B)."
+   ]
+  },
+  {
+   "text": "The normal builder for 'gold': success.",
+   "calc": [
+    "affixes.md H: the normal builder runs on item seed {e10f7f06:0000029a}.",
+    "affixes.md H1: for a base other than a charm, body part, scroll or book the normal builder draws nothing of its own on the item seed (a charm takes the forced-affix pair, an inferred path).",
+    "Result: success.",
+    "ItemApplyProps draws (property values) are applied to the seed by our property model; the values are not shown."
+   ]
+  },
+  {
+   "text": "Item complete: gold.",
+   "calc": [
+    "Result of the model: quality 2 (normal).",
+    "Name card: coloured by quality, no icon (schematic mode).",
+    "Not modelled here: gold amount and gold find (tc.md H8-H9), ItemInitStats values, the ethereal and socket rolls, the automagic pick after them (affixes.md J), the durability fix of a failed unique or set, property values."
+   ]
+  },
+  {
+   "text": "Pick in 'Andariel (H)': roll 44 of 68 -> sub-TC 'Act 2 (H) Equip A'.",
+   "calc": [
+    "tc.md F2: n = party + (PlayerCount - party) / 2 = 1; n <= 1: NoDrop stays 19.",
+    "tc.md D4: roll = Range(src.seed, total + NoDrop' = 68) = 44; seed after {cf8d5898:4278ce9c}.",
+    "tc.md D4: roll - NoDrop' = 44 - 19 = 25, in 0..48.",
+    "tc.md E1: entry i with cumExp_i <= roll < cumExp_i + Prob_i.",
+    "Entry 1: Act 2 (H) Equip A, Prob 19, cumExp 11 (tc.md E1).",
+    "tc.md G: the entry is a TC (flag 0x04): the pick is consumed and the resolver tail-continues into the sub-TC 'Act 2 (H) Equip A' (1 picks, NoDrop 0); its ratio words become the max of the two frames."
+   ]
+  },
+  {
+   "text": "Pick in 'Act 2 (H) Equip A': roll 1410 of 1566 -> sub-TC 'Act 1 (H) Equip B'.",
+   "calc": [
+    "tc.md D4: NoDrop 0: the range is the total 1566.",
+    "tc.md D4: roll = Range(src.seed, total + NoDrop' = 1566) = 1410; seed after {f1a37b94:56918360}.",
+    "tc.md D4: roll - NoDrop' = 1410 - 0 = 1410, in 0..1565.",
+    "tc.md E1: entry i with cumExp_i <= roll < cumExp_i + Prob_i.",
+    "Entry 8: Act 1 (H) Equip B, Prob 1530, cumExp 36 (tc.md E1).",
+    "tc.md G: the entry is a TC (flag 0x04): the pick is consumed and the resolver tail-continues into the sub-TC 'Act 1 (H) Equip B' (1 picks, NoDrop 0); its ratio words become the max of the two frames."
+   ]
+  },
+  {
+   "text": "Pick in 'Act 1 (H) Equip B': roll 1236 of 1566 -> sub-TC 'Act 1 (H) Equip A'.",
+   "calc": [
+    "tc.md D4: NoDrop 0: the range is the total 1566.",
+    "tc.md D4: roll = Range(src.seed, total + NoDrop' = 1566) = 1236; seed after {1b5adc44:64c91e43}.",
+    "tc.md D4: roll - NoDrop' = 1236 - 0 = 1236, in 0..1565.",
+    "tc.md E1: entry i with cumExp_i <= roll < cumExp_i + Prob_i.",
+    "Entry 8: Act 1 (H) Equip A, Prob 1530, cumExp 36 (tc.md E1).",
+    "tc.md G: the entry is a TC (flag 0x04): the pick is consumed and the resolver tail-continues into the sub-TC 'Act 1 (H) Equip A' (1 picks, NoDrop 0); its ratio words become the max of the two frames."
+   ]
+  },
+  {
+   "text": "Pick in 'Act 1 (H) Equip A': roll 912 of 1827 -> sub-TC 'Act 5 (N) Equip C'.",
+   "calc": [
+    "tc.md D4: NoDrop 0: the range is the total 1827.",
+    "tc.md D4: roll = Range(src.seed, total + NoDrop' = 1827) = 912; seed after {1232de97:0b68d6f3}.",
+    "tc.md D4: roll - NoDrop' = 912 - 0 = 912, in 0..1826.",
+    "tc.md E1: entry i with cumExp_i <= roll < cumExp_i + Prob_i.",
+    "Entry 8: Act 5 (N) Equip C, Prob 1785, cumExp 42 (tc.md E1).",
+    "tc.md G: the entry is a TC (flag 0x04): the pick is consumed and the resolver tail-continues into the sub-TC 'Act 5 (N) Equip C' (1 picks, NoDrop 0); its ratio words become the max of the two frames."
+   ]
+  },
+  {
+   "text": "Pick in 'Act 5 (N) Equip C': roll 830 of 1566 -> sub-TC 'Act 5 (N) Equip B'.",
+   "calc": [
+    "tc.md D4: NoDrop 0: the range is the total 1566.",
+    "tc.md D4: roll = Range(src.seed, total + NoDrop' = 1566) = 830; seed after {588d1126:07972dcd}.",
+    "tc.md D4: roll - NoDrop' = 830 - 0 = 830, in 0..1565.",
+    "tc.md E1: entry i with cumExp_i <= roll < cumExp_i + Prob_i.",
+    "Entry 8: Act 5 (N) Equip B, Prob 1530, cumExp 36 (tc.md E1).",
+    "tc.md G: the entry is a TC (flag 0x04): the pick is consumed and the resolver tail-continues into the sub-TC 'Act 5 (N) Equip B' (1 picks, NoDrop 0); its ratio words become the max of the two frames."
+   ]
+  },
+  {
+   "text": "Pick in 'Act 5 (N) Equip B': roll 892 of 1785 -> sub-TC 'Act 5 (N) Equip A'.",
+   "calc": [
+    "tc.md D4: NoDrop 0: the range is the total 1785.",
+    "tc.md D4: roll = Range(src.seed, total + NoDrop' = 1785) = 892; seed after {852ec00b:24ef1848}.",
+    "tc.md D4: roll - NoDrop' = 892 - 0 = 892, in 0..1784.",
+    "tc.md E1: entry i with cumExp_i <= roll < cumExp_i + Prob_i.",
+    "Entry 8: Act 5 (N) Equip A, Prob 1743, cumExp 42 (tc.md E1).",
+    "tc.md G: the entry is a TC (flag 0x04): the pick is consumed and the resolver tail-continues into the sub-TC 'Act 5 (N) Equip A' (1 picks, NoDrop 0); its ratio words become the max of the two frames."
+   ]
+  },
+  {
+   "text": "Pick in 'Act 5 (N) Equip A': roll 723 of 1481 -> sub-TC 'Act 4 (N) Equip B'.",
+   "calc": [
+    "tc.md D4: NoDrop 0: the range is the total 1481.",
+    "tc.md D4: roll = Range(src.seed, total + NoDrop' = 1481) = 723; seed after {047110bf:378ca8fe}.",
+    "tc.md D4: roll - NoDrop' = 723 - 0 = 723, in 0..1480.",
+    "tc.md E1: entry i with cumExp_i <= roll < cumExp_i + Prob_i.",
+    "Entry 8: Act 4 (N) Equip B, Prob 1445, cumExp 36 (tc.md E1).",
+    "tc.md G: the entry is a TC (flag 0x04): the pick is consumed and the resolver tail-continues into the sub-TC 'Act 4 (N) Equip B' (1 picks, NoDrop 0); its ratio words become the max of the two frames."
+   ]
+  },
+  {
+   "text": "Pick in 'Act 4 (N) Equip B': roll 1133 of 1396 -> sub-TC 'Act 4 (N) Equip A'.",
+   "calc": [
+    "tc.md D4: NoDrop 0: the range is the total 1396.",
+    "tc.md D4: roll = Range(src.seed, total + NoDrop' = 1396) = 1133; seed after {45b3fbf9:01da42e5}.",
+    "tc.md D4: roll - NoDrop' = 1133 - 0 = 1133, in 0..1395.",
+    "tc.md E1: entry i with cumExp_i <= roll < cumExp_i + Prob_i.",
+    "Entry 8: Act 4 (N) Equip A, Prob 1360, cumExp 36 (tc.md E1).",
+    "tc.md G: the entry is a TC (flag 0x04): the pick is consumed and the resolver tail-continues into the sub-TC 'Act 4 (N) Equip A' (1 picks, NoDrop 0); its ratio words become the max of the two frames."
+   ]
+  },
+  {
+   "text": "Pick in 'Act 4 (N) Equip A': roll 1078 of 1572 -> sub-TC 'Act 3 (N) Equip B'.",
+   "calc": [
+    "tc.md D4: NoDrop 0: the range is the total 1572.",
+    "tc.md D4: roll = Range(src.seed, total + NoDrop' = 1572) = 1078; seed after {dfad3982:1d1296f4}.",
+    "tc.md D4: roll - NoDrop' = 1078 - 0 = 1078, in 0..1571.",
+    "tc.md E1: entry i with cumExp_i <= roll < cumExp_i + Prob_i.",
+    "Entry 8: Act 3 (N) Equip B, Prob 1530, cumExp 42 (tc.md E1).",
+    "tc.md G: the entry is a TC (flag 0x04): the pick is consumed and the resolver tail-continues into the sub-TC 'Act 3 (N) Equip B' (1 picks, NoDrop 0); its ratio words become the max of the two frames."
+   ]
+  },
+  {
+   "text": "Pick in 'Act 3 (N) Equip B': roll 155 of 1487 -> sub-TC 'Act 3 (N) Equip A'.",
+   "calc": [
+    "tc.md D4: NoDrop 0: the range is the total 1487.",
+    "tc.md D4: roll = Range(src.seed, total + NoDrop' = 1487) = 155; seed after {fc44f7fe:5d4b3847}.",
+    "tc.md D4: roll - NoDrop' = 155 - 0 = 155, in 0..1486.",
+    "tc.md E1: entry i with cumExp_i <= roll < cumExp_i + Prob_i.",
+    "Entry 8: Act 3 (N) Equip A, Prob 1445, cumExp 42 (tc.md E1).",
+    "tc.md G: the entry is a TC (flag 0x04): the pick is consumed and the resolver tail-continues into the sub-TC 'Act 3 (N) Equip A' (1 picks, NoDrop 0); its ratio words become the max of the two frames."
+   ]
+  },
+  {
+   "text": "Pick in 'Act 3 (N) Equip A': roll 387 of 1226 -> sub-TC 'Act 2 (N) Equip B'.",
+   "calc": [
+    "tc.md D4: NoDrop 0: the range is the total 1226.",
+    "tc.md D4: roll = Range(src.seed, total + NoDrop' = 1226) = 387; seed after {4450eebd:69383ab0}.",
+    "tc.md D4: roll - NoDrop' = 387 - 0 = 387, in 0..1225.",
+    "tc.md E1: entry i with cumExp_i <= roll < cumExp_i + Prob_i.",
+    "Entry 8: Act 2 (N) Equip B, Prob 1190, cumExp 36 (tc.md E1).",
+    "tc.md G: the entry is a TC (flag 0x04): the pick is consumed and the resolver tail-continues into the sub-TC 'Act 2 (N) Equip B' (1 picks, NoDrop 0); its ratio words become the max of the two frames."
+   ]
+  },
+  {
+   "text": "Pick in 'Act 2 (N) Equip B': roll 1003 of 1141 -> sub-TC 'Act 2 (N) Equip A'.",
+   "calc": [
+    "tc.md D4: NoDrop 0: the range is the total 1141.",
+    "tc.md D4: roll = Range(src.seed, total + NoDrop' = 1141) = 1003; seed after {69f84221:1c7e8015}.",
+    "tc.md D4: roll - NoDrop' = 1003 - 0 = 1003, in 0..1140.",
+    "tc.md E1: entry i with cumExp_i <= roll < cumExp_i + Prob_i.",
+    "Entry 8: Act 2 (N) Equip A, Prob 1105, cumExp 36 (tc.md E1).",
+    "tc.md G: the entry is a TC (flag 0x04): the pick is consumed and the resolver tail-continues into the sub-TC 'Act 2 (N) Equip A' (1 picks, NoDrop 0); its ratio words become the max of the two frames."
+   ]
+  },
+  {
+   "text": "Pick in 'Act 2 (N) Equip A': roll 459 of 1275 -> sub-TC 'Act 1 (N) Equip B'.",
+   "calc": [
+    "tc.md D4: NoDrop 0: the range is the total 1275.",
+    "tc.md D4: roll = Range(src.seed, total + NoDrop' = 1275) = 459; seed after {1d41f37a:2c32fd52}.",
+    "tc.md D4: roll - NoDrop' = 459 - 0 = 459, in 0..1274.",
+    "tc.md E1: entry i with cumExp_i <= roll < cumExp_i + Prob_i.",
+    "Entry 8: Act 1 (N) Equip B, Prob 1233, cumExp 42 (tc.md E1).",
+    "tc.md G: the entry is a TC (flag 0x04): the pick is consumed and the resolver tail-continues into the sub-TC 'Act 1 (N) Equip B' (1 picks, NoDrop 0); its ratio words become the max of the two frames."
+   ]
+  },
+  {
+   "text": "Pick in 'Act 1 (N) Equip B': roll 513 of 1147 -> sub-TC 'Act 1 (N) Equip A'.",
+   "calc": [
+    "tc.md D4: NoDrop 0: the range is the total 1147.",
+    "tc.md D4: roll = Range(src.seed, total + NoDrop' = 1147) = 513; seed after {9d43fa34:0c34005e}.",
+    "tc.md D4: roll - NoDrop' = 513 - 0 = 513, in 0..1146.",
+    "tc.md E1: entry i with cumExp_i <= roll < cumExp_i + Prob_i.",
+    "Entry 8: Act 1 (N) Equip A, Prob 1105, cumExp 42 (tc.md E1).",
+    "tc.md G: the entry is a TC (flag 0x04): the pick is consumed and the resolver tail-continues into the sub-TC 'Act 1 (N) Equip A' (1 picks, NoDrop 0); its ratio words become the max of the two frames."
+   ]
+  },
+  {
+   "text": "Pick in 'Act 1 (N) Equip A': roll 312 of 971 -> sub-TC 'Act 5 Equip C'.",
+   "calc": [
+    "tc.md D4: NoDrop 0: the range is the total 971.",
+    "tc.md D4: roll = Range(src.seed, total + NoDrop' = 971) = 312; seed after {5a78ca62:4198211c}.",
+    "tc.md D4: roll - NoDrop' = 312 - 0 = 312, in 0..970.",
+    "tc.md E1: entry i with cumExp_i <= roll < cumExp_i + Prob_i.",
+    "Entry 8: Act 5 Equip C, Prob 935, cumExp 36 (tc.md E1).",
+    "tc.md G: the entry is a TC (flag 0x04): the pick is consumed and the resolver tail-continues into the sub-TC 'Act 5 Equip C' (1 picks, NoDrop 0); its ratio words become the max of the two frames."
+   ]
+  },
+  {
+   "text": "Pick in 'Act 5 Equip C': roll 486 of 868 -> sub-TC 'Act 5 Equip B'.",
+   "calc": [
+    "tc.md D4: NoDrop 0: the range is the total 868.",
+    "tc.md D4: roll = Range(src.seed, total + NoDrop' = 868) = 486; seed after {ee2efe86:25bc3062}.",
+    "tc.md D4: roll - NoDrop' = 486 - 0 = 486, in 0..867.",
+    "tc.md E1: entry i with cumExp_i <= roll < cumExp_i + Prob_i.",
+    "Entry 8: Act 5 Equip B, Prob 833, cumExp 35 (tc.md E1).",
+    "tc.md G: the entry is a TC (flag 0x04): the pick is consumed and the resolver tail-continues into the sub-TC 'Act 5 Equip B' (1 picks, NoDrop 0); its ratio words become the max of the two frames."
+   ]
+  },
+  {
+   "text": "Pick in 'Act 5 Equip B': roll 212 of 766 -> sub-TC 'Act 5 Equip A'.",
+   "calc": [
+    "tc.md D4: NoDrop 0: the range is the total 766.",
+    "tc.md D4: roll = Range(src.seed, total + NoDrop' = 766) = 212; seed after {36b56d80:6358346e}.",
+    "tc.md D4: roll - NoDrop' = 212 - 0 = 212, in 0..765.",
+    "tc.md E1: entry i with cumExp_i <= roll < cumExp_i + Prob_i.",
+    "Entry 8: Act 5 Equip A, Prob 731, cumExp 35 (tc.md E1).",
+    "tc.md G: the entry is a TC (flag 0x04): the pick is consumed and the resolver tail-continues into the sub-TC 'Act 5 Equip A' (1 picks, NoDrop 0); its ratio words become the max of the two frames."
+   ]
+  },
+  {
+   "text": "Pick in 'Act 5 Equip A': roll 242 of 670 -> sub-TC 'Act 4 Equip B'.",
+   "calc": [
+    "tc.md D4: NoDrop 0: the range is the total 670.",
+    "tc.md D4: roll = Range(src.seed, total + NoDrop' = 670) = 242; seed after {3b8d77ee:16d18e9a}.",
+    "tc.md D4: roll - NoDrop' = 242 - 0 = 242, in 0..669.",
+    "tc.md E1: entry i with cumExp_i <= roll < cumExp_i + Prob_i.",
+    "Entry 8: Act 4 Equip B, Prob 629, cumExp 41 (tc.md E1).",
+    "tc.md G: the entry is a TC (flag 0x04): the pick is consumed and the resolver tail-continues into the sub-TC 'Act 4 Equip B' (1 picks, NoDrop 0); its ratio words become the max of the two frames."
+   ]
+  },
+  {
+   "text": "Pick in 'Act 4 Equip B': roll 516 of 532 -> sub-TC 'Act 4 Equip A'.",
+   "calc": [
+    "tc.md D4: NoDrop 0: the range is the total 532.",
+    "tc.md D4: roll = Range(src.seed, total + NoDrop' = 532) = 516; seed after {cc38b8c0:18d6c4c0}.",
+    "tc.md D4: roll - NoDrop' = 516 - 0 = 516, in 0..531.",
+    "tc.md E1: entry i with cumExp_i <= roll < cumExp_i + Prob_i.",
+    "Entry 8: Act 4 Equip A, Prob 500, cumExp 32 (tc.md E1).",
+    "tc.md G: the entry is a TC (flag 0x04): the pick is consumed and the resolver tail-continues into the sub-TC 'Act 4 Equip A' (1 picks, NoDrop 0); its ratio words become the max of the two frames."
+   ]
+  },
+  {
+   "text": "Pick in 'Act 4 Equip A': roll 12 of 463 -> sub-TC 'weap30'.",
+   "calc": [
+    "tc.md D4: NoDrop 0: the range is the total 463.",
+    "tc.md D4: roll = Range(src.seed, total + NoDrop' = 463) = 12; seed after {8ce8f080:552de3db}.",
+    "tc.md D4: roll - NoDrop' = 12 - 0 = 12, in 0..462.",
+    "tc.md E1: entry i with cumExp_i <= roll < cumExp_i + Prob_i.",
+    "Entry 4: weap30, Prob 14, cumExp 12 (tc.md E1).",
+    "tc.md G: the entry is a TC (flag 0x04): the pick is consumed and the resolver tail-continues into the sub-TC 'weap30' (1 picks, NoDrop 0); its ratio words become the max of the two frames."
+   ]
+  },
+  {
+   "text": "Pick in 'weap30': roll 14 of 21 -> item 'War Javelin'.",
+   "calc": [
+    "tc.md D4: NoDrop 0: the range is the total 21.",
+    "tc.md D4: roll = Range(src.seed, total + NoDrop' = 21) = 14; seed after {ceb6f65b:3ac5bf6e}.",
+    "tc.md D4: roll - NoDrop' = 14 - 0 = 14, in 0..20.",
+    "tc.md E1: entry i with cumExp_i <= roll < cumExp_i + Prob_i.",
+    "Entry 4: War Javelin, Prob 3, cumExp 12 (tc.md E1).",
+    "tc.md H1: an item entry: quality roll, creation (H4-H7)."
+   ]
+  },
+  {
+   "text": "Unique test for 'War Javelin': chance 863, draw 252 -> lost.",
+   "calc": [
+    "quality.md Inputs: item '9ja' (qlvl 30), ilvl 75, TC frame ratio words [1024, 983, 983, 983, 0, 0], magic find 200, source seed {ceb6f65b:3ac5bf6e}.",
+    "quality.md B: ITEMRATIO_Select picks itemratio row 3 (version argument 100); d = ilvl - qlvl = 75 - 30 = 45 (quality.md C).",
+    "quality.md D4-D7: the chance after the base term and magic find (21535) is raised to the row minimum 6400 when not above it (D6), then c - ratio word 983 x c / 1024 (D7) = 863.",
+    "quality.md D: draw RangeB(src.seed, chance 863) = 252; the test is won when the draw < 128: lost."
+   ]
+  },
+  {
+   "text": "Set test for 'War Javelin': chance 293, draw 152 -> lost.",
+   "calc": [
+    "quality.md Inputs: item '9ja' (qlvl 30), ilvl 75, TC frame ratio words [1024, 983, 983, 983, 0, 0], magic find 200, source seed {ceb6f65b:3ac5bf6e}.",
+    "quality.md B: ITEMRATIO_Select picks itemratio row 3 (version argument 100); d = ilvl - qlvl = 75 - 30 = 45 (quality.md C).",
+    "quality.md D4-D7: the chance after the base term and magic find (7299) is raised to the row minimum 5600 when not above it (D6), then c - ratio word 983 x c / 1024 (D7) = 293.",
+    "quality.md D: draw RangeB(src.seed, chance 293) = 152; the test is won when the draw < 128: lost."
+   ]
+  },
+  {
+   "text": "Rare test for 'War Javelin': chance 160, draw 25 -> won.",
+   "calc": [
+    "quality.md Inputs: item '9ja' (qlvl 30), ilvl 75, TC frame ratio words [1024, 983, 983, 983, 0, 0], magic find 200, source seed {ceb6f65b:3ac5bf6e}.",
+    "quality.md B: ITEMRATIO_Select picks itemratio row 3 (version argument 100); d = ilvl - qlvl = 75 - 30 = 45 (quality.md C).",
+    "quality.md D4-D7: the chance after the base term and magic find (3993) is raised to the row minimum 3200 when not above it (D6), then c - ratio word 983 x c / 1024 (D7) = 160.",
+    "quality.md D: draw RangeB(src.seed, chance 160) = 25; the test is won when the draw < 128: won."
+   ]
+  },
+  {
+   "text": "Quality 6 (rare) for 'War Javelin' after 3 draws; source seed now {b4d61799:4bfb218d}.",
+   "calc": [
+    "quality.md Inputs: item '9ja' (qlvl 30), ilvl 75, TC frame ratio words [1024, 983, 983, 983, 0, 0], magic find 200, source seed {ceb6f65b:3ac5bf6e}.",
+    "quality.md B: ITEMRATIO_Select picks itemratio row 3 (version argument 100); d = ilvl - qlvl = 75 - 30 = 45 (quality.md C).",
+    "quality.md Test order: unique, set, rare, magic, superior, then normal or low; a won test ends the roll (exit label rare:win-draw).",
+    "quality.md Draw order: 3 draws on src.seed, seed after {b4d61799:4bfb218d}."
+   ]
+  },
+  {
+   "text": "Item creation for 'War Javelin' (quality 6, rare): item seed {6bf39f86:0000029a}.",
+   "calc": [
+    "uniques-sets.md A1-A2: DropCreateItem draws two Steps on the game seed (unit seed, then item.start); item.seed = {start, 666} = {6bf39f86, 666}. The game seed here is derived from the illustrative input.",
+    "tc.md H7: creation does not touch src.seed (seed stays {b4d61799:4bfb218d}).",
+    "Creation record for drops: item version 101, ladder 0, record quality 6, record row 0 (uniques-sets.md A, B)."
+   ]
+  },
+  {
+   "text": "The rare builder for 'War Javelin': success.",
+   "calc": [
+    "affixes.md E: the rare builder runs on item seed {6bf39f86:0000029a}.",
+    "affixes.md E: rare names first (prefix side, then suffix side): 'Doom' and 'Fang' (the RarePrefix / RareSuffix keys shown as their string-table text, strings.md D and C); count 6 (table g_RareAffixCountTable[low & 7] after one Step, or 3 + Range(item.seed, 2) for a jewel).",
+    "affixes.md C: prefix pick: alvl 60, 78 candidates, W 290, draw 125 -> Fine (alvl from ilvl and qlvl, filter, weights, draw #2 = low % (W + 1)).",
+    "affixes.md C: prefix pick: alvl 60, 69 candidates, W 226, draw 43 -> Savage (alvl from ilvl and qlvl, filter, weights, draw #2 = low % (W + 1)).",
+    "affixes.md C: suffix pick: alvl 60, 70 candidates, W 251, draw 242 -> of Enchantment (alvl from ilvl and qlvl, filter, weights, draw #2 = low % (W + 1)).",
+    "affixes.md C: prefix pick: alvl 60, 59 candidates, W 158, draw 120 -> Foul (alvl from ilvl and qlvl, filter, weights, draw #2 = low % (W + 1)).",
+    "affixes.md C: suffix pick: alvl 60, 47 candidates, W 228, draw 11 -> of Alacrity (alvl from ilvl and qlvl, filter, weights, draw #2 = low % (W + 1)).",
+    "affixes.md C: suffix pick: alvl 60, 43 candidates, W 205, draw 125 -> of Pestilence (alvl from ilvl and qlvl, filter, weights, draw #2 = low % (W + 1)).",
+    "Result: success.",
+    "ItemApplyProps draws (property values) are applied to the seed by our property model; the values are not shown."
+   ]
+  },
+  {
+   "text": "Item complete: Doom Fang.",
+   "calc": [
+    "Result of the model: quality 6 (rare).",
+    "Name card: coloured by quality, no icon (schematic mode).",
+    "Not modelled here: gold amount and gold find (tc.md H8-H9), ItemInitStats values, the ethereal and socket rolls, the automagic pick after them (affixes.md J), the durability fix of a failed unique or set, property values."
+   ]
+  },
+  {
+   "text": "Drop finished: 5 items after 52 random picks.",
+   "calc": [
+    "tc.md D: the call returns count = 5 with src.seed {b4d61799:4bfb218d}.",
+    "Items: gold; Long Sword of Vileness; Stone Bar; gold; Doom Fang"
+   ]
+  }
+ ]
+}

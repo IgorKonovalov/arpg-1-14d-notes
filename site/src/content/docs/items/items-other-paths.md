@@ -1,0 +1,653 @@
+---
+title: "Items that do not come from a monster drop"
+sidebar:
+  order: 2
+---
+
+A monster drop is only one way an item comes into the game. This page covers four others: putting gems, runes and
+jewels into sockets (and the [runewords](../../reference/glossary/) that can result), the Horadric Cube, vendors and gambling, and the items that
+quests drop or give. Each of these paths either calls the same item creation as a drop, with a different starting
+record, or changes an item that already exists. The shared machinery (the [treasure class](../../reference/glossary/) (TC) walk,
+the quality roll, uniques and sets, affixes, [base stats](../../reference/glossary/)) is explained on the [items](../items/) page and is not repeated
+here. This page restates four reviewed specs:
+socket filling and runewords,
+the Horadric Cube,
+vendor stock and gambling and
+quest drops, quest rewards and special drops.
+
+## The big picture
+
+Every path below ends in one of two places. Either it builds a creation record (a base, an [ilvl](../../reference/glossary/), a
+quality, sometimes [forced affixes](../../reference/glossary/)) and hands it to the ordinary item creation, or it copies or edits an item the
+player already has. What differs between paths is who makes the choices and which [seed](../../reference/glossary/) they
+[draw](../../reference/glossary/) on:
+
+| Path | Who chooses | Seed the choices draw on |
+|---|---|---|
+| Socketing | the player picks the child and the order | the completing rune's own [item seed](../../reference/glossary/) (runeword rolls only) |
+| Cube | the first matching recipe row | the [game seed](../../reference/glossary/) for new items, then each item's own seeds |
+| Vendors and gambling | the stock and gamble builders | the [store seed](../../reference/glossary/), one per game |
+| Quests | a boss's [quest TC](../../reference/glossary/), or a quest script | the dying monster's seed (TC walk) or the [quest seed](../../reference/glossary/) |
+
+In every path that creates an item, the item's own unit seed and item seed come from two steps of the game seed, as
+they do for a drop.
+
+```mermaid
+flowchart TD
+  SO["socket a gem, rune or jewel"] --> PAR["the parent item is changed,<br/>maybe into a runeword"]
+  CU["cube: Transmute"] --> ROW{"first recipe row that fits"}
+  ROW -->|"created output"| REC["creation record"]
+  ROW -->|"useitem or mod output"| CPY["copy of input 1"]
+  VS["vendor trade open"] --> SB["stock build on the store seed"]
+  GA["gamble open"] --> GB["gamble build on the store seed"]
+  SB --> REC
+  GB --> REC
+  KILL["boss killed"] --> QT{"quest TC switch"}
+  QT --> TCW["ordinary TC walk"]
+  KILL --> SCR["quest scripts on the quest seed"]
+  OBJ["quest object operated"] --> SCR
+  SCR --> REC
+  NPC["NPC reward or service"] --> REC
+  NPC --> CPY
+  TCW --> IC["item creation, as for a drop"]
+  REC --> IC
+```
+
+## Socketing and runewords
+
+When the player drops a gem, rune or jewel (the [socket filler, or child](../../reference/glossary/)) onto a socketed item (the
+parent), the client first checks that the request makes sense, then the server checks again and decides. The server's list of refusals is the
+authority. A test run saw the whole chain pass hundreds of times, and saw one server refusal: an unidentified jewel,
+which the client lets through because the client does not test the child's identified flag. The other server
+refusals (child not on the cursor, parent not identified, child not a socket filler, parent not socketed, parent
+full, and so on) are read from the code and were never seen failing.
+
+Some things are *not* tested at all. The insert does not look at the parent's quality, its item class or the game
+type. Low, magic, rare and [crafted](../../reference/glossary/) parents all accepted children in the test run, and a rune went into a helm in a
+classic game. There is no level-requirement test for the child either: a level-1 character put in runes up to *Jah*
+(level 65). In the two cases logged, an unidentified socketed item looked "not socketed" to the client, so the client
+refused the insert as if the item had no sockets; the one of them that was then identified took the child. That this holds for
+every unidentified socketed item, and what tells the client at identification, are not shown.
+
+**Socket order is insertion order.** Each child goes to the end of the parent's list of children, and that order is
+the one a runeword is compared against.
+
+**What a child brings**. A gem or rune
+applies one of three property groups from the `Gems` table, chosen by the *parent's* base: a weapon takes the weapon
+group, body armour and helms take the helm group, shields and the other shield types take the shield group. The properties are written onto the
+child's own stat list, which is then linked to the parent, so the parent sees them through the link. On the stock
+data no gem or rune property needs a random roll, so an insert that does not complete a runeword moves no seed at
+all. A jewel applies nothing at this point: its properties were rolled when the jewel itself was created.
+
+### When the children make a runeword
+
+After every insert the game checks the `Runes` table for a matching runeword. Only a full item can match: until the last socket
+is filled the count of children differs from the socket count and the check stops.
+
+```mermaid
+flowchart TD
+  Q{"parent magic, set, rare,<br/>unique or crafted?"} -->|yes| N["no runeword"]
+  Q -->|"no: low, normal, superior"| QB{"quest base?"}
+  QB -->|yes| N
+  QB -->|no| F{"every socket filled?"}
+  F -->|no| N
+  F -->|yes| R["scan Runes rows from the top"]
+  R --> M{"runes in socket order,<br/>allowed item type?"}
+  M -->|"first row that fits"| L{"ladder-only row<br/>in a non-ladder game?"}
+  M -->|"no row"| N
+  L -->|yes| N
+  L -->|no| RW["runeword"]
+```
+
+- Low-quality and superior bases make runewords, as normal ones do; magic, set, rare, unique and crafted bases never
+  do. [Ethereal](../../reference/glossary/) is not tested: an ethereal normal sword made *Steel* in a save the game itself wrote.
+- A quest base never makes one (*Wirt's Leg* made none in the run).
+- The runes must be in the row's order: the right runes in the wrong order, or in the wrong item type, matched nothing.
+  Item type equivalences count, so a row for "weapons" accepts every weapon.
+- A row marked for the ladder (*Spirit* in the run) makes no runeword in a non-ladder game, and the insert still
+  succeeds. That it does apply in a ladder game is read from the code: no ladder game was run.
+- A classic game accepts runes in sockets (confirmed) but forms no runeword. That second part is read from the code and
+  the data, not seen in a run: the match has no game-type test, and every rune is an expansion item, so no row is
+  classic-legal.
+- *Patience* never forms: its row is not marked complete, and the match skips every incomplete row. That is checked
+  against the stock table. *Passion* and *Patience* share one name, so the name a runeword shows only ever comes from
+  *Passion*.
+
+A quirk in the bound check means a row with exactly one rune more than the item has sockets compares that extra rune
+against a leftover memory slot. Read from the code, such a row matches only if the leftover happens to hold that
+rune's [item index](../../reference/glossary/); the single logged case did not match. The slot holds whatever the code that ran
+before at the same depth of the call stack left there, so a false match would need an earlier match check on a fuller
+item, not chance. What it holds in a given game cannot be worked out from the code alone; only a run could show it.
+
+### What the runeword rolls
+
+When a row matches, the parent is marked as a runeword and gets one new stat list with the row's lines, applied in
+column order. The lines that have a
+range are rolled on the **item seed of the child whose insert completed the word**, not on the parent's seeds and not
+on the game seed. Two consequences matter to a player:
+
+- The property handlers treat the *rune* as "the item". So `ac%` on a runeword does not reset the parent's base
+  defense the way it would on a magic item, `dmg-min`/`dmg-max` write all three related damage stats, and *Famine*'s
+  ethereal line never makes the parent ethereal (all confirmed by a run or a game-written save), and *Eternity*'s
+  indestructible line was made in a run. A few other handler branches are read from the code only: no stock runeword
+  line uses them, or the runewords that would use them are ladder-only rows, or the branch needs the rune to be a
+  weapon, so no stock single-player game reaches them.
+- A rune loaded from a save starts with a fixed item seed derived from its saved start value, so the same save with
+  the same insert order gives the same rolls.
+
+Charged skills still draw their roll, and then a player-made runeword has its charges refilled to the maximum.
+That refill is confirmed for the insert a player makes, and the save reader does *not* refill. A runeword loaded
+from a save is not rolled again: the reader rebuilds the parent with its saved lists first, so when the last rune goes
+back in, the game finds the runeword list already present and adds nothing (seen on the *Steel* save). The save does not name the runeword's
+row either: the writer runs the match again and saves that row's name index, and the reader keeps the number without
+looking a row up; the row of a loaded runeword is always found again from its runes (read from the code;
+sockets-runewords, *Inputs*). Also read from the code only: a
+loaded item still marked as a runeword whose row no longer matches is discarded.
+
+### Socket counts
+
+There are two ways an item gets its number of sockets. At creation (a drop, the cube, a quest
+reward) the count is capped by the inventory size, by 6, by the base's maximum, and by quality: magic at most 4, rare
+at most 2, crafted at most 3, sets and uniques 1 (or the count they already have). On drops, the size, 6 and base
+caps and their order are confirmed, and normal and superior items get no quality cap; the quality caps themselves are
+read from the code, since no run executed them. A count loaded from a save is kept as it is, above those caps: a magic
+crystal sword with 6 sockets loaded with 6 and took 6 children.
+
+## The Horadric Cube
+
+Pressing *Transmute* runs a scan over the `CubeMain` table, in row order. The first row whose header conditions and
+seven inputs fit the items in the cube is the recipe, and the scan stops there. This is a
+[transmute (cube recipe)](../../reference/glossary/).
+
+```mermaid
+flowchart TD
+  T["Transmute"] --> RW["next CubeMain row"]
+  RW --> H{"enabled, version, ladder,<br/>exact item count?"}
+  H -->|no| RW
+  H -->|yes| IN{"all seven inputs match?"}
+  IN -->|no| RW
+  RW -->|"no row left"| X["nothing happens, no draw"]
+  IN -->|yes| OUT["build outputs A, B, C in order"]
+  OUT --> P{"anything produced?"}
+  P -->|no| K["cube unchanged"]
+  P -->|yes| D["destroy every cube item,<br/>place the outputs, identified"]
+```
+
+**The row filter.** A few rules decide which rows can be tried at all:
+
+- The item count is exact. Each stack counts as one item, and on the stock data every row expects exactly the summed
+  quantity of its inputs, so one extra item in the cube refuses every recipe.
+- A classic game skips expansion rows.
+- **Ladder rows work in single player.** The rune upgrades and the two elite unique upgrades are marked for the ladder,
+  but the skip only applies to a game type that single player is not, and the run made those runes offline.
+- The five disabled rows can never be reached: the switch that would enable them is read once, written nowhere, and
+  starts at 0 in the executable.
+
+**The inputs**.
+Inputs are taken in column order, and an input claims *every* matching item in the cube, not just its quantity, then
+compares the count. An input can ask for a base code or an item type, a quality, sockets or no sockets, ethereal or
+not, a tier (normal, exceptional, elite). The exceptional test was seen deciding: an elite-upgrade recipe refused a
+normal and an elite dagger and took an exceptional one. The "ethereal" and elite input tests are read from the code
+only; no stock recipe uses them. An input that names a base also takes a higher tier of it: a gloves recipe matched
+magic heavy bracers and vambraces. On the recipes that need it, a quest item is tested against the difficulty:
+Wirt's Leg matches only if its quest-difficulty stat is at least the current difficulty. A leg with that stat at 0
+matched no row in Nightmare, one at 1 did; in Normal every leg passes. Read from the table, the same test binds the
+Staff of Kings, the Viper Amulet, Khalim's Flail and Khalim's organs. A recipe whose output
+adds a socket refuses a first input that cannot hold sockets (a rare amulet stayed unmatched). The rows' optional
+player tests (day of the month, stats) are read from the code only; no stock row uses them. Some of the stat tests
+(on the player, and on the first input) compare not the stat itself but its bonus over the base value (from items, skills and states); that reading is from
+the code too.
+
+That a stackable item relaxes the exact count is also read from the code; on the stock recipes it changes nothing.
+
+### What an output can be
+
+Outputs A, B and C are built in that order. The output ilvl comes from the row's `lvl`, `plvl` and `ilvl` columns: a
+fixed `lvl` wins; otherwise a percentage of the player's level plus a percentage of **input 1's** ilvl, each truncated,
+at least 1. Capping that value at 99 is read from the code; no
+transmute reached it.
+
+| Output kind | What it does |
+|---|---|
+| a fixed item code, an item type, or `usetype` | a new item through ordinary item creation, with the row's quality and any forced affix ids |
+| `useitem` | a copy of input 1, with its affixes, names and stats |
+| `mod` | a copy of input 1 moved to another base (the exceptional upgrade rows); base stats are re-rolled, affixes and sockets stay |
+| Cow Portal | opens the portal to the cow level |
+| the two Pandemonium portals | nothing: both do nothing in this game version |
+
+Some details from § E,
+§ M and
+§ F:
+
+- **Created items** are ordinary creations, entered with the cube's record: the ethereal roll is switched off and so
+  is the socket roll. A record of quality 0 (runes, gems, potions) still goes through a quality roll that draws on the
+  new item's seed, and only afterwards does the rune or gem type force the quality to normal.
+- **An item-type output** picks a random base of that type with a level no higher than the output ilvl, with two draws
+  on the game seed. The polearm recipe drew a scythe out of ten candidates. The edge cases of that pick (an empty list,
+  the candidate cap) are read from the code only.
+- **Copies are not clones of the seed**. A `useitem` or `mod` copy takes two game-seed steps and gets a fresh item seed,
+  so its later rolls (the recipe's own lines, a socket) start from new values. A copy keeps the gems or runes in its
+  sockets unless the recipe strips them (the unsocket recipe does), and a copy with one socketed item took two more
+  game-seed steps; two per socketed item is read from the code. The unsocket recipe on a runeword also removes the
+  runeword.
+- **An ethereal upgrade** first gets the plain values of its new base, then the ethereal bonus (×3/2) from the
+  recipe's property line, as seen on an ethereal *Gull* upgraded to an exceptional dagger.
+- **The recipe's own property lines** come after the item exists. On the rune socket recipes the line rolls 1 to 6
+  sockets for every item class, then the base caps it: a roll of 6 on a gothic plate gave 4 sockets. Each line could
+  have a chance to apply; every stock chance cell is blank, so that gate is read from the code only.
+- **`sock=1`** (the recipe that adds a socket to a rare) gave one socket to a rare short sword, cap and kite shield.
+  Its quality caps are read from the code; with one socket they never bind.
+- **Repair and recharge.** The repair recipe restored a damaged sword's durability and a broken one's (clearing the
+  broken state), and refilled throwing knives to their maximum stack of 160; the recharge recipe refilled a wand's
+  charges. Read from the code only: which maximum durability the repair takes when the item has a durability bonus
+  (both swords had none), the refill of an item with several charged skills, and a stack whose maximum is above 255.
+
+**Finishing**. If anything was produced, every item in the
+cube is destroyed (with the stock rows that is exactly the inputs) and the outputs are placed in the cube,
+**identified**, crafted items included. Placing the Horadric Staff sets the player's staff quest bit, and Khalim's
+Will calls its own quest hook; neither hook ran for any of the 18 other outputs placed in that run. Where each output lands is the same free-spot search the game uses for a
+player's inventory, run on the empty 3 × 4 cube grid: a 1 × 1 item lands at cell (2, 3), a 2 × 1 item at (1, 3),
+and anything larger at (0, 0). That search reproduced all 100 logged placements. A partly filled
+cube never meets an output, since the inputs are destroyed first. If nothing was produced, the cube stays as it was:
+nothing produced, nothing consumed.
+
+### Crafted items
+
+A crafted item is built by the crafted builder. It draws two
+[rare names](../../reference/glossary/), then an affix count of the remainder of a draw by 5, raised to a tier set by the ilvl
+(above 70: 4; above 50: 3; above 30: 2; else 1), so it is never lowered. Each slot first draws a side (prefix or
+suffix), every slot, then picks an affix. Properties are rolled only after all picks, then the recipe's own three lines
+are added. So tier 4 always gives four affixes, while tier 1 gives one with probability 2/5. An affix pick can find
+no candidate on the stock data: on a short staff at output ilvl 1, light boots up to 5 and light gloves up to 3 (the
+output ilvl is half the character's level plus half the input's, so it takes a low-level character and low-level
+inputs). When that side already holds an affix the game crashes, as was seen at output ilvl 1 on light boots. The same pick on an empty side, and the limit of 252 retries against a duplicate, are read from the code only.
+
+### The cow portal and the Pandemonium rows
+
+The Cow Portal opens only from the Act I town ([level](../../reference/glossary/) 1), once per game. It is refused for a
+character whose [quest record](../../reference/glossary/) has the bit that the Cow King's death script sets for his killer, and in an expansion
+game the character's Baal quest word must show the quest done (in a classic game, Diablo's; both seen). The run tested these gates with forced save
+states, so it checks the gates, not which quest events set the bits. A refused portal leaves the leg and the tome in
+the cube. Outside the encampment it was refused (tried in the Act IV town). Finding the portal's spot draws nothing;
+the portal object draws from the game seed (171 to 173 steps in the logged openings), and what those draws are spent
+on is not yet known. The two Pandemonium rows match, produce
+nothing, and leave the cube untouched in any game this executable hosts.
+
+## Vendors and gambling
+
+Vendor stock and gambling never go through the TC resolver. All their choices draw on one store seed per game, seeded
+from one game-seed step at game creation. Each item they make is then created
+like a drop, its own seeds coming from two game-seed steps. Other units draw on the game seed between builds, so each
+item's own seeds depend on every game-seed draw made before it.
+
+```mermaid
+flowchart TD
+  GC["game creation"] -->|"one game-seed step"| S["store seed"]
+  TO["trade open"] --> B{"stock built and not stale?"}
+  B -->|no| SB["stock build: counts, quality,<br/>upgrade draws on the store seed"]
+  B -->|yes| SEND["show the stock"]
+  GO["gamble open"] --> G{"this player has a window here?"}
+  G -->|no| GB["gamble build: 14 slots"]
+  G -->|yes| SEND2["show it"]
+  SB --> IC["item creation"]
+  GB --> IC
+  LV["a player leaves a town level"] --> ST["reset or mark stale"]
+  ST --> B
+```
+
+### When stock is built and refreshed
+
+There is **one stock per vendor per game, shared by every player**: a two-client game confirmed it for two players,
+and beyond that it is read from the code. It is built the first time anyone opens the trade
+window, from the opener's level:
+
+- A waypoint to another level **of the same act** resets every built store of that act at once; the next trade open
+  rebuilds from the opener's current level.
+- A waypoint **to another act** only marks the old act's stores stale, and only those built more than 240 seconds
+  (240 000 ms) before. A stale store is rebuilt at the next trade open when the opener is the only player interacting.
+  The leaving player still counts as in town here because, for a change of act, the town-leave check runs before the
+  player leaves its town room; within an act it runs only after the player is found in the new level. That ordering
+  is read from the code and matches the run's counts.
+- Walking out of town behaves like a waypoint within the act: the walk from the Rogue Encampment into the Blood Moor
+  reset Akara's and Charsi's stores at once.
+- The same player reopening a built store keeps its stock, and so do entering a town and a level-up: in a test run a
+  store built at level 30 was reopened after an act change, a level-up and a return by waypoint, and showed the same
+  items each time. That level-up was a single event of two levels, made from a character file built by a tool, not
+  by play. Read from the code: a quest event rebuilds nothing either, and the level-up's note to the stores is never
+  read, so the stock keeps the level of its build.
+- Asheara sells both items and mercenaries, and the two lists draw on the same store seed. Her mercenary list is
+  built when a player first starts talking to her, before any menu choice, so it always comes before her first stock
+  build. The runs confirmed this order; that no other order can occur is read from the code.
+- A two-client game confirmed the multiplayer cases: a store one player built is kept, unchanged, when the other opens
+  it; when a player leaves the game from a town, a store is only marked stale (if built more than 240 seconds before)
+  while the other player is still in that town, and every built store is reset when nobody is left there; a stale
+  store keeps its stock while a second player is talking to the merchant, and is rebuilt once only one is; and
+  leaving the game from Harrogath triggers nothing. Whether a dropped connection and *Save and Exit* take the same
+  path out is not known, and the case of a player leaving with a trade window open was seen only in part.
+
+### The stock build
+
+The [stock level](../../reference/glossary/) is the opener's level + 5. In Normal it is capped per act at 12, 20, 28, 36 and 45;
+in Nightmare and Hell there is no cap, not even at 99: a level-99 character in Hell got stock level 104.
+
+For each base on the vendor's list, in order, and only if the base level is not above the stock level:
+
+- **Normal copies.** Below stock level 25 the vendor makes between the base's `Min` and `Max` copies; from 25 on, none.
+  Each copy draws its quality: normal, or superior with 14 in 100 below stock level 10 and 25 in 100 from 10 on (the
+  code's bounds, not a measured frequency). The low-quality branch can never be reached, so stock is normal, superior
+  or magic, never low, rare, set or unique; the 4 656 logged stock items of the first run bear this out.
+- **Magic copies**, if the base allows them and its `MagicLvl` is not above the stock level. `MagicLvl` is a minimum
+  stock level, **not** an affix level; the affixes come from the ordinary [affix level](../../reference/glossary/) (alvl) rule
+  with the item's ilvl. From
+  stock level 25 the top of the magic count range rises by 1 or 2 (one more draw picks which).
+- **Permanent items** (the bases marked `PermStoreItem`; Akara has ten) are made once per build, as normal items.
+
+In Nightmare and Hell, with the opener above level 25, every stock item (permanent ones included) first draws an
+upgrade, one draw out of 100 000. In Nightmare it becomes the exceptional base when the draw is below
+stock level × 64 + 4000, else the base's `NightmareUpgrade` if it has one. In Hell it becomes the elite base (expansion
+only) below stock level × 16 + 1000, else the exceptional base below stock level × 128 + 5000; the base's `HellUpgrade`,
+when it has one, then replaces either result. Those two upgrade columns always name a normal-tier base one step up the
+same type, so exceptional and elite stock comes only from the two thresholds. Vendor and gamble items are **never ethereal**: the creation record switches the ethereal roll off.
+
+Each stock item goes on the tab of its item type: armor, weapons or miscellaneous. A weapon that does not fit tries
+the store's third tab, which no item type names, so it holds only weapons that did not fit; and
+an item that still does not fit is created anyway, its random draws spent, and then
+left out of the stock as a failed creation. The runs confirmed the tabs; exactly which free cell the game picks is
+not modelled yet. No build reached 32
+failed creations (the most was 27, Larzuk in Hell). Read from the code, the check that finds a 33rd failure ends the
+whole build at once, permanent items included; the check runs only after a normal copy or a permanent item. Also read
+from the code: a "Cracked" low-quality result would be retried.
+
+### Gambling
+
+A gamble window has 14 slots and belongs to one player at one gambler NPC. Every gamble open in the runs built a new
+window. Read from the code, it is built only when that player has no window there yet, and a window can survive to a
+second open only while another player is talking to the same NPC, so single player has no such case. For each slot:
+
+1. A [gamble level](../../reference/glossary/) is drawn in the range character level − 5 to + 4 and clamped to 5..99 (seen at
+   character levels 1 and 99). It is the base filter, the item's ilvl and the upgrade level. There is no separate affix
+   window around the character's level.
+2. A base is drawn uniformly among the gamble list rows whose level is at most the gamble level. **Slot 0 is always a
+   ring and slot 1 always an amulet**: their draws are made and thrown away, but their gamble level is kept.
+3. In an expansion game the base may be upgraded: one draw against an exceptional chance, and only if that fails, one
+   against an elite chance.
+4. One draw out of 100 000 sets the quality. With the stock `DifficultyLevels` values that is 50 unique, 100 set,
+   10 000 rare and the rest magic, in every difficulty. A unique or set that cannot be built falls back as for any
+   item.
+
+The gambled item is fully decided at the build, base and quality included. Closing the window frees it, and the next
+*Gamble* builds a new one. Buying an item copies it to the player without making a replacement. Read from the code:
+opening the window twice within one interaction shows the same items, but that needs a second player talking to
+the NPC.
+
+Buying from the stock removes the item unless it is one of the vendor's permanent items. Selling copies the item into
+the stock unless it is refused. The runs saw refusals of a permanent item, of an item sold in the gamble window, and
+of healing potions sold outside Normal (`hp5` there; that `hp4`, `mp4` and `mp5` are refused the same way is read
+from the code). The [prices page](../economy/) covers the ethereal, `0x100` and `carry1` refusals. A gambled unique enters the
+[made-uniques set](../../reference/glossary/) when the window is built, as a dropped one does, whether or not it is bought, so a
+later pick of that row fails and falls back; this is read from the code. Prices and repair have their own spec, which the
+vendor spec points to; the [prices, repair, gold and wear](../economy/)
+page explains it.
+
+## Quest drops and quest rewards
+
+Quest state changes item creation in three places: five bosses switch to a special TC, quest scripts
+create items on their own, and three NPC services rebuild an item the player hands over. When a quest bit gets set
+(dialogue, timers) is treated as an input here; the quest scripts that set the bits are on the
+[quests and travel](../../running/quests/) page.
+
+### The quest TC of the five act bosses
+
+Andariel, Duriel, Mephisto, Diablo and Baal each have a quest TC, used instead of their usual TC
+while the killer's quest record says the quest is not done. Three bits of the boss's quest word are tested
+in order, and the first one that is set keeps the usual TC: a bit that the save loader sets (read from the code, it
+means "saved the game while bit 1 was set"), the "killed" bit, and a per-boss checkpoint bit.
+
+**The drop runs before the quest scripts see the death**, so the first kill always gets the quest TC; the bits the
+boss's own script sets for that kill cannot hide it. What each boss's state gives:
+
+| Boss | Quest TC while | Evidence |
+|---|---|---|
+| Andariel | fresh: the quest bits are clear | confirmed |
+| Andariel | killed and reported to Warriv: in every later game | confirmed: the report cleared the "killed" bit and set the "done" bit, the game saved them, and the next game gave the quest TC again |
+| Andariel | killed in this game, not yet reported: normal TC | read from the code |
+| Andariel | saved and reloaded before reporting: normal TC for good | confirmed |
+| Duriel | until the character's first kill in that difficulty, even with the quest marked done | confirmed |
+| Mephisto | until the first kill | confirmed both ways: a fresh killer got the quest TC, a character with the quest done got the usual TC (and no soulstone) |
+| Baal | until the first kill | confirmed both ways: a fresh killer got the quest TC, a character with the quest done got the usual TC |
+| Diablo | until the first kill | read from the code (he was not killed in any run) |
+
+Scope: these results are for single player. A kill by a [hireling](../../reference/glossary/) or a summon counts as the owner's:
+a hireling and a Hydra each killed Andariel, the owner's quest record was read and the quest TC used, and the owner
+got the quest credit and Andariel's gems; the drop itself still records the hireling or the summon as the killer.
+A monster under a state such as conversion is also resolved to its caster by the code, but that was not run, and no
+party was run either; only the resolved player's own record is read. The Countess, the Cow King and Nihlathak have no
+quest TC (only the five bosses above have one), so their drops are their ordinary [superunique](../../reference/glossary/) TCs.
+
+### Special drops on the quest seed
+
+Quest scripts run after the TC drop and make their own items. Their picks draw on the **quest seed**, seeded from one
+game-seed step at game creation and kept for the whole game. Creating the item itself never moves the quest seed. In the run
+no other quest code drew it before a scripted drop, but the code shows other quest code that does, so in general its
+state at a drop depends on the game's quest history and is asserted rather than derived. Its game-creation step is
+the fourth draw on the game seed, after the monster regions, the object region and the store seed: confirmed in every
+recorded game.
+
+- **Andariel**: on a kill whose killer's quest word shows
+  neither an unreported kill nor the quest done, two picks from a list of seven (six chipped gems and a chipped skull),
+  then one from the seven standard ones, one draw of 7 each, all normal quality, at Andariel's level. Kills with
+  either of those bits set drew nothing. The same held in Normal, Nightmare and Hell and in a classic Normal game;
+  the credit the script also gives the killer's party is read from the code.
+- **The Countess**: her death script creates no item and
+  draws nothing; her runes come from her superunique TC, so quest state does not enter. Confirmed in Normal and
+  Nightmare, with her quest done and not done (one owner-played kill in each of the four states); Hell is read from
+  the code.
+- **The Cow King**: after his own TC, eight
+  stamina potions for a qualifying killer (one who has killed Baal, in an expansion game, and has not been credited
+  before), with no draw on the quest seed. Confirmed in one owner-played kill: the script asks for quality 0 and the
+  potions came out normal quality, at his level. By the code, quality 0 makes item creation run a quality roll on the
+  item's own seed, and then the stamina potion's type, which is always normal, overrides the result; the roll's draws
+  are not checked by any log. The two refusals and the
+  classic game's test (Diablo instead of Baal) are read from the code. The cow level itself was played: 565 hell
+  bovines dropped ordinary TC drops.
+- **The Hellforge**: the hammer must be found *and* equipped
+  in the right hand, and its quest-difficulty stat must be at least the current difficulty (in Nightmare a hammer at 0
+  counted no strike and one at 2 did; in Hell a hammer and a soulstone at exactly 2 were found, which settles the
+  equal case). Three strikes start four waves: perfect gems, flawless, flawless, standard, one draw of 7 per gem, at
+  the forge's area level; then, in an expansion game, one rune from the difficulty's list of 11 (`r01`–`r11` in
+  Normal, `r12`–`r22` in Nightmare, `r15`–`r25` in Hell). Confirmed in all three difficulties with one player (the
+  Hell forge in an owner-played session).
+  The classic game (no rune) and several players (one gem per credited player per wave) are read from the code. The
+  hammer itself drops from Hephasto as a unique and draws nothing on the quest seed. The forge's click goes to the
+  forge's own operate function like any object's, and its waves arrive later as a timer event of the quest objects;
+  both confirmed.
+- **Baal**: on a first kill, a gold amount of
+  6000·difficulty + 1500 to + 2999 per qualifying player, one draw on the quest seed each, dropped as gold piles made
+  like any dropped gold, so each takes that item's draws. Confirmed for one player in Normal (2 178 gold, one pile);
+  a kill with the quest already done drew nothing. That a pile holds up to 2 000 000 000, so any Baal amount is one
+  pile, is read from the code, as are Nightmare, Hell and several players.
+
+### Quest items and quest chests
+
+The Horadric parts, Wirt's Leg, the scrolls, the books and the other quest items are created by their scripts with
+fixed codes and qualities. Most of that table is now confirmed
+for the case where the script gives its item: Wirt's Leg, the Inifuss scroll, the Lam Esen tome, Radament's book,
+the Horadric scroll, staff and cube, the three Khalim parts, the figurine and the gifts that follow it, the
+soulstone and the hammer. The refusals (a quest bit already set, the item already held) were mostly not run; the
+altar, the Malus, Akara's book, the Gidbinn and the council's flail are read from the code. The quality in the table
+is the one the script asks for: seven of these items (Radament's book, the Inifuss scroll, the tome, the figurine,
+the soulstone, Malah's scroll and the golden bird) ask for normal quality and come out at quality 7. The cause is
+their base's unique flag: confirmed for the figurine, the soulstone, Malah's scroll and the golden bird (a gift
+whose base lacks the flag kept its asked quality), and read from the code for the book, the Inifuss scroll and the
+tome.
+
+A duplicate is refused by each script's own test (its quest bits, or "the player already holds the item"); that no
+other test refuses one is read from the code. Because a quest item checked against the difficulty only counts when
+its quest-difficulty stat is at least the current difficulty, a Normal staff does not stop a Nightmare chest from
+making a new one, while a held cube stops the cube chest; both were seen. The item on the cursor is tested slightly
+differently: the cube held on the cursor counts only in Normal, while in the inventory it counts in every
+difficulty (read from the code). Separately, the check on picking up or moving an item refuses a second copy of a
+quest item, a quest item whose finished form (the Horadric Staff, Khalim's Will) is already held, and a second copy
+of a carry-one unique (read from the code); at a pickup it was seen refusing six quest items and allowing the cube
+and the tome as the reading gives, though not which quest word each test reads.
+
+The quest chests come in two orders. The Act II chests (the scroll, the staff and the cube) make their quest item,
+then their ordinary chest drop, then 5 to 9 gold piles with one draw on the quest seed. The three Khalim chests make
+the gold first, then the part, then the ordinary drop. Both orders were seen, with the gold count the logged quest
+seed gives each time; the altar was not run. A chest gives nothing a second time in the same game (read from the
+code). An object's drop takes its item level from the monster level of the object's level; in a level with no
+`Levels` record, or a town (monster level 0 or 1), that is 1 (read from the code).
+
+### NPC services: imbue, socket, personalize
+
+Three NPC services take the item on the cursor and give back a new or changed one. All three call the repair and then identify
+their result, in that order. Runs showed the socketed and the personalized item come back repaired, and a throwing
+knife stack refilled. The imbued item is repaired only when it comes out of its creation already identified, as an
+imbued Wirt's Leg did; an imbued cap, created unidentified, kept its damage, because the repair runs before the
+service identifies it. That an ethereal item is never repaired here is read from the
+code. Each service then sets bit 0 of its quest word and clears bit 1. Every refused item in the runs was refused by
+the client before it reached the server, so the server's own refusal is read from the code.
+
+- **Charsi's [imbue](../../reference/glossary/)**
+  is a **fresh creation**, not an edit: same base, quality rare, ilvl = character level + 4 (character level when it
+  is 5 or less), on two new game-seed steps, so the old item's seeds are not reused. 17 imbues in one run confirm it,
+  and the low-level branch (character level 5 gives item level 5, 6 gives 10) and an ethereal item (it stays
+  ethereal) are confirmed too. Only low, normal and superior bases qualify: magic, set, rare, unique and crafted
+  items, a quest item other than the leg, a socketed item and an item holding a gem were all refused. Throwing
+  knives were accepted: the throwing-weapon refusal in the code was skipped for every item the run tested, and what
+  makes it apply is not known.
+- **Larzuk's socket** copies
+  the item on fresh seeds. A magic item gets 1 or 2 sockets (one draw, confirmed on 15 magic caps: 1 eight times, 2
+  seven times), and a magic item whose base allows only 1 still takes that draw. Low, normal and superior items get
+  their base's maximum, and set, rare, unique and crafted items get 1, with no draw: confirmed once each.
+- **Anya's personalization**
+  copies the item and writes the player's name on it after placing it; the service itself touches no affix or seed.
+
+### Items NPCs give
+
+Confirmed in all three difficulties:
+Akara's ring (magic in Normal, rare in Nightmare and Hell, at a fixed ilvl of 7, 30 or 60), Ormus's rare ring (ilvl 21,
+35 or 75), Qual-Kehk's one to three runes (by his quest bits), Malah's scroll, and Anya's class item from the Prison
+of Ice, picked with one quest-seed draw from a per-class list for the difficulty. Alkor's potion (in Normal) and
+Meshif's golden bird (in Nightmare) were each confirmed in one difficulty. Each is created like a store item, at the character's level unless a fixed level is given. Malah's
+potion was not given: her talk offers it only in one quest state, which no run reached and whose cause is not known.
+
+### The boss level exception
+
+A monster flagged as a boss keeps its own Nightmare and Hell level instead of the area level in an expansion game. Andariel was level 49 in Nightmare
+and 75 in Hell; a monster's scripted drop takes the monster's level as its ilvl. Four more boss-flagged monsters
+(Blood Raven, Radament, Mephisto, Nihlathak) were seen keeping their own Nightmare level; the remaining classes and
+the Hell levels of all but Andariel follow from the same test in the code.
+
+## Worked examples
+
+### Sanctuary in a large shield
+
+Copied from sockets-runewords § Worked example. A normal large
+shield with 3 sockets already holds Ko, Ko. The player inserts Mal, loaded from a save, so its item seed is its saved
+start value with the fixed high word 666. Mal brings its shield-group line, `red-mag` 7..7, with no draw. The shield is now full, the runes read Ko Ko Mal and a large shield is a shield, so *Sanctuary* matches. Its
+seven lines are applied on Mal's item seed:
+
+| Line | Range | Draw | Result |
+|---|---|---|---|
+| `block` | 20..20 | none | 20 |
+| `block2` | 20..20 | none | 20 |
+| `ac%` | 130..160 | #1, out of 31 | 12 → 142 |
+| `ac-miss` | 250..250 | none | 250 |
+| `res-all` | 50..70 | #2, out of 21 | 20 → 70 on all four resistances |
+| `balance2` | 20..20 | none | 20 |
+| `charged` *Slow Missiles* level 12 | 60 charges | #3, out of 53 | 9 of 60, then refilled to 60 of 60 |
+
+The game seed and the shield's own seeds are unchanged at the end; only Mal's item seed moved, three times.
+
+### A crafted Hit Power amulet
+
+Copied from cube § Example 1. A level-80
+Sorceress, expansion, Normal, puts a magic amulet (ilvl 41), a magic jewel, `r10` and `gpb` in the cube. Row 70 is the
+first that fits. The output ilvl is 80 × 50 ÷ 100 + 41 × 50 ÷ 100 = 40 + 20 = 60, which is tier 3.
+
+1. Two game-seed steps give the amulet its unit seed and its item seed.
+2. Rare names: *Shadow* and *gorget*.
+3. Count draw: 0, raised to the tier: 3 affixes.
+4. Slots: side suffix → *of Worth*; side prefix → *Garnet*; side suffix → *of Holy Bolts*.
+5. Properties, after all picks: fire resistance 24, minimum damage 2, *Holy Bolts* level 3 charges 22 of 27.
+6. The recipe's lines: `gethit-skill` (skill 44, level 4, value 5) with no draw, `thorns` 4, `howl` 15.
+
+The game seed ends only two steps further on. The four inputs are destroyed and the identified amulet is placed in the
+cube.
+
+### Akara's stock at character level 30
+
+Copied from vendors § Worked example. Expansion, Normal, Act I, so the
+stock level is min(35, 12) = 12. Akara's list has 5 bases and 10 permanent codes.
+
+| Draw | Result |
+|---|---|
+| `wnd` count, 4..6 | 5 normal copies |
+| their five quality draws | 37, 95, 75, 80, 81 → normal, superior, superior, superior, superior |
+| `wnd` magic count, 7..9 | 7 magic copies |
+| `ywn` count, 1..2 | 1 copy, quality draw 22 → normal |
+| `ywn` magic count, 1..1 | 1, a draw spent although the range has one value |
+
+The build goes on the same way for 27 store-seed draws in all, then makes the 10 permanent items with no store-seed
+draw: 46 items. The example also shows a gamble window at Jamella in Hell for a level-75 character. Slot 0 drew gamble
+level 79 and the base `hlm`, which was replaced by a ring, and its quality draw 85041 (not below 10 150) made it magic.
+Slot 6 drew level 72 and `hgl`, upgraded to its exceptional base `xhg` because the draw 899 was below the bound
+(72 − 54) × 90 + 1 = 1621. The whole window took 58 store-seed draws.
+
+### Andariel's first kill and the Hellforge
+
+Copied from quest-drops § Example 1
+and Example 3. A
+level-80 Sorceress, expansion, Normal, single player, kills Andariel (level 12) with the three tested quest bits clear. The quest TC
+switch picks `Andarielq`. The TC walk on Andariel's own seed makes 7 [picks](../../reference/glossary/): the first lands on a
+`crs` that rolls rare, the other six are [NoDrop](../../reference/glossary/). Then the death script draws three gems on the quest seed:
+
+| Pick | Draw of 7 | Item |
+|---|---|---|
+| chipped list | 3 | `gcy` |
+| chipped list | 6 | `skc` |
+| standard list | 4 | `gsg` |
+
+All three are normal quality at ilvl 12, and creating them left the quest seed where the picks put it. In another
+session, one player in Normal operated the Hellforge with the quest seed at its start value: four waves drew `gpv`,
+`glw`, `glw` and `gsb`, then the rune draw of 11 gave 6, the seventh rune of the Normal list, `r07`.
+
+## What is not known yet
+
+Collected from the specs' open questions and unconfirmed points:
+
+- **Socketing**: the server refusals behind the
+  client test were never seen failing; a child above the player's level, ladder-only rows in a ladder game, and the
+  `etype` exclusion were not tested; what the leftover slot of the one-extra-rune case holds in a game needs a run;
+  the creation-side socket caps were not executed (the crafted cap is 3 in the code).
+- **Cube**: what the cow portal object's game-seed draws
+  are spent on; whether the stat-bonus reading of the stat tests holds, since no stock row uses them; what no stock
+  recipe reaches (outputs B and C, the player and item tests, ethereal and elite inputs, the item level cap, an affix
+  pick with no candidate on an empty side); and stock cases no run has logged (a repair on an item with a durability
+  bonus, a recharge with several charged skills, a stack above 255, a copy with two socketed items).
+- **Vendors**: the rest of the multiplayer cases (a leave
+  with a trade window open, the two ways of leaving, a gamble window kept while a second player talks to the same
+  NPC, three or more players); the cell a stock item is placed in; three bytes of the
+  vendor record that nothing read in the windows a run watched (a reader elsewhere is not excluded); and how many draws
+  the [mercenary (hireling)](../../reference/glossary/) list takes from the shared store seed, which the vendor run did not follow:
+  it took the store seed after each hire-list build from the recording (16 builds, each entered with the seed the
+  model predicted). The hire list's own draws are specified with the hirelings, and a reimplementation runs them in that build's place.
+- **Quests**: kills by converted monsters, parties,
+  a classic Hellforge, Diablo, the Countess in Hell, the Cow King's refusals, the altar, the Malus and a few other
+  quest items, and most refusal cases were not attempted; Malah's potion waits on a quest state no run reached; and,
+  for quest objects other than the Hellforge, Wirt's body and the Kurast sewer lever, the timer route at run time.
+
+## Where to read more
+
+- The specs: socket filling and runewords,
+  the Horadric Cube, vendor stock and gambling,
+  quest drops and rewards.
+- Each spec's *Reimplementation notes* lists the traps:
+  sockets,
+  cube,
+  vendors,
+  quests.
+- The [glossary](../../reference/glossary/) for the terms, and the wiki pages on [item drops](../items/),
+  [using items and the inventory](../inventory/) (pickup, drop, stacks and the belt), [randomness](../../foundations/randomness/) and
+  [saves](../../characters/saves/).

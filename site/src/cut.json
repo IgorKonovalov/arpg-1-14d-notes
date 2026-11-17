@@ -1,0 +1,29 @@
+{
+  "date": "2026-11-17",
+  "groups": [
+    {
+      "slug": "foundations",
+      "label": "Foundations"
+    },
+    {
+      "slug": "world",
+      "label": "Building the world"
+    },
+    {
+      "slug": "items",
+      "label": "Items"
+    },
+    {
+      "slug": "characters",
+      "label": "Characters and combat"
+    },
+    {
+      "slug": "running",
+      "label": "The running game"
+    },
+    {
+      "slug": "reference",
+      "label": "Reference"
+    }
+  ]
+}

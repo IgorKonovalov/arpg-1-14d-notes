@@ -1,0 +1,399 @@
+---
+title: "Game data: tables, strings and formulas"
+sidebar:
+  order: 2
+---
+
+Much of what Diablo II does is driven by tables: which monsters a [level](../../reference/glossary/) can have, what a
+[treasure class](../../reference/glossary/) drops, how much a skill does. The game keeps that data in "excel" tables (Levels,
+MonStats, TreasureClassEx, Weapons and about eighty more), in three string tables that hold the names and text
+shown on screen, and in small compiled formulas that some table cells carry instead of a plain number. This page explains how the game finds and loads
+those files, how a record is addressed, how one table points at another, how a stored number becomes a name on
+screen, and how a formula is run. It restates four specs: the data overview,
+excel tables, string tables and
+calc formulas. The loading happens once, at program start, before any game exists, and it
+draws no random number; formulas are evaluated later, when the game needs a value, and only a formula's `rand` can
+draw (below).
+
+## The big picture
+
+The diagram is a simplified copy of the data flow and the
+excel algorithm; the text below is what counts.
+
+```mermaid
+flowchart TD
+    mpq["game archives, by priority<br/>(loose files only under -direct)"] --> find["file lookup"]
+    find --> bin["each table's .bin<br/>count + fixed-size records"]
+    bin --> rec["records addressed by position"]
+    rec --> items["weapons + armor + misc<br/>one item array, code lookup"]
+    rec --> tcs["treasure classes<br/>one numbering, name lookup"]
+    rec --> refs["stored references<br/>record positions, ordinals"]
+    rec --> str["stored string index"]
+    rec --> off["stored formula offset"]
+    find --> tbl["string.tbl, patchstring.tbl,<br/>expansionstring.tbl"]
+    tbl --> text["index to text, key to index"]
+    str --> text
+    find --> pool["four formula pools"]
+    off --> eval["formula evaluator"]
+    pool --> eval
+```
+
+## Which archive a file is read from
+
+The game's data sits in its MPQ archives. At start-up the game opens them and keeps them in a list sorted by
+priority; a lookup walks that list and the first archive that has the file wins. For the table files this gives the order
+`patch_d2`, then `d2exp`, then `d2kfixup`, then `d2delta`, then `d2data`. `d2exp` is opened whenever it exists,
+even for a classic game, so classic and expansion games read the same tables.
+
+Loose files on disk are only looked at when the game runs with `-direct` (or when no archive is open at all), and
+then they beat every archive. In a
+normal run a loose file never overrides an archive. This is confirmed in runs that put a debugger on the game before
+its start-up code: the archive opens, the sorted list after each open and every file lookup match these rules, a run
+with loose files but no `-direct` read none of them, and the same kind of files with `-direct` were read from disk.
+Only the place of the two optional archives in the middle of the list (the install has neither) and the case with no
+archive open (no lookup ran before the first open) are read from the code. The video archive is opened later, when a cinematic is played, and goes to the front of its priority group.
+
+## The game reads the .bin, not the .txt
+
+Every table exists in two forms: a tab-separated `.txt` source and a compiled
+`.bin`, which is a 32-bit record count followed by fixed-size records. **The game always loads the `.bin`**; in a
+normal run no `.txt` is parsed at all. This is confirmed: the in-memory "parse the text" path is dead, and for all
+86 loaded tables the record size the game's code uses matches the file.
+
+The `-txt` option compiles the `.txt` files and writes fresh `.bin` files to disk, and then loads the `.bin`
+through the normal lookup. Without `-direct` the game never sees the disk copy, so `-txt` alone changes nothing;
+only `-direct -txt` makes the game run on edited text. Both are confirmed in a run: with `-txt` alone every table
+loaded was the archive's copy, and with `-direct -txt` every table read after the compile came from the freshly
+written files.
+
+A few consequences that a modder or reimplementer would trip over:
+
+- `TreasureClass.txt` is never loaded. The live table is `TreasureClassEx` (confirmed).
+- Five tables (`automagic`, `RarePrefix`, `RareSuffix`, `inventory`, `PlrMode`) have their `.bin` and their newest
+  `.txt` in different archives. The game's own compile of that `.txt` gives the shipped `.bin` byte for byte, so it
+  makes no difference which one is taken (confirmed).
+- A few tables ship and are never loaded at all (confirmed for `cubemod` and `cubetype`), and some small code-list
+  tables are loaded only under `-txt`, for the compiler. One of them, `hitclass`, is still read whole at every start
+  by another loader (confirmed). Three of these code lists, the body locations, the player classes and the item and
+  skill events, are only index spaces in a normal run: the other tables store a row number (location 0 to 10, class
+  0 to 6, event 0 to 12) and the code uses it as a plain number (read from the code).
+- The `sounds` table is not loaded in a normal run. With sound off no sound file is read at all (confirmed); with
+  sound on, the client reads `sounds.txt` as text, and only `-txt` loads `sounds.bin` (read from the code).
+- Some tables load at every start but carry no game rule. Read from the code: `MonItemPercent` is read by nothing, so
+  it changes no drop; `Composit`, `MonSounds` and `AutoMap` are read by the client's drawing and sound only; of
+  `Overlay` the server reads only the row count, as a bound on an overlay number; `Arena` feeds a per-player score in
+  every game that no core rule reads. Of `SkillDesc`, the server reads the skill-tree page, which decides whether a
+  "+ to a skill tab" item counts for that skill.
+
+## Records are positions
+
+Record *i* of a table is simply the *i*-th fixed-size record after the count. A record number is a position in the
+`.bin`, **not** a line of the `.txt`. The difference
+comes from the [expansion marker](../../reference/glossary/): a `.txt` row whose first field is `Expansion` has no record, so
+every record after it sits one lower than its text row. `leveldefs` is the second half of Levels: its record *i*
+describes the same level as Levels record *i*, and it has no count of its own (the shared count is read from the
+code).
+
+## How one table points at another
+
+Tables refer to each other in three ways; the first two go through a lookup object, a [link](../../reference/glossary/):
+
+| Kind | Example | Lookup | Case |
+|---|---|---|---|
+| 4-character code | item code `hax` | sorted list of codes, binary search | sensitive |
+| name | a treasure class name | name tree, first 31 characters | insensitive |
+| stored position | a monster in Levels `mon1` | none: the number is used directly | — |
+
+**Items.** Weapons, armor and misc are loaded into one combined array, in that order. The
+[item index](../../reference/glossary/) used everywhere else is the position in that array: with the shipped counts, weapons
+are 0–305, armor 306–507 and misc 508–658. An item
+code is its four bytes read as a number, compared unsigned and case-sensitively. If two records had the same code, the second
+would be filed under the next free number and become unreachable by its own code; the shipped tables have no
+duplicates, so this never happens on stock data.
+
+**Names.** Name lookups lowercase the ASCII letters and compare only the first 31 characters. When two records
+share a name, a lookup returns the first one registered.
+
+These lookups are confirmed. Item codes resolve to their combined position in over a thousand logged calls, and the
+code and name lookups were run under an emulator against a model (the unsigned compare, the case rules, the
+31-character cut, duplicate codes). That the duplicate-code rule never fires on stock data has nothing to observe.
+
+## Treasure classes share one numbering
+
+Every stored [treasure class](../../reference/glossary/) (TC) reference, such as a monster's `TreasureClass1`, uses one
+index space built at load. This numbering is confirmed
+against every non-blank TC cell of MonStats:
+
+```mermaid
+flowchart LR
+    e["0<br/>the empty TC: no TC"] --- a["1 to 160<br/>automatic item-type TCs"] --- x["161 + r<br/>TreasureClassEx record r"]
+```
+
+| [TC index](../../reference/glossary/) | Meaning |
+|---|---|
+| 0 | the empty TC: a stored 0 means "no TC" |
+| 1 to 160 | automatic TCs built from item types (5 types × 32 levels: 3, 6, … 96) |
+| 161 + r | TreasureClassEx record r (852 records, ending at the first empty name; the count is read from the code) |
+
+While loading TreasureClassEx, the game also resolves each `ItemN` cell. A name of up to four characters is tried
+as an item code first; failing that, it is looked up as a TC name, then as a unique item name, then as a set item
+name; a name that matches nothing is dropped. So a short TC name that equals an item code means the item. A unique or
+set entry keeps two numbers: the base item of the named row and the row itself, which item creation later uses to make
+that exact unique or set item (read from the code, excel G4). The loader
+stops reading a row's items at the first empty `ItemN`, so an item after a blank cell is ignored; a
+[Picks](../../reference/glossary/) of 0 becomes 1; and a cell with a probability below 1 is skipped. A replay of the logged
+drops confirms the numbering, the item-code-first rule and the resolution of every logged cell; the three rules just
+named, a short name that is both an item code and a TC name, the unique and set steps and a name that ends at an
+inner quote have no stock case and are read from the code.
+
+The automatic TC of an item type for level L (named after the type code and L, such as `bow3`) takes the non-quest,
+spawnable items of that type whose level is above L − 3 and at most L, each weighted by the rarity of the item's own
+type, with one pick and no upgrade (confirmed in the logged drops). "Of that type" counts an item whose own or second
+type is that type or descends from it through the item types' parent columns; that the build uses this test is read
+from the code. After the load the game looks up 45 chest TC names
+(`Act 1 Chest A` and so on) for the objects' chests; the lookups are confirmed in the start-up runs, and where it
+keeps the result is read from the code.
+
+## Monster references and the off-by-one
+
+A stored monster reference (Levels `mon1`, MonStats `minion1` and the like) does not hold a MonStats record number.
+It holds a [distinct-Id ordinal](../../reference/glossary/): the position of that monster's `Id` among the *distinct* Ids of
+MonStats. The game then uses that number directly as a record position.
+
+The two agree until MonStats repeats an Id. It does once: `cr_lancer8` appears at records 617 and 723. From
+record 724 on, ordinal and position differ by one, so a reference to one of those monsters reaches the record
+**before** it. In the shipped data this affects three cells of *Act 5 - Pandemonium 3* (`mon1`, `nmon1`, `umon1`),
+which name `overseer6` but reach the second `cr_lancer8`. The stored ordinals are confirmed by the data, and that
+the game uses them as positions is confirmed for the level's [monster pool](../../reference/glossary/): that level's pool held
+class 723 in every logged game. A scan of every reader of MonStats in the code finds none that looks a monster up by
+its Id (read from the code). Whether such a monster is ever seen in play is left to the monster specs.
+
+## What a stored cell means
+
+A short guide to the values inside a `.bin` record, all checked against every cell of the documented tables:
+
+| Field kind | Stored value | Blank cell |
+|---|---|---|
+| integer | the number, cut to the field width with no range check (999 in a byte is 231) | 0 |
+| 4-character code | four bytes, space-padded | four spaces |
+| reference to another table | the target's record index, first match | the target's empty-key row if it has one, else −1 |
+| item-type reference | as above, key cut to 4 characters (`staff` finds `staf`) | 0, which is the `None` row |
+| TC reference | TC index (TreasureClassEx row + 161) | 0 |
+| [string key](../../reference/glossary/) | [string index](../../reference/glossary/) | 5382 |
+| formula | offset into a formula pool | −1 |
+
+The `.txt` compiler that produced these values (header matching, defaults for a missing column, the quirks above) is
+described in excel § J. Only a reimplementation that compiles
+`.txt` itself needs it.
+
+## String tables: from a number to text
+
+Records and code name a text by a 16-bit string index. Three string tables of the chosen language hold the texts,
+each with its own base:
+
+| Index | Table | Entry |
+|---|---|---|
+| 0–9999 | `string.tbl` | the index |
+| 10000–19999 | `patchstring.tbl` | index − 10000 |
+| 20000 and up | `expansionstring.tbl` | index − 20000 |
+
+The game loads `string.tbl`, then `patchstring.tbl`, then `expansionstring.tbl` **whenever the expansion archive
+exists**, for a classic game too. This is confirmed in a run: a classic session showed character-select text from
+the expansion table. Every
+text is converted from UTF-8 to 16-bit characters once, at load.
+
+The lookup is by **entry position**. A language whose table has other entries would show other text for the same
+stored index, and the stored indices are the English ones. The language comes from the first byte of the file
+`data\local\use`. The start-up runs confirm it: the shipped byte
+0 gave English, and the shipped Russian file's byte 11 made the game look for Cyrillic fonts, fail to load the font
+map and exit before reading any string table. A byte above 13 becomes English, and a byte of exactly 13 reads past
+the language table (confirmed under an emulator) and would crash the load; both need an edited file and are read
+from the code. Only English ships the expansion table, so another language whose fonts load would still crash at
+that table (read from the code). Two fallbacks, an expansion index with no expansion table and an entry past the end
+of a table, cannot be reached on a stock install; what they do is confirmed by running the game's own lookup under
+an emulator.
+
+## String keys: from a name to a number
+
+Some code, mostly table loaders, looks a text up by its [string key](../../reference/glossary/), an ASCII name such as
+`GloomUM`:
+
+```mermaid
+flowchart TD
+    k{"key empty?"} -->|yes| z["0, empty text"]
+    k -->|no| p{"in patchstring?"}
+    p -->|"yes, entry e"| pr["10000 + e"]
+    p -->|no| x{"in expansionstring?"}
+    x -->|"yes, entry e"| xr["20000 + e"]
+    x -->|no| s{"in string?"}
+    s -->|"yes, entry e"| sr["e"]
+    s -->|no| nx["0, placeholder text"]
+```
+
+The search order is patchstring, then expansionstring, then string, and the match is exact. Each
+table is a hash table searched by walking from a home slot; a miss always walks the table's whole probe limit (1 179
+nodes in the English patchstring, for example). When a key occurs twice in one table, the lowest entry wins. A key found nowhere
+returns 0 with a placeholder text: the key followed by the suffix " -not xlated call ken w", minus its last
+character, so `funeralpire` gives "funeralpire -not xlated call ken " with a trailing space. All of this is
+confirmed in a run that logged the game's key lookups, except that the match is case-sensitive: no logged key differs
+from a table's key only in case, so that part is read from the code. One quirk is confirmed under the emulator: entry 0 of
+`string.tbl` cannot be told apart from "not found", since both give 0.
+
+When the `.txt` compiler turns a string-key cell into a stored index, it replaces 0 (blank or unknown) by 5382,
+the `string.tbl` entry named `dummy`.
+That is why blank name cells in the shipped `.bin` files hold 5382. One cell of the shipped files breaks the rule:
+the `uberandariel` monster's name `Lilith` exists in the English patchstring table, yet its cell stores 5382. The
+game's own compiler stores the key's index there (confirmed with a compile run), so the shipped file was probably
+made against string tables that lacked the key.
+
+## Names on items and monsters
+
+Name columns hold stored string indices: MonStats `NameStr`, SuperUniques `Name` (the names of
+[superuniques](../../reference/glossary/)), the UniquePrefix name words and Weapons `namestr` are examples. Showing one of those names is an index lookup.
+
+[Rare names](../../reference/glossary/) take a slightly different path
+(strings § D, *Rare names*). The `.bin` stores no index for
+them. A run that hovered four rare items confirms the load-time lookup and the two shown indices; the fallbacks for
+a 0 index and a missing record are read from the code. When the rare-name tables are loaded, each record's `name` key is looked up and the index kept. When the
+client shows a rare item, it takes the item's two rare-name ids, finds each record and shows the text of each stored
+index; if an index is 0, it shows the raw key in parentheses instead, and a missing record leaves its word empty. The two words are then put into the string
+`RareFormat` as its first and second arguments, the way the magic name line uses `MagicFormat` (prefix, base name,
+suffix). The run shows the line using `RareFormat`; the order of the arguments is read from the code. In the
+shipped English table `RareFormat` is `%0 %1` (checked in the data), so
+an English rare name is the first word, one space, the second word. The order and the separator come from the string
+table, so another language may change them. This rests on `%0` and `%1` standing for the first and second argument;
+the code that substitutes them is not read yet.
+
+One loader shows how a key lookup can silently fail: the gems table loader builds a key from bytes that, in this
+version, hold the gem's compiled item index rather than its code text, so the lookups miss (the run saw 68 such keys)
+and every gem stores 0 there. This is confirmed: the 68 logged keys are exactly those bytes of the 68 gem records.
+
+## Calc formulas
+
+Some cells hold a [calc formula](../../reference/glossary/) rather than a number: a skill's damage or duration, a number in a
+skill description, a missile's synergy, a potion's duration and strength. In the shipped data these are already
+compiled into postfix bytecode, kept in four pools (`skillscode`, `skilldesccode`, `misscode`, `itemscode`), and the
+record stores an offset into its pool, or −1 for a blank cell, which evaluates to 0 (that last step is confirmed by
+running the game's own code under an emulator). The spec describes the machine that runs the formulas, not
+what each one means. One link to combat is named, from the code: the `ToHitCalc` result of a player skill is the
+attack-rating percent its melee hit passes to the hit test (see the [combat](../../characters/combat/) page).
+
+**The code.** Postfix means operands come before their operator: `(lvl < 4) ? lvl : (2+lvl/3)` becomes "lvl, 4, <,
+lvl, 2, lvl, 3, ÷, +, ?:, end". Each step is one opcode byte,
+sometimes followed by a constant, a variable number or a function number.
+
+**The evaluator** runs those bytes on a stack of 32-bit integers. Three points matter for an exact copy, all confirmed
+in a run of 44 529 evaluations with no mismatch:
+
+- **Both branches of `?:` are computed.** The ternary is just an operator over three values already on the stack,
+  so every variable read and function call in the unused branch still happens.
+- **Division truncates toward zero**, as in C. A zero divisor gives 0 rather than a crash, confirmed under the
+  emulator. One division still crashes the game: the smallest 32-bit integer divided by −1. That is read from the
+  code only, since an emulator cannot show a crash, and only an edited formula can reach it.
+- Evaluation stops at the end byte, and also at the byte the compiler emits for an unclosed `(`; stock Fire Wall
+  ends that way.
+
+The rest of the evaluator, which no stock formula reaches, is confirmed by running the game's own code under an
+emulator against a model: the opcodes the compiler never emits, comparisons other than `<` and `>`, the power operator,
+overflow (it wraps), a stack of 64 values that drops any further push, and a pop from an empty stack, which gives 0.
+
+**Contexts**. A formula runs with a context: a skill formula with the unit, the skill
+and its level; a missile formula with the missile, its owner and a level; an item formula with the unit that uses
+the item and the item itself. Variables
+are the rows of SkillCalc or MissCalc (`lvl`, `par1`…, `ln12` and so on). Item formulas have no variables
+(confirmed under the emulator), and the stock ones are all constants. The functions are `min max rand skill miss stat sklvl` for skills, a shorter list for
+missiles and items. Values that depend on the unit's state (its skill levels, its stats, elemental damage) are inputs
+the rest of the game supplies. The skills table of functions is confirmed in play, and the missile and item tables
+by the run's logs with the tables in the program file; `min`, `max` and `rand` of all three tables, the missile
+variables (except the ones that read damage) and the missile context are confirmed under the emulator. So are the
+skill variables no stock formula reads, except five that read the unit's state: a skill's mana cost, for example,
+shifts by the table's `manashift` masked to its low 5 bits. Which game functions call the missile and item formulas
+is confirmed: the run's calls return into the missile elemental-damage functions and into the potion-use function, read as
+code, for a stamina, antidote or thawing potion. That the item context's second value is the used item is read from
+the code; no stock formula reads it.
+
+`rand(a, b)` is the one place a formula draws: one [draw](../../reference/glossary/) on the unit's [seed](../../reference/glossary/),
+`a + Range(b − a + 1)`, or no draw when `a ≥ b`. In the missile context the
+code passes a value on the stack instead of a unit seed, so that draw advances no game seed. The functions
+themselves are confirmed under the emulator; which unit's seed `rand` draws on when a monster actually casts the
+one stock skill that uses it was not seen in play.
+
+**Compiling.** Only `-txt` compiles formulas. The
+compiler folds a formula with no variables and no function calls into one constant, fails on some text a permissive
+parser would accept (a cell holding one space, `min(-1,lvl)`, two minus signs in a row as in `- -5`), and then stores
+−1, so the formula yields 0. It also fails past 64 pending operators or 1 024 bytes of output. All of this is
+confirmed, the space on a stock cell and the rest under the emulator. Two equal formulas are stored twice, in record
+order and, within a record, in the order of the columns in the text file, then the formula columns the file lacks,
+which store −1 (confirmed under the emulator).
+
+## Worked examples
+
+**Excel references**, copied from the excel worked example (values from the
+shipped `.bin` files):
+
+1. MonStats record 0 (`skeleton1`) has `TreasureClass1` = 430. Since 430 ≥ 161, that is TreasureClassEx record
+   430 − 161 = 269, named `Act 1 H2H A`. Its runtime index is 430, and a name lookup of `ACT 1 H2H A` also returns
+   430, because names ignore case.
+2. Levels record 135 (*Act 5 - Pandemonium 3*) has `mon1` = 723. The `.txt` names `overseer6`, which is record
+   724; record 723 is the second `cr_lancer8`, and that is the record the game uses.
+3. The weapon code `hax` is stored as the bytes `68 61 78 20`, the number `20786168` in hex. It is weapons record
+   0, so a code lookup returns item index 0.
+4. TreasureClassEx record 0 is `Gold`, Picks 1, `Item1` = `gld` (three characters, so tried as an item code
+   first); its runtime index is 161.
+
+**A key lookup**, copied from the strings worked example, as logged in
+a recorded game. Looking up the key `of Amianthus`:
+
+| Step | Table | Home slot | Nodes examined | Result |
+|---|---|---|---|---|
+| 1 | patchstring | 961 | all 1 179 | miss |
+| 2 | expansionstring | 34 | 3 (`Shocking`, `Consecrated`, then `of Amianthus`) | entry 925 |
+| — | string | not searched | — | — |
+
+The index is 20000 + 925 = **20925**, and the text is `of Amianthus`. In the same example, index 21796 shows
+`CHARACTER` (expansionstring entry 1796, logged in a classic game with the expansion archive present), and index
+5382 shows `an evil force` (the `dummy` entry, also logged once).
+
+**A formula**, copied from the calc worked example: Raise Skeleton's
+`petmax`, `(lvl < 4) ?lvl:(2+lvl/3)`, evaluated at skill level 3 (logged 52 times, result 3):
+
+| # | Action | Stack after |
+|---|---|---|
+| 1 | read `lvl` → 3 | 3 |
+| 2 | push 4 | 3 4 |
+| 3 | 3 < 4 → 1 | 1 |
+| 4 | read `lvl` → 3 | 1 3 |
+| 5 | push 2 | 1 3 2 |
+| 6 | read `lvl` → 3 | 1 3 2 3 |
+| 7 | push 3 | 1 3 2 3 3 |
+| 8 | 3 ÷ 3 = 1 | 1 3 2 1 |
+| 9 | 2 + 1 | 1 3 3 |
+| 10 | else 3, then 3, condition 1 → then | 3 |
+| 11 | end: return 3 | |
+
+The game read `lvl` three times although it dropped the else-branch. The description copy of the same formula at
+level 4 takes the else-branch, 2 + 4 ÷ 3 = 3, also logged as 3.
+
+## What is not known yet
+
+From the open questions of excel,
+strings and calc:
+
+- The place of the two optional archives in the search order is read from the code only; the install has neither.
+- Whether anything reads two MonStats padding bytes during a game is open; nothing writes them between the load and
+  the end of a game.
+- The string-table fatal checks are read from the code and unreachable on a stock install; the other languages' font
+  maps are not read; the substitution of `%0`, `%1` in the rare and magic name lines is not read.
+- `max` and `rand` were checked under an emulator but not in a live monster cast; the missile variables that read
+  damage, and five skill variables that read the unit's state, were not checked; the item context's second
+  argument (the used item) is read from the code and no stock formula reads it; hovering over the potions of one run
+  evaluated nothing, but which items would evaluate a formula on a hover is not read; the crash on the smallest integer
+  divided by −1 cannot be shown under an emulator.
+
+## Where to read more
+
+- The specs: data overview, excel tables,
+  string tables, calc formulas.
+- The [glossary](../../reference/glossary/) for TC index, item index, string index and key, and calc formula.
+- Related wiki pages: [randomness](../randomness/) for `rand` and seeds; [items](../../items/items/), [monsters](../../world/monsters/)
+  and [levels](../../world/levels/) for what the game does with these tables.
