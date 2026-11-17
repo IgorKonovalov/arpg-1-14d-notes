@@ -39,19 +39,19 @@ flowchart LR
 
 | When | Function | Tag |
 |---|---|---|
-| A price is needed (trade window, purchase, sale, repair, corpse choice) | → `ITEMS_TradePriceCore` | [C] |
+| A price is needed (trade window, purchase, sale, repair, corpse choice) | `ItemTradePrice` → `ITEMS_TradePriceCore` | [C] |
 | The player buys or gambles (packet) | `NPC_BuyItem` | [C] |
 | The player sells (packet) | `NPC_SellItem` | [C] |
-| The player repairs one item or all (packet bit 31) | — | [C] |
-| A quest service (Charsi's imbue, Larzuk's socket, Anya's personalization) finishes its item | `NPC_MenuAction` → | [C] |
+| The player repairs one item or all (packet bit 31) | `NpcRepair` → `RepairCost` | [C] |
+| A quest service (Charsi's imbue, Larzuk's socket, Anya's personalization) finishes its item | `NPC_MenuAction` → `ItemRepairAll` | [C] |
 | Hire, resurrect, identify at Cain | `HIRE_Hire`, `MERC_Resurrect`, `NPC_CainIdentify` | [C] |
-| A gold item is created; a monster's gold drop is scaled | — | [C] |
-| Wirt's body is operated (object 268; one object event 7 per pile) | — | [C] |
-| An amount is dropped as piles (Baal, overflow, death) | — | [C] |
+| A gold item is created; a monster's gold drop is scaled | `ItemInitStats`, `DropGoldFind` | [C] |
+| Wirt's body is operated (object 268; one object event 7 per pile) | `A1Q4_WirtGold` → `DropItemAtUnit` | [C] |
+| An amount is dropped as piles (Baal, overflow, death) | `DropGoldAmount` | [C] |
 | A player dies | `PLAYER_DeathGoldLoss` | [C] |
 | A melee hit is delivered | `COMBAT_DeliverQueued` → `COMBAT_DurabilityLoss` | [C] |
-| A missile weapon or throwing stack is used | `PLAYER_UseAmmo` → | [C] |
-| A charged skill is cast | — | [I] |
+| A missile weapon or throwing stack is used | `PLAYER_UseAmmo` → `ItemConsumeOne` | [C] |
+| A charged skill is cast | `UseCharge` | [I] |
 | Item event 3 fires (replenish) | `g_ItemEventFuncs` → `ITEMEVENT_Replenish` | [C] |
 
 - [C] **The client copy's call sites.** The client calls the same price and repair-cost functions: six call sites
@@ -121,14 +121,14 @@ flowchart LR
 | `R_CAP` | 99 (`item_reducedprices` cap; a signed compare, so a negative stat passes unchanged) | — | [C] |
 | `GOLD_PER_LEVEL` | 10 000: carried gold cap = `L × 10 000` (`imul`, 32-bit) | — | [C] |
 | `STASH_CAP` | 2 500 000, not by level | `PLAYER_StashGoldCap` | [C] |
-| `PILE_MAX`, `PILES_MAX` | 2 000 000 000 per pile, 32 piles | — | [I] |
+| `PILE_MAX`, `PILES_MAX` | 2 000 000 000 per pile, 32 piles | `DropGoldAmount` | [I] |
 | `DEATH_PCT_CAP`, `SP_KEEP` | 20 %; 500 per level kept in single player | `PLAYER_DeathGoldLoss` | [C] |
 | `RES_FACTOR`, `RES_CAP` | 15; 50 000 (unsigned compare) | `MERC_ResurrectCost` | [C] |
 | `CAIN_COST` | 100 per unidentified item | `NPC_CainIdentify` | [I] |
 | `CORPSE_MAX` | 16 corpses (`cmp eax, 0xF; jbe`) | — | [I] |
 | wear chances | armour 10, weapon 4, expansion throwing weapon 10 (percent) | `ITEMS_DurabilityLossRoll` | [C] |
 | `g_ArmorWearSlots` | 7 pairs {bodyloc, weight}: (1, 3) head, (3, 5) torso, (4, 4), (5, 4) the two hands, (8, 2) belt, (9, 2) feet, (10, 2) gloves; count 7 | `g_ArmorWearSlots` | [C] |
-| `REPLENISH_BASE`, `REPLENISH_MIN` | 2500 frames; requeue floor 125 frames (`ReplenishStep`'s; the first timer has no floor, § H7) | `ITEMEVENT_Replenish` | [C] the base in `ItemReplenishDurTimer`; [I] the base and floor in `ReplenishStep`, after its stat write |
+| `REPLENISH_BASE`, `REPLENISH_MIN` | 2500 frames; requeue floor 125 frames (`ReplenishStep`'s; the first timer has no floor, § H7) | `ItemReplenishDurTimer`, `ITEMEVENT_Replenish` | [C] the base in `ItemReplenishDurTimer`; [I] the base and floor in `ReplenishStep`, after its stat write |
 
 ## Algorithm
 

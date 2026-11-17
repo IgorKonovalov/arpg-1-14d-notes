@@ -35,7 +35,7 @@ flowchart TD
 | A monster's plain attack, inside the queue, only on a hit | `MON_MeleeHit` → `COMBAT_ResolveAndQueue` → `COMBAT_BuildDamage` | [C] |
 | The physical roll | `COMBAT_RollPhysical` | [C] |
 | One element's roll | `COMBAT_RollElemStat`, `COMBAT_RollRange` | [C] |
-| A monster's to-hit and damage stats, at its attack mode change | — | [C] for its draws and its stats (the stats in 19 750 of 19 750 calls) |
+| A monster's to-hit and damage stats, at its attack mode change | `MonAttackStats` | [C] for its draws and its stats (the stats in 19 750 of 19 750 calls) |
 
 ## Inputs
 
@@ -195,7 +195,7 @@ Step notes:
   `UnitSetOverlayStat(def, 54, 0)` is reached only when `+0x60 & 0xF0` ≠ 0 (416 separating cases). [C]
 
 - 10. `MISSILE_ApplyDamage` calls the same doubling, so a monster's missile takes it too: in 7 734 missile events from
-  monsters with MonStats `Crit` above 0 the owner's draw is asserted. [C] (row 11)
+  monsters with MonStats `Crit` above 0 the owner's draw is asserted. [C] (`MonCritDouble`, row 11)
 
 ### B. The physical roll (`COMBAT_RollPhysical`)
 

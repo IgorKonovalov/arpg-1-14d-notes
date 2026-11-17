@@ -712,7 +712,7 @@ J10. do 73 (Blessed Hammer), do 80 (Fist of the Heavens):   [C] → MissileCreat
   `MonAttackStats` (`edx = 5`), which tests mode 5 first (mask `0x10`), and mode
   5 selects `A2`; it
   stores the test's word with no `or ax, 1` (the player's `or` jumps past it).
-  [C] (static, row 8)
+  [C] (static, `MonAttackStats`, `SkillDo150Smite`, row 8)
 - J2. **Smite sets no flag `0x40`.** Do 150 itself has no access to `Unit+0xC4`, where do 2 does `or [edi+0xC4], 0x40`;
   its direct-call closure (2 085 functions) reaches one of the 124 set sites, `SKILLS_SrvDo`'s, only
   through `COMBAT_DeliverQueued` → `COMBAT_DurabilityLoss` → … → `AuraSelect`, the durability path. [C] (static) Which unit that path sets the bit on, and the 622 indirect calls of the closure, are unfollowed. [I]
@@ -789,7 +789,7 @@ K17. do 78 (SkillDo78LeapAttack): no record test; → LeapAttackLand (+0x0C bit 
 
 - K14. **Do 74 adds the skill's to-hit to its missile.** Past the boundary, it adds `SKILLS_GetToHit` to the missile's
   stat 19 after creating the missile, the one exception read to
-  [missiles B2](../missiles/#b-creation)'s "no to-hit for a player's skill missile". [I] (`SKILLS_GetToHit`, row 18)
+  [missiles B2](../missiles/#b-creation)'s "no to-hit for a player's skill missile". [I] (`SkillDo74DoubleThrow`, `SKILLS_GetToHit`, row 18)
 
 ### L. Druid (st 56–58; do 114–124; entries 145, 146)
 
@@ -949,8 +949,10 @@ M5. ItemEffect 36 (rows 44 Frost Nova, 48 Nova): an item cast of those skills ru
 ```
 
 - M2. **The knockback's level difference is `slvl`.** Dragon Talon's do reads stat 12 of the target (`push edi`) twice,
-  so its chance computes `level(target) + slvl − level(target)`: `edi` is `UNIT_GetTargetUnit`'s result, both reads push it with no `edi` write between, and the chance is `s1 + slvl − s2`. [C] (static, row 1)
-- M2. Psychic Hammer's do has the same form: both reads are `push ebx`, the target (`ebx` from `UNIT_GetTargetUnit`; the chance). [C] (static, row 2)
+  so its chance computes `level(target) + slvl − level(target)`: `edi` is `UNIT_GetTargetUnit`'s result, both reads push it with no `edi` write between, and the chance is `s1 + slvl − s2`. [C] (static,
+  `SkillDo42DragonTalon`, row 1)
+- M2. Psychic Hammer's do has the same form: both reads are `push ebx`, the target (`ebx` from `UNIT_GetTargetUnit`; the chance). [C] (static,
+  `SkillDo33PsychicHammer`, row 2)
 
 ### N. Item, charge and shrine callers (st 3, do 4, 113, 151)
 
@@ -1391,7 +1393,7 @@ through tries 2–4, Q1's `after:`); with no room in all four tries the entry re
   calc2. [C]
 - **Return values that look wrong.** do 13 returns 0 on every path; mdo 14 with a skill or level ≤ 0 returns 2
   without mdo 1; do 63 returns 1 for a bad missile class. [C] for mdo 14 and do 63 and for do 13: its one `ret` follows `xor eax, eax` with no `EAX` write between and no
-  branch lands past the `xor` (two independent readings)
+  branch lands past the `xor` (`SkillDo13Fend`, two independent readings)
 - **Signed and unsigned tests.** A blank `SubMissile1` (−1) passes the `≠ 0` test of mdo 21, 22, 23, 25 and 26;
   class 0 passes do 68's test, and do 73 and 80 refuse it; do 31 tests `pettype` signed, do 49 unsigned, do 44 and
   45 turn a bad one into 0. [C]

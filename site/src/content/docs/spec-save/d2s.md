@@ -21,16 +21,16 @@ Names (client, player data, item data) follow: the **client** is the server's pe
 
 | When | Function | Tag |
 |---|---|---|
-| *Save and Exit* in single player, first write (every client of the game) | → `PLRSAVE_Save` | [C] |
-| *Save and Exit* in single player, second write, same bytes | → `PLRSAVE_Save` | [C] |
+| *Save and Exit* in single player, first write (every client of the game) | `SaveGameClients` → `PLRSAVE_Save` | [C] |
+| *Save and Exit* in single player, second write, same bytes | `SaveClients` → `PLRSAVE_Save` | [C] |
 | Single-player file write | `PLRSAVE_WriteFile` → `D2S_WriteSave` | [C] |
-| Server shutdown, every client of every game | — | [I] |
-| Periodic save: none while the host callback is 0 | — | [C] |
-| Periodic save with a host callback set | — | [I] |
-| Hosted save through the callback, skipped when unchanged | — | [I] |
-| Player join: load (logged returns) | → → … → `PLRSAVE_ReadFile` → `D2S_ReadSave` | [C] |
+| Server shutdown, every client of every game | `SaveAllOnShutdown` | [I] |
+| Periodic save: none while the host callback is 0 | `AutosaveTick` | [C] |
+| Periodic save with a host callback set | `AutosaveTick` | [I] |
+| Hosted save through the callback, skipped when unchanged | `SaveViaCallback` | [I] |
+| Player join: load (logged returns) | `ClientAddPlayerToGame` → `PlayerLoad` → … → `PLRSAVE_ReadFile` → `D2S_ReadSave` | [C] |
 | Version 92–96 reader | `D2S_ReadSaveV92` | [C] |
-| New character (client side, 335-byte stub) | — | [C] |
+| New character (client side, 335-byte stub) | `StubBuild`, `StubWrite` | [C] |
 
 - [C] *Save and Exit* in single player writes the file **twice**, byte-identical: `PLRSAVE_Save` is called from
   two sites in turn (then), and both calls reach `PLRSAVE_WriteFile`. Nothing was written during
@@ -314,7 +314,7 @@ Each row gives the runtime source the writer reads and the runtime field the rea
 | `0x07C` | (u16, u16) | right skill | skill id, item ref | [C] | → player data `+0x70` / `+0x78` | [C] |
 | `0x080` | (u16, u16) | swap skill A | — | [C] | → player data `+0x84` / `+0x8C` | [C] |
 | `0x084` | (u16, u16) | swap skill B | — | [C] | → player data `+0x80` / `+0x88` | [C] |
-| `0x088` | 16 B | graphics | default `0xFF` | [C] | not read by the server | [C] |
+| `0x088` | 16 B | graphics | `CompositeFromEquip`, default `0xFF` | [C] | not read by the server | [C] |
 | `0x098` | 16 B | colours | the same call | [C] | not read by the server | [C] |
 | `0x0A8` + d | u8 × 3 | `difficulty` | byte d = game difficulty (`game+0x6D`): client act `+0x1AC` `\| 0x80`; the other two bytes 0 | [C] | `b & 0x7F` → client act (out-of-range act clamp: note below the table); `b & 0x80` gates the map-seed reuse | [C] |
 | `0x0AB` | u32 | `map_seed` | `game+0x7C` | [C] | → `game+0x7C` under the condition of D4 | [C] |
@@ -1090,7 +1090,7 @@ J2. ITEMS_ReadProperty:                                          [C] framing, sc
   are read as 14 bits (skill the low 9, level the next 5) and kept as stat 107 with the skill as param only when
   `0 < level ≤ 2^(Save Bits of 107) − 1` and `SkillHasDesc(skill)` passes: `0 ≤ skill <` the Skills count
   and `0 ≤` the skill's Skills `skilldesc` (`+0x194`, s16) `<` the SkillDesc count. Otherwise the property is
-  dropped. (d2s.md per-id table, `Skills.txt:skilldesc`)
+  dropped. (d2s.md per-id table, `SkillHasDesc`, `Skills.txt:skilldesc`)
 - J. [I] The clamp at the bounds (the only stored value at a bound is a 1-bit stat 153 = 1, which tests
   nothing) rests on the code read, and so do a version < 93 set item reading a `Sets` id (the built set item's row
   is 0 in both tables) and the bound's place at 93: version 92 is the one version below it that a run loaded, and no

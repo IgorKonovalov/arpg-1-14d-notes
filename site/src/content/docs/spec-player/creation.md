@@ -39,13 +39,13 @@ flowchart TD
 | That `NewCharLegacy` takes the same steps as `NewCharFromStub`, and its other caller, `PlayerLoad` | — | [I] |
 | The game was started with `-act N` (N = 2..5): inside `PLAYER_InitBaseStats` | — | [C] |
 | A monster is killed: experience to the credited player | — | [C] |
-| The call above that entry: `UnitKilled` to `KillExpGate`; no call when a unit is null or the victim has flag bit 26 of `+0xC4` | — | [I] |
+| The call above that entry: `UnitKilled` to `KillExpGate`; no call when a unit is null or the victim has flag bit 26 of `+0xC4` | `KillExpGate` | [I] |
 | Any experience change that changes the level | — | [C] |
 | The Ancients' reward (quest a5q5, Rite of Passage) in Normal: a grant of 1 400 000 experience, cut to the width of the next level | — | [C] |
-| The same grant's 20M (Nightmare) and 40M (Hell), and its caller: `A5Q5_AncientDeath` and the summit and party grants (the run did not log which) | — | [I] |
+| The same grant's 20M (Nightmare) and 40M (Hell), and its caller: `A5Q5_AncientDeath` and the summit and party grants (the run did not log which) | `A5Q5_AncientDeath` → `ExpGrantCapped` | [I] |
 | Death to a monster with no owner: the loss, then the corpse's share written at the corpse's creation | — | [C] |
-| The gate's caller, `PlayerDeath`; no loss when the killer is a player or a player's monster; the share returns on the owner's pickup of the corpse | `PLAYER_CorpsePickup` (one caller, `UnitInteract`) | [I] |
-| The client's switches behind the create message's class and name bytes: `-ama`, `-pal`, `-sor`, `-nec`, `-bar` set `g_ClientClass` to 0, 3, 1, 2, 4 (later bytes win; classes 5 and 6 have no switch); `-name`, unless `"0"`, copies its first 16 bytes to `g_ClientName`. `-ctemp N` replaces the class byte of the create and join messages, only when `ClientFlagBit8` is set: bit 8 of `g_ClientFlags` is 0 in the image, the two bit-0 setters leave it, and the one whole-word writer `ClientFlagsSet` has one call, in code that reads a message buffer, so the first game of a process can't see it | `g_ClientClass`, `g_ClientName`, `g_CTemp` | [I] |
+| The gate's caller, `PlayerDeath`; no loss when the killer is a player or a player's monster; the share returns on the owner's pickup of the corpse | `PlayerDeath`, `PlayerDeathExpLossGate`, `PLAYER_CorpsePickup` (one caller, `UnitInteract`) | [I] |
+| The client's switches behind the create message's class and name bytes: `-ama`, `-pal`, `-sor`, `-nec`, `-bar` set `g_ClientClass` to 0, 3, 1, 2, 4 (later bytes win; classes 5 and 6 have no switch); `-name`, unless `"0"`, copies its first 16 bytes to `g_ClientName`. `-ctemp N` replaces the class byte of the create and join messages, only when `ClientFlagBit8` is set: bit 8 of `g_ClientFlags` is 0 in the image, the two bit-0 setters leave it, and the one whole-word writer `ClientFlagsSet` has one call, in code that reads a message buffer, so the first game of a process can't see it | `g_ClientClass`, `g_ClientName`, `g_CTemp`, `ClientFlagBit8` | [I] |
 | An attribute point is spent | — | [C] |
 
 ## Inputs
@@ -99,7 +99,7 @@ The record index of CharStats is the class id 0..6 (`Expansion` marker row not c
 | level-difference factors, monster above | `256 ×6, 225, 174, 92, 38, 5` (/256) | `g_XpPenaltyAbove` | [C] |
 | kill experience clamp | — | — | [I] |
 | party bonus | `89/256` per extra member | `XP_PartyShare` | [C] (two members; the integer step for n up to 8) |
-| party distance² | 6400, from the killed monster, inclusive, unsigned (J4) | — | [C] the code's map |
+| party distance² | 6400, from the killed monster, inclusive, unsigned (J4) | `PartyXpCollect` | [C] the code's map |
 | party member cap | 8 collected; a ninth that passes every test reaches the fatal path (J4) | — | [C] the code's map |
 | starting item creation record | ilvl = level, `+0x18` 4, `+0x28` 1, quality 2, flags `0x0A` | `ITEMS_CreateForStore` | [C] |
 | starter item flag | `0x20000` (save flag bit 17) | — | [C] |
@@ -109,7 +109,7 @@ The record index of CharStats is the class id 0..6 (`Expansion` marker row not c
 | Input | Kind | Where it is specified | Tag |
 |---|---|---|---|
 | `ITEMS_RollStaffMods` at the end of the normal builder (the Sorceress's `sst`, the Necromancer's `wnd`) | seed oracle of this run's item model: its exit seed and its `item_singleskill` entries are the logged ones. The roll is modelled in [items/affixes § I](../../spec-items/affixes/#i-staff-mods--items_rollstaffmods), the chained tools' default since; this run's 11 rolls were not re-run through it | [items/affixes § I](../../spec-items/affixes/#i-staff-mods--items_rollstaffmods) | [C] (`ITEMS_RollStaffMods`: 11 of 269 creations) |
-| full maxima `UnitGetMaxHp/Mana/Stamina` when items add to them | value input of the level-up refill; the sum is specified in [stats/aggregate § G](../../spec-stats/aggregate/#g-the-maxima-the-rescale-and-the-stat-callback), and this run's values stay oracles (review: none replaced, the logs hold no item lists) | § I, I3 | [C] (7 of 20 level-ups) |
+| full maxima `UnitGetMaxHp/Mana/Stamina` when items add to them | value input of the level-up refill; the sum is specified in [stats/aggregate § G](../../spec-stats/aggregate/#g-the-maxima-the-rescale-and-the-stat-callback), and this run's values stay oracles (review: none replaced, the logs hold no item lists) | § I, I3 | [C] (`UnitGetMaxHp`: 7 of 20 level-ups) |
 
 ## Algorithm
 

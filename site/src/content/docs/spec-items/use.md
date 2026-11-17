@@ -26,11 +26,11 @@ flowchart LR
 
 | When | Function | Tag |
 |---|---|---|
-| Client packet `0x20`, use an inventory item (13 bytes: guid, x, y) | — | [C] |
-| Client packet `0x26`, use a belt item (13 bytes: guid, the mercenary flag) | — | [C] |
-| Client packet `0x27`, an item on an item (9 bytes: target guid, used guid) | — | [I] |
-| Client packet `0x61`, the mercenary button (3 bytes) | — | [I] |
-| Skill do 113 reaches the first two as well | — | [C] |
+| Client packet `0x20`, use an inventory item (13 bytes: guid, x, y) | `Pkt20UseInvItem` → `PlayerUseInvItem` | [C] |
+| Client packet `0x26`, use a belt item (13 bytes: guid, the mercenary flag) | `Pkt26UseBeltItem` → `PlayerUseBeltItem` | [C] |
+| Client packet `0x27`, an item on an item (9 bytes: target guid, used guid) | `Pkt27ItemOnItem` → `PlayerUseItemOnItem` | [I] |
+| Client packet `0x61`, the mercenary button (3 bytes) | `Pkt61MercItem` → `MercGiveCursorItem` | [I] |
+| Skill do 113 reaches the first two as well | `SkillDo113UseBookScroll` | [C] |
 
 ## Inputs
 
@@ -392,7 +392,7 @@ Step notes:
 - F1. [C] **Live: a potion is used at full life**: the list is allocated and the rate set, return 1; the amount is not refused. Scope: `hp1`, 1 case, stat 6 equal to stat 7 at the call.
 - F1. [C] **Live: seeds across the request.** The 12 requests `0x20` and 5 of the 6 `0x26` that used a potion moved the player's seed; the game seed did not move across any request. The sixth `0x26` is the `rvs` of § G. Scope: the player's and the game's seeds around the handler, not other units' seeds.
 - F3, F4. [C] 800 cases: all 7 classes, other classes and types, odd and negative amounts, a null unit. In a game only the Sorceress's factors ran (`v` life, `2v` mana).
-- F. [I] **Stock totals**, in stored units (`calc1 << 8`, the class factor): `hp1` 30 gives 7 680 for a Sorceress, 11 520 for an Amazon, 15 360 for a Barbarian, i.e. 30, 45 or 60 life. The stored rate truncates: `hp3` (100, `len` 171) gives 25 600 ÷ 171 = 149 per frame, 25 479 over the 171 frames, 99 life and a remainder. Stock `ValShift` of stats 26 and 74 is blank, so 0.
+- F. [I] **Stock totals**, in stored units (`calc1 << 8`, the class factor): `hp1` 30 gives 7 680 for a Sorceress, 11 520 for an Amazon, 15 360 for a Barbarian, i.e. 30, 45 or 60 life. The stored rate truncates: `hp3` (100, `len` 171) gives 25 600 ÷ 171 = 149 per frame, 25 479 over the 171 frames, 99 life and a remainder. Stock `ValShift` of stats 26 and 74 is blank, so 0. (`ItemUsePotion`)
 - F. [C] **Kind 4** (`ItemUseStatPlain`) is this loop without the class scale and the draws: 800 cases with the seed compared, no stock row. The controls that separate the draws are `stat3`'s, and `stat4` holds no golem case.
 - F. [C] **Healing and mana potions do not run the group clear**: kind 3 has no call of `STATE_GroupClear` in its body or anywhere under it (2 003 functions), and `GroupClear`'s 9 callers by the raw scan hold none in kind 3. How the stored rate reaches life is [stats/states E2](../../spec-stats/states/).
 
@@ -479,7 +479,7 @@ H6. Keys have no use entry: KeyConsume(player):                      [C] (family
 ```
 
 - H1. [I] A first identify through D1 has `r` = 0, so it falls to D2's codes and returns 0 with nothing used. The second request is `0x27`, which does not clear the marks, so flag 4 from the first request stands.
-- H5. [C] `v = 0` sets the golem to full: `GolemHealShare`'s own branch calls `UnitSetStat(golem, 6, UnitGetMaxHp(golem), 0)` (190 of 190), not `GolemHeal`, which returns 0 with no call for a share ≤ 0; for a share > 0 `GolemHeal` sets `min(i32(life + share), max)` by a signed compare, so a sum past `2³¹ − 1` is stored wrapped, not capped (no stock golem comes near it). Kind 3 tests `v > 0` first; kind 5 has no such test, and reaches the call with `v = 0` only at a maximum of 0, no stock case. The returns after the set are step H5's last line. (family `golem`, 1 200 cases)
+- H5. [C] `v = 0` sets the golem to full: `GolemHealShare`'s own branch calls `UnitSetStat(golem, 6, UnitGetMaxHp(golem), 0)` (190 of 190), not `GolemHeal`, which returns 0 with no call for a share ≤ 0; for a share > 0 `GolemHeal` sets `min(i32(life + share), max)` by a signed compare, so a sum past `2³¹ − 1` is stored wrapped, not capped (no stock golem comes near it). Kind 3 tests `v > 0` first; kind 5 has no such test, and reaches the call with `v = 0` only at a maximum of 0, no stock case. The returns after the set are step H5's last line. (`GolemHealShare`, `GolemHeal`, family `golem`, 1 200 cases)
 - H6. [C] `key` has `useable` 0 (the `.txt` and the `.bin` at `+0x11D`) and no `pSpell`. Its callers by the raw scan: `OBJOP_Chest` (after its class-6 test) and the case.
 
 ### I. What the columns gate
@@ -498,7 +498,7 @@ H6. Keys have no use entry: KeyConsume(player):                      [C] (family
 | Kinds 2, 6, 9 | 0 in the entry's own body |  | [C] |
 | The gate | 0 on this path | | [C] as A2 |
 
-- [I] **No bound past the boundaries.** The counts hold only up to each entry's first callee, except the 17 live uses of § F, whose seed chain shows no other draw on the user's seed. Under the five use functions and the entries 1, 2, 5, 6, 7, 9 lie 2 097..2 115 functions with 118 holding a seed step (119 under entry 3: its own), indirect calls unfollowed, the steps at depth 5 or more, among them the room population and level creation, which no reading here connects to a use. The narrow closures: test 559 functions and 0 with a step, entry 8 574 and 0, 636 and 0. (`rcg-summary.txt`)
+- [I] **No bound past the boundaries.** The counts hold only up to each entry's first callee, except the 17 live uses of § F, whose seed chain shows no other draw on the user's seed. Under the five use functions and the entries 1, 2, 5, 6, 7, 9 lie 2 097..2 115 functions with 118 holding a seed step (119 under entry 3: its own), indirect calls unfollowed, the steps at depth 5 or more, among them the room population and level creation, which no reading here connects to a use. The narrow closures: test 559 functions and 0 with a step, entry 8 574 and 0, 636 and 0. (`rcg-summary.txt`, `ItemUse`)
 
 ## Outputs
 
@@ -506,7 +506,7 @@ The user's stats or a stat list of a state with its end and event 12; the user's
 
 ## Worked example
 
-Two stock `hp1` uses of a Sorceress at vitality 165, frames 111 and 909 of the second inventory run (session `pot`). [C] (committed, first and fourth rows, and reproduced with `Unit.range`)
+Two stock `hp1` uses of a Sorceress at vitality 165, frames 111 and 909 of the second inventory run (session `pot`). [C] (committed, first and fourth rows, and reproduced with `Unit.range`; `ItemUsePotion`)
 
 | | frame 111 | frame 909 |
 |---|---|---|

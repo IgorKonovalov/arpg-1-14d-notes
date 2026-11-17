@@ -34,11 +34,11 @@ Names of functions, structs and fields are ours. `MulDiv(a, b, c)` is the helper
 |---|---|---|
 | A list is linked under a unit, or unlinked | `STATLIST_LinkToUnit`, `STATLIST_Unlink` | [C] (26 087 links and unlinks) |
 | A list entry is added or set (any writer) | `STATLIST_AddStat`, `STATLIST_SetStatEx` → `STATLIST_Propagate` | [C] (101 995 own writes) |
-| A full stat is read | — | [C] (891 844 reads) |
-| An item is equipped, unequipped, or the requirements are refreshed | — | [C] for the refresh (972 refreshes); [C] for the entry: 5 973 item links through the attach, 5 695 unlinks through the detach, and the pickup's 260 unlinks with no detach; [I] for the attach and detach bodies |
+| A full stat is read | `StatListGetValue` | [C] (891 844 reads) |
+| An item is equipped, unequipped, or the requirements are refreshed | `ITEMS_AttachToOwner`, `ITEMS_DetachFromOwner`, `EquipReqRefresh`; the body-to-cursor pickup unlinks through `InvItemRemove` instead | [C] for the refresh (972 refreshes); [C] for the entry: 5 973 item links through the attach, 5 695 unlinks through the detach, and the pickup's 260 unlinks with no detach; [I] for the attach and detach bodies |
 | A timed state is put on a unit | `STATE_ApplyTimed` | [C] (3 643 applies) |
 | A timed list's end frame is reached | `EVENT_TimedListExpire` | [C] (2 749 runs) |
-| A player's regeneration tick, every frame | — | [C] (54 719 ticks) |
+| A player's regeneration tick, every frame | `RegenEvent` | [C] (54 719 ticks) |
 | An aura runs | `EVENT_SelectedAuraTick`, `EVENT_ItemAuraTick` | [C] (3 629 runs) |
 | A shrine or a well is operated | `OBJOP_Shrine` | [I] (15 operates over, a named shortfall) |
 

@@ -294,7 +294,7 @@ Step notes:
    negative value never arrives: the parser copies a switch's text only up to the next `-`, so `-seed -2147483648` (and `-seed -1`) leaves the text empty, `atol` gives 0,
    step 2 applies nothing, and the game takes the clock path. A value of 2³¹ or more saturates at
    `0x7FFFFFFF`. So the seeds reproducible from the command line are `1`…`0x7FFFFFFF`, and no seed of
-   `0x80000000` or above reaches step 1 that way. [C] (`GAME_InitSeeds`, sessions s9 and s10) This corrects the earlier reading that a seed ≥ 2³¹ could be given as its negative
+   `0x80000000` or above reaches step 1 that way. [C] (`ConfigParseCmdLine`, `GAME_InitSeeds`, sessions s9 and s10) This corrects the earlier reading that a seed ≥ 2³¹ could be given as its negative
    decimal, which the run contradicted. What the `D2.ini` route stores for such values is open (*Open
    questions*).
 3. All acts of one game get the same map seed, so all acts share the same `levelSeedBase`.
@@ -303,7 +303,7 @@ Step notes:
    level IDs in 66–72. Which of the two fields is the real tomb is open. [C] Step 3d: the level-link setup copies the act seed into a local
    link-builder struct, and the link callbacks step **the copy**, which is then discarded. The act
    seed itself is stepped only by the level-link builder when its loop reaches level 6 with link
-   value 1 or 3, and by the Act III link code. [C] (the act model equals the logged act seed on all 42
+   value 1 or 3, and by the Act III link code. [C] (`LevelLinkBuild`: the act model equals the logged act seed on all 42
    act creations, Acts I–V, and no other code stepped an act seed) Observed act-seed steps after 3c: Act I 0 (seed 12345) and 1 (seed 777),
    Act III 119 (seed 12345), Acts II, IV and V 0. [C] These draws matter
    only to later consumers of the act seed, never to level seeds.
@@ -526,7 +526,8 @@ separate objects.
   `+0xC4`, makes one `r = RNG_Range(caster+0x20, 0x10000)` on the **caster's** seed and keeps `r` in its frame, before its `STATLIST_Alloc` or `StatListSetEnd`. In
   the run's cases it makes no other draw on the caster's seed before that call; the `auralencalc` it evaluates between
   the draw and that call ran on constant programs only, so a calc function's own draws are not covered. [C]
-  (up to `STATLIST_Alloc` or `StatListSetEnd`)
+  (up to `STATLIST_Alloc` or `StatListSetEnd`;
+  `SkillDo124PeriodicState`)
 
   After that call, from the reading: a `STATLIST_Alloc` giving 0 makes do 124 return 0 with nothing queued or stored;
   otherwise, after its list steps (`StatListSetEnd`, event 12, `SKILLS_ApplyAuraStats`, stats 350 and 351), it

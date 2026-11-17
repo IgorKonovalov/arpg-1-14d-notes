@@ -37,9 +37,9 @@ flowchart LR
 
 | When | Function | Tag |
 |---|---|---|
-| A kind-2 event comes due in the monster slot pass | from `g_MonEventFuncs[2]` | [C] |
-| A mode ends, nine direct calls of the same slot | — | [C] nine loads of the slot, each followed by `call eax`, seven in `MonModeEndGeneric` and one in each `MonModeEndToS1` form |
-| A monster is created, or its AI state changes | first | [C] `MonAiInit`'s 33 direct calls, three tools, include `MonsterInit`'s with state 0 |
+| A kind-2 event comes due in the monster slot pass | `MonAiEvent`, from `g_MonEventFuncs[2]` | [C] |
+| A mode ends, nine direct calls of the same slot | `MonModeEndGeneric` (seven), `MonModeEndToS1`, `MonModeEndToS1b` | [C] nine loads of the slot, each followed by `call eax`, seven in `MonModeEndGeneric` and one in each `MonModeEndToS1` form |
+| A monster is created, or its AI state changes | `MonAiInit`, first from `MonsterInit` | [C] `MonAiInit`'s 33 direct calls, three tools, include `MonsterInit`'s with state 0 |
 
 ## Inputs
 
@@ -356,7 +356,7 @@ E1. MonAiInit(game, unit, ctl, state: i32):                                [C] t
   | State | Think | Kind | Setter read |
   |---|---|---|---|
   | 0 | the class's row | the class's | `MonsterInit` and the sites sending a unit back |
-| 1 | — | 0 | `MonAiInit`'s class bound |
+| 1 | `AiIdle` | 0 | `MonAiInit`'s class bound |
 | 2 | — | 1 | none (see E7) |
 | 3 | init | 1 | none (see E7) |
 | 4 | alt | 0 | none by an immediate; the table's `Hireable` pair |

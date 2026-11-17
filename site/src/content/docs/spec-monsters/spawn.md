@@ -91,18 +91,18 @@ MonStats record position.
 
 | Name | Value | Anchor | Tag |
 |---|---|---|---|
-| `DEN_SCALE` | 100000 (density roll modulus) | — | [C] |
+| `DEN_SCALE` | 100000 (density roll modulus) | `RoomPopulate` | [C] |
 | `DEN_MAX` | 10000 (density clamp, written back) | — | [C] |
-| `SUBST_NORMAL`, `SUBST_SPECIAL` | 20, 0 (substitution thresholds) | — | [C] |
+| `SUBST_NORMAL`, `SUBST_SPECIAL` | 20, 0 (substitution thresholds) | `MonRegionPickClass` | [C] |
 | `UMAX_LIMIT` | 5: special iff `r ≤ 5`, so 6 of 100 | — | [C] |
-| `TYPE_SPLIT` | 35: type 1 iff `r ≤ 35` (folded into 2 anyway) | — | [C] |
-| `POS_TRIES` | 20 random points in `SpawnPosPick` | — | [C] |
-| `UNIQUE_MINIONS` | 3 … 6 | — | [C] |
+| `TYPE_SPLIT` | 35: type 1 iff `r ≤ 35` (folded into 2 anyway) | `SpawnTypeRoll` | [C] |
+| `POS_TRIES` | 20 random points in `SpawnPosPick` | `SpawnPosPick` | [C] |
+| `UNIQUE_MINIONS` | 3 … 6 | `UniqueMinions` | [C] |
 | `PACK_MOD` | 16, the mod `ChampionPack` passes to each member (`push 0x10`) | — | [C] |
 | collision mask by `spawnCol` | 0 and other: `0x3C01`; 2: `0x3F11` | — | [C] |
 | collision mask by `spawnCol` | 1: `0x01C0` (on the ring path; most `spawnCol` 1 classes take `SpawnPosOnTile` instead, H2); 3: 0 | — | [C] |
 | `EVILHUT`, its object | class 528, object 562 | — | [I] |
-| wanderer class list | Act I: one class, 270 `rogue2`; other acts none | — | [C] |
+| wanderer class list | Act I: one class, 270 `rogue2`; other acts none | `WandererSpawn` (§ K) | [C] |
 
 ### Inputs and oracles
 
@@ -618,7 +618,7 @@ cell: in the presets window 26 size-0 tests (classes 327, 517 and 545 `baaltaunt
 give non-zero where the game gave 0. [C] Other sizes return `0xFFFF`; no MonStats2 record has one (609 records: sizes 0–3
 only). [I]
 
-H4. **What blocks.** The default mask `0x3C01` reads tile bit 0, objects, doors and the `0x1000`/`0x2000` centre marks, but not the monster bit `0x100`. A monster the pass has created therefore blocks later placements only through its `0x1000` cells: its centre for size 1 or 2, its plus for size 3. A **wraith** is created with pattern 5 (the plus of `0x100`, no centre mark), but the post-create refresh turns that into pattern 1 before the next test, so a created wraith blocks through its `0x1000` centre like any size-2 monster. Only a size-0 monster blocks nothing. [C] (`COLL_PatternMark`: 410 creations, 4 `wraith2`, 67 placements accepted with a `0x100` cell in their footprint)
+H4. **What blocks.** The default mask `0x3C01` reads tile bit 0, objects, doors and the `0x1000`/`0x2000` centre marks, but not the monster bit `0x100`. A monster the pass has created therefore blocks later placements only through its `0x1000` cells: its centre for size 1 or 2, its plus for size 3. A **wraith** is created with pattern 5 (the plus of `0x100`, no centre mark), but the post-create refresh turns that into pattern 1 before the next test, so a created wraith blocks through its `0x1000` centre like any size-2 monster. Only a size-0 monster blocks nothing. [C] (`COLL_PatternMark`, `PathPatternRefresh`: 410 creations, 4 `wraith2`, 67 placements accepted with a `0x100` cell in their footprint)
 
 H5. `SpawnClassCellTest` passes every class except five `BaseId`s, which test an offset cell: 206 `crownest1`, 228 `sarcophagus`, 298 `vilemother1`
 (passes on this path), 334 `suckernest1`, 528 `evilhut`. [C] for 206, 298 and the pass-through [C] for 528 and 228, whose offset-cell tests are predicted in the presets window: 73 `evilhut`
@@ -717,8 +717,8 @@ K1. RoomWandererTick(game, room):                                 [C] for the fi
   draws and placement).
   The lifecycle run checked the first draw on 11 064 more walked rooms, re-activated ones included. What room `+0x78`
   is, and so in which rooms the gate can pass, is [drlg/lifecycle § I](../../spec-drlg/lifecycle/#i-the-wanderer-tick).
-- [C] The class list has an entry for Act I only: one class, 270 `rogue2`. `WandererSpawn` returns for an act ≥ 5, reads the act's `(start, count)` byte pair at `pairs + 2·act` and the class at `classes + 4·(start
-  + i)`, two tables of the image; the image holds class 270 and the pairs `(0, 1), (0, 0), (0, 0), (0, 0), (0, 0)`, and
+- [C] The class list has an entry for Act I only: one class, 270 `rogue2`. `WandererSpawn` returns for an act ≥ 5, reads the act's `(start, count)` byte pair at `pairs + 2·act` and the class at
+  `classes + 4·(start + i)`, two tables of the image; the image holds class 270 and the pairs `(0, 1), (0, 0), (0, 0), (0, 0), (0, 0)`, and
   the only instructions naming these tables are three readers, no write. A count
   of 0 returns before any spawn.
 - [C] `MonWndr` reaches the game only through this gate. Two tools find two readers of Levels `+0x2E`: the region build,

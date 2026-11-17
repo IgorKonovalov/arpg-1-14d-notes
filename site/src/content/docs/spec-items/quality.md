@@ -82,7 +82,7 @@ values the drop roll can reach (`*Min` columns: `UniqueMin` 6400, `RareMin` 3200
 | `ratio[0..3]` | u16 each: `[0]` Magic, `[1]` Rare, `[2]` Set, `[3]` Unique (the frame's first four words) | stack argument, a pointer into the TC frame |
 | `game.difficulty` | u8 at `Game+0x6D` | passed to `ITEMRATIO_Select`, which does not read it |
 | killer type | u32 at `Unit+0x00` (`0` player, `1` monster) |  |
-| stat 80 (`item_magicbonus`), layer 0 | i32, the unit's stat value including equipped items | — |
+| stat 80 (`item_magicbonus`), layer 0 | i32, the unit's stat value including equipped items | read with `UnitGetStat` |
 | itemratio array | `g_pItemRatio`, `g_nItemRatio` records of 0x44 bytes | `g_pItemRatio`, `g_nItemRatio` |
 
 ### Constants

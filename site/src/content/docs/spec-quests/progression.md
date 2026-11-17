@@ -203,7 +203,7 @@ Step notes:
 |---|---|---|---|---|---|
 | e0 talk start | `+0xA0` | `NpcInteractStart`; re-dispatched by quest scripts (`QUESTS_RedispatchNpcTalk`, which then sends the game record) | all quests, forced, act filter | `+0x08` NPC, `+0x0C` player | [C] |
 | e2 talk end | `+0xA8` | `NpcInteractRemove` | all, forced, act filter | `+0x08` NPC | [C] |
-| e3 level change | `+0xAC` | room sync, for a level change within one act; the portal operate from a town; `NpcActTravel`'s Warriv branch calls quest object 6's slot directly (its word-6 bits 13 and 0 test read from the code, [quests/travel E3](../travel/#e-act-change-through-an-npc)) | all, forced, any act (the direct call: quest 6 only) | `+0x0C` player, `+0x14` level left, `+0x18` level entered | [C] (the direct call) |
+| e3 level change | `+0xAC` | room sync, for a level change within one act; the portal operate from a town; `NpcActTravel`'s Warriv branch calls quest object 6's slot directly (its word-6 bits 13 and 0 test read from the code, [quests/travel E3](../travel/#e-act-change-through-an-npc)) | all, forced, any act (the direct call: quest 6 only) | `+0x0C` player, `+0x14` level left, `+0x18` level entered | [C] (`ClientRoomSync`; the direct call, `NpcActTravel`) |
 | e4 item placed | `+0xB0` | 7 sites | the item's hooks, unforced | `+0x08` item, `+0x0C` player | [C] |
 | e5 item dropped | `+0xB4` | — | the item's hooks, unforced | `+0x08` item | [C] |
 | e8 hooked death | `+0xC0` | `QUESTS_MonsterDeathEvent` after the drop | the monster's hooks; forced for a fixed list | `+0x08` monster, `+0x0C` killer player | [C] |
@@ -547,7 +547,7 @@ stateDiagram-v2
 | b14, G b13 | set | Cain lost, the other paths: e3 entry to level 40 (from a level of Act II: an act change dispatches no e3) by a player with b0, b1 clear while Cain is not rescued (`+0x50` = 0, `+0x0C` < 6), and from the Warriv travel branch | [I] |
 | b0; b1 clear | set / clear | e11 NPC 148 message 0x76 with b1 set; the ring reward (oracle) | [C] (x-talk1, h-talk1, c-talk1) |
 | G b13 | set | the same message: if G w4 b13 was clear (then `+0xF0`), and if the creator had b15 | [I] |
-| G b13 | set | FirstJoin when the creator has b0 | [C] (written inside the join exactly when the joiner had w4 b0: 44 of 44 joins with it, 0 of 10 without) |
+| G b13 | set | FirstJoin when the creator has b0 | [C] (written inside the join exactly when the joiner had w4 b0: 44 of 44 joins with it, 0 of 10 without; `A1Q4_FirstJoin`) |
 | b10 | set | the Cow King's death: the killer has b10 clear **and** w26 b0 (classic, `game+0x70` = 0) or w40 b0 (expansion) | [I] |
 | b10 | set | the same death: every player then in level 39 | [I] |
 | G b11 | set | the cow portal opened | [C] (both logged cow-portal openings, 3361 and 3506; is the only `GameQuestSet` caller with (4, 11); `CUBE_CowPortalOpen`) |
@@ -707,12 +707,12 @@ stateDiagram-v2
 | bit | set/clear | trigger and condition | site | Tag |
 |---|---|---|---|---|
 | b2, b3, b4 | set | per player with b0, b1 clear, by log state (2; 3 with `+0x0B` = 1; 3 otherwise) | in `A2Q1_NpcGate` | [C] for b4: one logged write, old 0 (4904-radament4); [I] for b2, b3 and the choice by log state |
-| b13, b1, b5 | set | e8 Radament: near credit, b0, b1 clear; party members in Act II | near credit; party | [C] for the near credit: b13, b1, b5 at its three sites, old 0x10 (4904-radament4); [I] for the party members |
+| b13, b1, b5 | set | e8 Radament: near credit, b0, b1 clear; party members in Act II | near credit; party | [C] for the near credit: b13, b1, b5 at its three sites, old 0x10 (4904-radament4, `A2Q1_NearCredit`); [I] for the party members |
 | b14 | set | e8: every other player with b0, b1 clear | — | [I] |
 | b0; b1 clear | set / clear | e11 NPC 176 (`atma`) message 0x14E with b1 set | — | [C] (x-talk2) |
-| b0, b1, b15, b5 | clear | e13: the first joiner has b0 and b5 and holds no `ass ` | — | [C] (the four clears in the 2 logged first joins with b0, b5 and no `ass `; none in the join holding `ass ` or in the 51 others) |
+| b0, b1, b15, b5 | clear | e13: the first joiner has b0 and b5 and holds no `ass ` | — | [C] (the four clears in the 2 logged first joins with b0, b5 and no `ass `; none in the join holding `ass ` or in the 51 others; `A2Q1_FirstJoin`) |
 | b5 | clear | the player uses the item `ass ` (Book of Skill): the item-use code tests the code, removes the book and clears b5 when set | — | [C] for the branch reached, b5 set (x-book) |
-| G b13 | set | Radament's death; message 0x14E while the quest is off; first joiner with b0 | — | [C] for the death: G w9 b13 right after Radament's credit, at a death only of the three (9, 13) callers running (4904-radament4); [I] for the message and the first joiner's condition |
+| G b13 | set | Radament's death; message 0x14E while the quest is off; first joiner with b0 | — | [C] for the death: G w9 b13 right after Radament's credit, at a death only of the three (9, 13) callers running (`A2Q1_RadamentDeath`: 4904-radament4); [I] for the message and the first joiner's condition |
 
 - [C] So a creator who saved with the Book unread **loses the quest** at his next first join: his word 9 lost b0, b1, b15
   and b5 at that join in x-lut and nm-lut.
@@ -756,7 +756,7 @@ stateDiagram-v2
 
 | bit | set/clear | trigger and condition | Tag |
 | --- | --- | --- | --- |
-| b2 | set | per player with b0, b1 clear, at quest state ≥ 1: reached from the eclipse timer at state 1, one client | [C] (x-entry, x-entry2, h-entry) |
+| b2 | set | per player with b0, b1 clear, at quest state ≥ 1: reached from the eclipse timer at state 1, one client | [C] (x-entry, x-entry2, h-entry; `A2Q3_EclipseOn`) |
 | b3, b4 | set | the same pass at quest state = 2, = 3 | [I] |
 | b1, b13; b14 clear | set / clear | altar operate (`OperateFn` 24, object 149), the operator with b0 clear | [I] |
 | b13, b1 | set | the same: every player in the altar's level with b0, b15 clear; party | [I] |
@@ -791,7 +791,7 @@ stateDiagram-v2
 | --- | --- | --- | --- |
 | b8 | set | e11 NPC 331 (`act2guard2`) messages 0xBB–0xBD; no `+0x09` test, so also with the quest switched off | [C] (44 writes, quest off) |
 | b7 | set | e11 NPC 331 message 0xBA | [I] |
-| b8, b7 | set | e3 entering level 50, b8 then b7; no state, bit or `+0x09` test on the path, read from the code (a part 2 development log, not part of the record, met it with the quest switched off) | [C] for the branch reached, quest 11 active and word 12 = 0 (x-entry, x-entry2) |
+| b8, b7 | set | e3 entering level 50, b8 then b7; no state, bit or `+0x09` test on the path, read from the code (a part 2 development log, not part of the record, met it with the quest switched off) | [C] for the branch reached, quest 11 active and word 12 = 0 (x-entry, x-entry2; `A2Q4_LevelChange`) |
 | b2–b5 | set | per player with b0, b1 clear, by quest state | [I] |
 | b13, b1, b0, b8, b7; steps clear | set / clear | the journal operate (`OperateFn` 42, object 357): every player in level 74 with b0, b1 clear; party members in Act II | [I] |
 | b14 | set | the journal: every other player with b0, b1 clear | [I] |
@@ -1099,14 +1099,14 @@ stateDiagram-v2
 
 | bit | set/clear | trigger and condition | Tag |
 | --- | --- | --- | --- |
-| b0 | set | the Dark Wanderer timer fires: every player in Act III with b0 clear, before the step | [C] for one player (x-entry, x-entry2, h-entry, x-wpact3r-0) |
+| b0 | set | the Dark Wanderer timer fires: every player in Act III with b0 clear, before the step | [C] for one player (x-entry, x-entry2, h-entry, x-wpact3r-0; `A3Q7_SetSeen`) |
 | G b13 | set | e13: the first joiner has b0 (and then no Dark Wanderer this game) | [C] for the write: `GameQuestSet(32, 13)` under the joiner's w32 b0 test (`cmp eax, 1; jne`, then `lea edx, [eax+0x1f]`), two walkers; [I] for "no Dark Wanderer this game" |
 
 - W32. [C] Four games (a save with word 32 = 0, the Kurast Docks by waypoint, the player next to the Dark Wanderer at
   the Spider Forest edge): the timer ran once at `tick = due + 1`, b0 was set, the quest seed stepped once (the logged
   low word one step of the seed before, `QUESTS_GetSeed`) and the targets were tried from `low & 1` in
   order, one free-spot search each. `low & 1` was 0 in all four (8 tries). (x-entry, x-entry2,
-  h-entry, x-wpact3r-0)
+  h-entry, x-wpact3r-0; `A3Q7_AfterglowTimer`)
 - [I] The 7-try branch (`low & 1` = 1) was not reached.
 - [I] Beyond these and the join's bit-15 pass, word 32 holds no bit.
 - [C] The init writes `+0xE0` = 16 although the code uses word 32: no A3Q7 record call takes `[obj+0xE0]`,
@@ -1189,7 +1189,8 @@ stateDiagram-v2
   `step·d + 4` (step 5 with the expansion bit, else 4), never lowering it.
 - [C] **The Harrogath portal** (object 566, expansion only) is created near NPC 367 by message 0x4E20; its operate is
   [quests/travel § F](../travel/#f-the-durance-portal-and-the-other-travel-objects)'s and writes w28 b0 then b13 on the
-  first trip only (word 28 b0 clear): it, not NPC 367's menu, is the Act IV → V travel in stock play. (x-tyrael3, five trips)
+  first trip only (word 28 b0 clear): it, not NPC 367's menu, is the Act IV → V travel in stock play. (x-tyrael3, five trips; `A4Q2_HarrogathPortalCreate`,
+  `A4Q2_HarrogathPortalOperate`)
 
 ##### Word 27: the Hellforge (quest object 24)
 
@@ -1207,7 +1208,7 @@ stateDiagram-v2
 |---|---|---|---|---|
 | b13, b1; steps clear | set / clear | the third strike: the striker, and every player in Act IV with b0, b1 clear (each loses `hfh ` and `mss `) | — | [C] |
 | b14 | set | the rest | — | [I] |
-| b2 / b5 / b3 | set | log state 2 → b5 with the soulstone given, else b2; state 3 → b3 | in `A4Q3_NpcGate` | [I] (the sites' owner) |
+| b2 / b5 / b3 | set | log state 2 → b5 with the soulstone given, else b2; state 3 → b3 | in `A4Q3_NpcGate` | [I] (`A4Q3_NpcGate`; the sites' owner) |
 | b0; b1 clear | set / clear | e11 NPC 246 message 0x2A8 with b1 set | — | [C] (x-talk4, h-talk4, c-talk4) |
 
 - [I] The forge, its strikes and its draws are [items/quest-drops § D](../../spec-items/quest-drops/#d-special-drops).
@@ -1242,7 +1243,7 @@ stateDiagram-v2
 | G b13 | set | e8 | [I] |
 | b2, b3, b4 | set | log states | [I] |
 | steps clear; b5 | clear / set | e11 NPC 511 (`larzuk`) message 0x4E7A with b1 set | [C] (x-talk5) |
-| b0; b1 clear | set / clear | the socket service done | [C] (24 logged socket services: b0 set then b1 cleared at these sites after each, old b1 set, b0 clear) |
+| b0; b1 clear | set / clear | the socket service done | [C] (24 logged socket services: b0 set then b1 cleared at these sites after each, old b1 set, b0 clear; `A5Q1_SocketDone`) |
 
 - [C] Larzuk is spawned once per game: one class-511 unit per game in the 6 logs that meet him.
 
@@ -1264,7 +1265,7 @@ stateDiagram-v2
 | bit | set/clear | trigger and condition | site | Tag |
 |---|---|---|---|---|
 | b4 | set | a cage freed with the rescue not complete (prisoner AI) | — | [I] |
-| b4 | clear | every join (e13, e14) | — | [C] (each of the 54 logged games cleared w36 b4 at its join: 53 at the e13 call, x-newchar's second join at the e14 call; its first join, the record not ready, logged none) |
+| b4 | clear | every join (e13, e14) | — | [C] (each of the 54 logged games cleared w36 b4 at its join: 53 at the e13 call, x-newchar's second join at the e14 call; its first join, the record not ready, logged none; `A5Q2_MonsterDeath`) |
 | b13, b1 | set | rescue complete: spawned = killed + rescued, all 3 cages open, rescued ≥ 12; the triggering player and party members in Act V | — | [I] |
 | b5 / b6 / b7 | set | the same: rescued 15 → b5, 14 → b6, 12–13 → b7 | — | [I] |
 | b14 | set | rescue complete with fewer than 12 rescued, or more than 4 prisoners killed | — | [I] |
@@ -1296,7 +1297,7 @@ stateDiagram-v2
 | b2 | set | log state | [I] |
 | b3 | set | e3 entering 114, or the old-level-109 branch (not reached) | [I] |
 | b8 | set | e11 NPC 513 message 0x4EA4 with b1 set, b0 clear: `tr2 ` given | [C] after Malah's `tr2 ` (placed by `QUESTS_GiveItem`), b8 with old 0x8002 (b1 set, b0 clear), in Normal, Nightmare and Hell; [I] the message with b1 clear or b0 set |
-| b9, b10 | set | e11 NPC 512 message 0x4EA8 with b1 set, b0 and b10 clear, no `+0x09` test: the reward item made (W37), then b9, and b10 last; a second talk gives nothing (b10) | [C] (x-anya, nm-anya, h-anya, quest 33 switched off) |
+| b9, b10 | set | e11 NPC 512 message 0x4EA8 with b1 set, b0 and b10 clear, no `+0x09` test: the reward item made (W37), then b9, and b10 last; a second talk gives nothing (b10) | [C] (x-anya, nm-anya, h-anya, quest 33 switched off; `A5Q3_NpcMessage`) |
 | b0; b1 clear | set / clear | the reward talk coming second (b8 already set): b1 cleared, b0 set, between b9 and b10 | [C] (x-anya, nm-anya, h-anya) |
 | b0; b1 clear | set / clear | the NPC 513 talk coming second (b9 already set) | [I] |
 | b7 | set | the player uses `tr2 ` with b8 set and b7 clear; then builds the resistance list | [C] for the branch reached (x-anya) |
@@ -1339,7 +1340,7 @@ stateDiagram-v2
 | b14 | set | the rest at the kill; a joiner as in word 37 | [I] |
 | b2, b3 | set | log states | [I] |
 | b4 | set | e11 NPC 512 message 0x4EB4 | [I] |
-| b0; b1 clear | set / clear | the personalise service done | [C] (22 logged personalisations: b0 set then b1 cleared at these sites after each, old b1 set, b0 clear) |
+| b0; b1 clear | set / clear | the personalise service done | [C] (22 logged personalisations: b0 set then b1 cleared at these sites after each, old b1 set, b0 clear; `A5Q4_PersonalizeDone`) |
 
 - [I] **The red portal** to level 121: `PortalObjectCreate(room, x + 10, y + 5, 121, 0, class 60, 1)` at the town Anya
   placeholder, once per game, after message 0x4EA9 (talk end) or object 459's event 7 (every 12 frames until it succeeds);
@@ -1421,7 +1422,7 @@ W40. ZooInit — InitFn 79 (object 567), once per game (private +0xA0):   [I]
 - [C] **The Zoo does not run on stock data**: no DS1 places object 567 (2 276 files under the second reader, 2 274 read
   alike by both), no `objgroup` cell names it, and none of the 3 instructions with the immediate `0x237` creates it, so
   W40 and its 1–10 quest-seed draws are not reached through stock placement (a computed class is not excluded).
-  (`g_ObjInitFns`; § 10, `objplace`)
+  (`A5Q6_ZooInit`, `g_ObjInitFns`; § 10, `objplace`)
 - [I] So `+0xA4` stays 0 for the level-109 message.
 - [C] The Worldstone Chamber portal moved the player into level 132: an operate of object 563, then the player in 132,
   in both logged Baal sessions.
@@ -1473,7 +1474,7 @@ The quest state that the reviewed creation specs take as an input, and the code 
 | [monsters/special](../../spec-monsters/special/) | superunique quest hooks, the forced death list | the hook lists (§ B) | [C] (`QUESTS_HookMonster` has 32 calls in 11 functions, three tools agreeing; the forced list as B4; `QUESTS_HookMonster`) |
 | [rng/seeds](../../spec-rng/seeds/) | act `+0x094` | the true tomb: word 14's level-change step, the join's tomb index, `OBJINIT_Portal`'s lair pair; act `+0x484` (maze only), `+0x474` (Kurast gates only) and the level-27 bit are read by no quest code | [C] |
 | [items/cube](../../spec-items/cube/) | the cow portal | w26 b0 (classic) or w40 b0 (expansion), G w4 b11 | [C] for the expansion side: G w4 b11 with the opener's w40 b0 set in both logged openings; [I] for w26 b0 in a classic game and the refusal |
-| [drlg/collision](../../spec-drlg/collision/) | the Arcane Sanctuary waypoint | no quest bit gates level 74 or portal 298 | [C] (no record reader in `A2Q4_ArcanePortalInit` or `OBJINIT_Waypoint` and their callees to depth 2) |
+| [drlg/collision](../../spec-drlg/collision/) | the Arcane Sanctuary waypoint | no quest bit gates level 74 or portal 298 | [C] (no record reader in `A2Q4_ArcanePortalInit` or `OBJINIT_Waypoint` and their callees to depth 2; `A2Q4_ArcanePortalInit`) |
 | [save/d2s](../../spec-save/d2s/) | the quest record of difficulty *d* | `+0x10 + 4·d`; the loader rule A3 | [C] |
 
 ## Outputs

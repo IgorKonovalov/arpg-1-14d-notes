@@ -30,7 +30,7 @@ stateDiagram-v2
 | A skill creates its `srvmissile` or a line or lob missile | [C] for the `srvmissile` creations of rows with no `srvdofunc` (579, from `SKILLS_SrvDo`): line flags `0x21` (player, 362), `0x1021` for a monster with stat 19 above 0 (113), lob `0x420` (104), with B2's and B3's class, skill and level; [I] which creator a do function's creation calls, by its call site |
 | A missile is created at a point (three quest functions, seven missile functions, five skill functions and two monster AIs, `AiUseSkillNearSelf` and `AiBladeCreeper`; no shrine function) | [C] its 17 callers, by three tools (static) |
 | Every frame, for every missile | [C] (13 335 frames) |
-| Do function 1, the common step | [C] by the frame behaviour: `MF0`'s row number is `pSrvDoFunc` 1 in 20 860 windowed frames, a frame returning 2 returns its nested end call's 2 (823 range spent, 65 a failed step), a frame returning 1 is followed by the missile's frame at frame + 1, in D3's code order; the table entry reaches it through the thunk |
+| Do function 1, the common step | [C] by the frame behaviour: `MF0`'s row number is `pSrvDoFunc` 1 in 20 860 windowed frames, a frame returning 2 returns its nested end call's 2 (823 range spent, 65 a failed step), a frame returning 1 is followed by the missile's frame at frame + 1, in D3's code order; the table entry reaches it through the thunk `MissDo01Thunk` |
 | A missile reaches a unit, or ends its life | [C] for a missed to-hit (105), and for the end and the pierce use of a damaging hit by a row with no hit function (3 876); [C] an end call (no unit) of a row without a hit function builds nothing, leaves the missile's seed and returns 2 (80 600), one of a hit-function row returns 2 (5 610), and a unit call of a row without a hit function runs the to-hit, the build and the apply in that order (16 858 build and apply, 594 roll, build and apply, 718 a missed roll alone); [I] what a hit function's result does |
 | The packet at the hit | [C] (778 builds) |
 
@@ -68,7 +68,7 @@ Skills § Dispatch.
 | Input | Kind | Tag |
 |---|---|---|
 | the path planner's points (`PathPlan`, a missile's path types 4, 10 and 14) and its draws | no longer an oracle: [path/search](../../spec-path/search/), H1 | [C] |
-| the grid a plan reads, and the cells a step crosses | a value oracle, counted: [path/overview §§ F2, F3](../../spec-path/overview/#f3-the-counted-oracle). Types 4, 10 and 14 read no cell | [C] types 4 and 10 as [path/search](../../spec-path/search/) §§ K and I state them; type 14's `PathPlanSpiral` calls only the cosine and sine tables and its non-stack operands are the path's (static); [I] the step's cell list |
+| the grid a plan reads, and the cells a step crosses | a value oracle, counted: [path/overview §§ F2, F3](../../spec-path/overview/#f3-the-counted-oracle). Types 4, 10 and 14 read no cell | [C] types 4 and 10 as [path/search](../../spec-path/search/) §§ K and I state them; type 14's `PathPlanSpiral` calls only the cosine and sine tables and its non-stack operands are the path's (static, `PathPlanSpiral`); [I] the step's cell list |
 | the numbered do, hit and damage functions outside § G's table | value oracles of the checker; specified in the [catalogue](../catalogue/) §§ C–F | [I] |
 | the result of a hit that does not miss | logged as the hit's return | [I] |
 | the room collision word | [drlg/collision](../../spec-drlg/collision/) | [I] |
@@ -208,7 +208,8 @@ B1. MissileCreate(game, p) → missile:                                [I] (all 
   unique-mod byte, then calls all nine, a later 0 not stopping it). Mod 29's function acts only when bit 3 of the
   monster data's byte `+0x16` is set, the missile is type 3 with an owner, its class lies in the Missiles count, the
   row's `+5` bit 4 is clear and the owner is not already marked (`+0x16` bit `0x80`), and sets that mark. It makes a
-  local seed `Init(1397049683)`, overwrites its high word with the owner's unit id and draws nothing from it before the
+  local seed `Init(1397049683)`, a constant whose four bytes spell `SEIS` high byte first,
+  overwrites the seed's high word with the owner's unit id and draws nothing from it before the
   first creation; the point is the owner's revalidated path target, else the missile's path position; `(dx, dy)` are
   the signs of owner − point, zeroed for classes 0x3F–0x42; the first side missile is `SkillMissileCreate(owner, skill,
   lvl, 0, 0, x0 − dy, y0 + dx, 0)` with the missile's skill and level. [C] The second, at
@@ -237,14 +238,16 @@ B4. MissileCreateAt(game, unit, skill, lvl, cls, x, y):              (at a point
 - B2. **`useAmmo` at the 33 call sites** of the line and lob creators (26 and 7): 1 at `SKILL_AttackDo` unless the
   unit's ranged missile is 27 (`magicarrow`, which takes the 0 site), at the Throw and Left Hand Throw do functions 3
   and 5 (lob for an item of type 38, else line), at six monster sites in six function bodies, and at both calls, 14 sites in
-  all; 0 at the other 19, `SKILLS_SrvDo` included. The use runs only behind the owner-type-0 test and `PLAYER_UseAmmo`'s own test. [C] (static, two decoders, `SKILL_AttackDo`, `PLAYER_UseAmmo`)
+  all; 0 at the other 19, `SKILLS_SrvDo` included. The use runs only behind the owner-type-0 test and `PLAYER_UseAmmo`'s own test. [C] (static, two decoders, `SKILL_AttackDo`,
+  `SkillThrowDo`, `PLAYER_UseAmmo`)
 - B2. **No to-hit for a player's skill missile.** `SkillMissileCreate` sets flag `0x1000` for a monster owner only and
   `SkillMissileCreateLob` sets none, so neither adds the skill's `SKILLS_GetToHit` to the missile. The one exception read
   is do 74, Double Throw, which adds it to the missile's stat 19 after creating the missile. Other creators of a to-hit flag or stat are
   unfollowed. [C] no player-owned missile carried stat 19 at a hit (0 of 101 777) and no player creation had flag
   `0x1000` (0 of 92 094), against 1 622 monster creations with it; the flag's only
   store sits behind the owner-type-1 test (static). [I] do 74's add, which no session ran
-  (`SKILLS_GetToHit`, `Skills.txt:srvdofunc`, row 18)
+  (`SkillMissileCreate`, `SkillMissileCreateLob`,
+  `SKILLS_GetToHit`, `Skills.txt:srvdofunc`, row 18)
 - B5. **The other creators**: skills core helpers (the nova of 64), shrine effects 19, 21
   and 22, the Act V quest functions, three monster functions, 30 missile functions (the sub-missile helpers and the
   numbered functions) and 40 skill functions; 97 sites in 82 functions. Items create missiles only through
@@ -304,7 +307,7 @@ C1. MissileDamageBlock(blk, owner, source, m, lvl):                  [I] (all of
   = 1 for a critical; then the owner's stat-180 entries. The function also sets the missile data's `+0x14` bit 0 for
   block flag `0x1` and bit 1 for `0x4`; stat 12 comes from its fourth argument; the stat-180 entries are those of the
   owner's extended list's cache only (none for a plain list), taken from the lower bound of key `180 << 16` while fewer
-  than 128, each set at its own layer. [C] (1 648 returns, the setter run whole)
+  than 128, each set at its own layer. [C] (`MissileDamageToStats`: 1 648 returns, the setter run whole)
 - C2. **The critical chain** is [combat/overview § B4](../../spec-combat/overview/#b-draw-order-per-event)'s `CritChain`: one
   inline step against stat 337 even when it is 0, then one against stat 141 when it is non-zero, then one against the
   mastery's chance with a weapon when it is non-zero, stopping at the first success. In the run one step of the
@@ -401,7 +404,8 @@ D4. PathVelocityStep(path, k):                                       [C] (all of
   `+0x72`/`+0x76` without adding it to the position, which its caller moves. [C]
 - D4. `dir` is `PathDirection`'s vector: `i = (minor · 127) ÷ major` (0 when `major` is 0) indexes `g_PathDirTable`,
   the components swapped when `dx` is the minor axis and negated by the deltas' signs; the 64-direction index is the
-  table's third word folded by the same octant rules. [C] (`g_PathDirTable`: every octant, 3 000 cases)
+  table's third word folded by the same octant rules. [C] (`PathDirection`,
+  `g_PathDirTable`: every octant, 3 000 cases)
 - D5. **A frame's seed.** The do function of a followed frame leaves the missile's seed unchanged except by the hits
   inside it (37 frames, 110 checks: the hit's entry seed is the frame's, its exit the build's, the
   `MISSILE_ApplyDamage` boundary moving it in none of 36). [C]
@@ -411,13 +415,13 @@ D4. PathVelocityStep(path, k):                                       [C] (all of
 | Type | Filter | Mask | Stock rows | Tag |
 |---|---|---|---|---|
 | 0 | none | — | 301 | [C] (`g_MissileCollideTypes`, the `.txt` and `.bin` counts agree; (static)) |
-| 1 | a player, or a monster for which `UnitAlignGet` returns 2 (stat 172 of the unit's state-0x69 list, 0 with none; 2 for any type above 1) | `0x0084` | 6 | [C] (the mask cell) |
-| 2, 5 | a monster | `0x0104` | 0 | [C] (the mask cell) |
-| 3 | a player or a monster (type 0 or 1, signed) | `0x0184` | 339 | [C] (the mask cell) |
+| 1 | a player, or a monster for which `UnitAlignGet` returns 2 (stat 172 of the unit's state-0x69 list, 0 with none; 2 for any type above 1) | `0x0084` | 6 | [C] (`CollidePlayerOrAlly`, `UnitAlignGet`; the mask cell) |
+| 2, 5 | a monster | `0x0104` | 0 | [C] (`CollideMonster`; the mask cell) |
+| 3 | a player or a monster (type 0 or 1, signed) | `0x0184` | 339 | [C] (`CollideUnit`; the mask cell) |
 | 4 | none | — | 0 | [C] (`g_MissileCollideTypes`, (static)) |
 | 6 | no filter: walls only | `0x0004` | 24 | [C] (`g_MissileCollideTypes`, (static)) |
-| 7 | a `CanDestroy` missile (type 3, its class in the Missiles count, the row's `+4` bit 4) | `0x0040` | 0 | [C] (the mask cell) |
-| 8 | a player or a monster | `0x0185` | 14 | [C] (the mask cell) |
+| 7 | a `CanDestroy` missile (type 3, its class in the Missiles count, the row's `+4` bit 4) | `0x0040` | 0 | [C] (`CollideMissile`; the mask cell) |
+| 8 | a player or a monster | `0x0185` | 14 | [C] (`CollideUnit`; the mask cell) |
 
 - D6. The shared unit test requires the candidate's `Unit+0xC4` bits 2 and 3, and refuses a unit in state 86 for a
   `NextHit` row, the last unit hit (only for a missile whose Missiles row has bit 0 of `+4`, `MISSDATA_IsLastHit`), and
@@ -517,7 +521,7 @@ E1. MISSILE_HitUnit(game, m, unit, end) → 1 keep, 2 free:            [I] (MISS
   defence draws inside are the defender's (85). [I] state 54's skip and the stat-120 defence change, which no logged case reached
 
 - E4. `MissileEndHit` (a hit function with no unit, then a free) has no call, jump, immediate or pointer
-  in the image: unreached. [C] (static: no rel32 call, jump or
+  in the image: unreached. [C] (static, `MissileEndHit`: no rel32 call, jump or
   conditional jump and no absolute pointer to it in any section)
 
 ### F. The packet at the hit (`MISSILE_BuildDamage`)
@@ -600,12 +604,14 @@ re-seed the missile's draws are a function of the creator's value, not of the ga
   range and the frames left (`+0x0E`, `+0x10`, through their clamping setters); `Init(path word +0x10 + arg, 0x29A)`, `arg`
   the block's `+0x58`; `PathSetType(path, 10)`; `PathSetByte90(path, r)`; `PathPlan(path, missile, 0)`, which takes its
   flag `0x40000` branch to the random walk; flag `0x20` set. [C] (emulated to its return, family `h1`, 198 of
-  300 cases)
+  300 cases; `MissCbReseedPathXPlusArg`)
 - H1. **`PathPlan` makes the steps, through the random walk, `+0x91 >> 1` of them.** `PathSetByte90` stores `min(r, 77)`
   in `+0x90` and `+0x91`. `PathSetType` and `PathSetByte90` step nothing: at `PathPlan`'s entry the seed is still the
   `Init` and the record has type 10, in all 100 cases of family `h1obs` (each stops at that entry, return site
 ). A path with `+0x91` of 0 or 1 draws nothing (family `rwalk`). The walk, its points and its draw order are
-  [path/search § I](../../spec-path/search/#i-the-random-walk-type-10), with a worked example at [path/overview](../../spec-path/overview/#worked-example). [C] (for the walk)
+  [path/search § I](../../spec-path/search/#i-the-random-walk-type-10), with a worked example at [path/overview](../../spec-path/overview/#worked-example). [C] (for the walk;
+  `PathPlanRandomWalk`, `PathSetType`,
+  `PathSetByte90`)
 
   | Callback | Class | Missiles row | `Range` | After the cap | Steps | Creations logged |
   |---|---:|---|---:|---:|---:|---:|
@@ -677,8 +683,8 @@ re-seed the missile's draws are a function of the creator's value, not of the ga
   first frame and for the missiles' place before the players' and monsters' events
   (D1); [I] for the objects and the fifth list
 - **A missed piercing missile has spent a pierce.** [C] (7 cases)
-- **A used pierce keeps the missile**: stat 328 falls by 1 and the missile flies on. [C] (130 cases)
-- **`LevRange` counts every level**: `LevRange · lvl + Range`, not from level 2. [C] (271 creations)
+- **A used pierce keeps the missile**: stat 328 falls by 1 and the missile flies on. [C] (`MissilePierceUse`: 130 cases)
+- **`LevRange` counts every level**: `LevRange · lvl + Range`, not from level 2. [C] (`MissileCreate`: 271 creations)
 - **A freed missile at a bit-0 or bit-2 own cell does not explode.** [I]
 - **Keep `g_PathDirTable` as data.** The step direction is a table lookup, not a trigonometric function. [C]
 

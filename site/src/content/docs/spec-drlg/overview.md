@@ -27,13 +27,13 @@ seeds are defined in [rng/seeds](../../spec-rng/seeds/) steps 3–5.
 |---|---|---|
 | Act created (server and client copy) | `DRLG_ActCreate` | [C] |
 | Level record created and seeded | `DRLG_LevelCreate` | [C] |
-| Level built (rooms created), lazily, on first need after each load | — | [C] |
-| Maze level: create / build | — | [C] |
-| Preset level: create / build | — | [C] |
-| Outdoor level: create / build | — | [C] |
+| Level built (rooms created), lazily, on first need after each load | `LevelInit` | [C] |
+| Maze level: create / build | `MazeLevelCreate` / `MazeLevelBuild` | [C] |
+| Preset level: create / build | `PresetLevelCreate` / `PresetLevelBuild` | [C] |
+| Outdoor level: create / build | `OutdoorLevelCreate` / `OutdoorLevelBuild` | [C] |
 | One DRLG room created (one level draw) | `DRLG_RoomCreate` | [C] |
-| Level unloaded (rooms and per-build state freed) | — | [C] |
-| DRLG room activated (tiles, k, active room) | → `DRLG_RoomActivate`, see [room-tiles.md](../room-tiles/) | [C] |
+| Level unloaded (rooms and per-build state freed) | `LevelUnload` | [C] |
+| DRLG room activated (tiles, k, active room) | `RoomActivateB` → `DRLG_RoomActivate`, see [room-tiles.md](../room-tiles/) | [C] |
 
 ## Inputs
 
@@ -79,11 +79,11 @@ Offsets are byte offsets into the owner.
 
 | Name | Value | Anchor | Tag |
 |---|---|---|---|
-| preset room block | 8 × 8 cells | — | [C] |
-| maze room single-room limit | 12 × 12 | — | [C] |
-| outdoor room DT1 mask by level type, checked types | 2 → `0x44103`; 16 → `0x1`; 21 → `0x4`; 31 → `0x11` | — | [C] |
-| outdoor room DT1 mask by level type, other types | 22, 27, 28 → `0x1`; 30 → `0x11`; any other type → 0 | — | [I] |
-| `MAZE_DEF_BASE` by level type | 3 → `0x34`, 4 → `0x6C`, 7 → `0xA7`, 8 → `0xCD`, 10 → `0x101`, 13 → `0x12D`, 17 → `0x19D`, 18 → `0x1E1`, 22 → `0x2F1`, 24 → `0x298`, 25 → `0x2C0`, 28 → `0x344`, 33 → `0x3EA`, 34 → `0x422`, 35 → `0x41C`; other types: no rotation | — | [C] |
+| preset room block | 8 × 8 cells | `PresetRoomsCreate` | [C] |
+| maze room single-room limit | 12 × 12 | `MazeLevelRooms` | [C] |
+| outdoor room DT1 mask by level type, checked types | 2 → `0x44103`; 16 → `0x1`; 21 → `0x4`; 31 → `0x11` | `OutdoorRoomsCreate` | [C] |
+| outdoor room DT1 mask by level type, other types | 22, 27, 28 → `0x1`; 30 → `0x11`; any other type → 0 | `OutdoorRoomsCreate` | [I] |
+| `MAZE_DEF_BASE` by level type | 3 → `0x34`, 4 → `0x6C`, 7 → `0xA7`, 8 → `0xCD`, 10 → `0x101`, 13 → `0x12D`, 17 → `0x19D`, 18 → `0x1E1`, 22 → `0x2F1`, 24 → `0x298`, 25 → `0x2C0`, 28 → `0x344`, 33 → `0x3EA`, 34 → `0x422`, 35 → `0x41C`; other types: no rotation | `MazePresetFile` (`switch`) | [C] |
 
 - [C] The outdoor mask values are checked against the logged rooms for four level types: 2 in 56 Blood Moor rooms, 16 and 21 in 40 and 20 rooms, and 31 in 145 type-1 rooms of
   levels 111, 112 and 117, with the `SubType` masks ORed. No run logged a type-1 room of
@@ -315,9 +315,9 @@ Step notes:
 2. **The level seed is initialised twice with the same value.** Every level draw that creates rooms
    happens after `LevelInit`'s re-seed, so the create-time draw is discarded, and the room sequence
    doesn't depend on anything that ran between creation and build. [C]
-   (32 builds) A level is built lazily.
+   (`LevelInit`: 32 builds) A level is built lazily.
    When the player leaves it, `LevelUnload` frees its rooms and its rotation list, and on
-   re-entry `LevelInit` runs again on the same level object. [C] (188 unloads, 59
+   re-entry `LevelInit` runs again on the same level object. [C] (`LevelUnload`, `RoomFree`: 188 unloads, 59
    rebuilds of an unloaded level object, no level built twice without an unload between) The rebuild repeats the same
    draws, files and rooms: in the owner's Catacombs entry levels 35 and 36 were built three times each
    and level 34 twice, all identical to the model. [C]
@@ -327,7 +327,7 @@ Step notes:
 4. **`Files` is the operand, not the number of named files.** `PresetInstanceCreate` always passes
    `LvlPrest +0x40`. A power-of-two operand is reduced with a mask, any other with an unsigned `mod`,
    which give the same result ([rng](../../spec-rng/overview/) step note 2). [C]
-   (960 instances, each
+   (`PresetInstanceCreate`: 960 instances, each
    loading exactly the predicted file) An index ≥ `Files` arises only from an override: the level's
    index (step 6), an outdoor cell's bits 16–19 (step 8) or a maze cell's forced index (step 9b). In the
    run that covered 9 of the 81 records whose `Files` and named count disagree. [C]
@@ -361,7 +361,7 @@ Step notes:
    case: only level 120 has one −1 and it has no out room, no level names a `SubType` without a record, and none has
    a `SubTheme` above 4. [I] Each room's position is
    `L.rect + 8·(cx, cy)`; an embedded preset gets the rect `{x, y, 0, 0}` and its rooms' size and position come from
-   the preset (`drlg/preset`). The position changes no draw. [C] (every one of 11 516 out rooms has its
+   the preset (`drlg/preset`). The position changes no draw. [C] (`OutdoorRoomsCreate`: every one of 11 516 out rooms has its
    logged rect and creation order, and the level seed matches after every window) The DT1 mask it produces (the
    level-type value OR the picked records' `Dt1Mask`) equals the room's `+0x50` in all 56 Blood Moor
    rooms. [C]
@@ -370,16 +370,17 @@ Step notes:
    rooms, and is freed. The seed entering the maze generator ([maze.md](../maze/), an oracle of the first
    run) is the seed after the first room's draw; the conversion order is the room list the generator leaves,
    newest first. [C]
-   (Den of Evil, Sewers Level 1, Catacombs Levels 2–4) The generator's room
+   (`MazeLevelBuild`, `MazeLevelRooms`: Den of Evil, Sewers Level 1, Catacombs Levels 2–4) The generator's room
    count, positions, `Def`s, forced indices and list order are [maze.md](../maze/)'s; the conversion walks
-   the list it leaves. [C] (230 windows)
+   the list it leaves. [C] (`MazeLevelBuild`: 230 windows)
    **Rotation counters are per build.** The list lives at
    level `+0x1CC`, nodes are prepended, and `LevelUnload` frees it and zeroes the field,
-   so each build starts without counters. [C] (per-build counters
+   so each build starts without counters. [C] (`MazePresetFile`,
+   `LevelUnload`: per-build counters
    reproduce 1648 first-use draws and 2424 rotations over 393 builds, rebuilds included;
    `LevelUnload` frees a non-empty list in 76 unloads) Every use, the first included, advances the counter before
    it is used: the first use of a def yields `(RangeB + 1) mod Files`. [C]
-   (16 first uses and 18 rotations in
+   (`MazePresetFile`: 16 first uses and 18 rotations in
    the scripted entries, 42 and 73 in the owner's Catacombs entry)
 
 ### Act-seed consumers
@@ -398,7 +399,7 @@ Step notes:
 
 ## Outputs
 
-For each built level: its DRLG rooms, linked at level `+0x10` (newest first), each with its type (`+0x48`), rect, first draw `+0x04` (which seeds it at activation), DT1 mask `+0x50`, and for type 2 its preset instance with the chosen file index. For outdoor rooms also the SubType pass (`+0x64`–`+0x6C`) that their activation applies. The level seed ends where the last modelled draw leaves it. [C] (the seed at every build's end and the room count of every build checked)
+For each built level: its DRLG rooms, linked at level `+0x10` (newest first), each with its type (`+0x48`), rect, first draw `+0x04` (which seeds it at activation), DT1 mask `+0x50`, and for type 2 its preset instance with the chosen file index. For outdoor rooms also the SubType pass (`+0x64`–`+0x6C`) that their activation applies. The level seed ends where the last modelled draw leaves it. [C] (`LevelInit`: the seed at every build's end and the room count of every build checked)
 
 ## Worked example
 
@@ -437,7 +438,7 @@ which takes it from creation to its active-room seed. The file the generator cho
   across a level's rebuilds breaks the rebuild (this was the 226-mismatch checker bug of the owner's run).
   [C]
 - **The maze conversion walks a list that is newest first**, and the maze rooms themselves are freed: a
-  maze level's activated rooms are all preset (type 2) rooms. [C] (every Catacombs room had `+0x48 = 2`)
+  maze level's activated rooms are all preset (type 2) rooms. [C] (`MazeLevelRooms`: every Catacombs room had `+0x48 = 2`)
 - **`LvlSubRoll` uses the room seed, not the level seed**, and runs at creation, before the activation
   re-seed: its draws never count in k. [C]
 

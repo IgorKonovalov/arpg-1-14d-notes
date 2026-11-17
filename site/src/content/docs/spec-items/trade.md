@@ -23,13 +23,13 @@ flowchart LR
 
 | When | Function | Tag |
 |---|---|---|
-| A player interacts with another player, within 8 | — | [I] |
-| A trade button (packet `0x4F`): 2 close, 3 accept the request, 4 accept the offer, 7 un-accept, 8 gold | — | [I] |
-| Seven inventory packets of a trading player (`0x19`, `0x1C`–`0x1F`, `0x24`, `0x63`) | — | [I] |
-| An item is placed on page 2 / taken off it | — | [I] |
-| Player event 13, the timed steps | — | [I] |
-| A client leaves the game; a player dies | — | [I] |
-| A player is saved | `PLRSAVE_Save` → | [I] |
+| A player interacts with another player, within 8 | `UnitInteract` → `TradeRequest` | [I] |
+| A trade button (packet `0x4F`): 2 close, 3 accept the request, 4 accept the offer, 7 un-accept, 8 gold | `PktInteractButton` | [I] |
+| Seven inventory packets of a trading player (`0x19`, `0x1C`–`0x1F`, `0x24`, `0x63`) | `InvMoveInteractTest` → `TradeItemTest` | [I] |
+| An item is placed on page 2 / taken off it | `TradeShowOffer` (from `InvPlaceItem`), `TradeHideOffer` (from `InvItemToCursor`) | [I] |
+| Player event 13, the timed steps | `TradeStateTick` (slot) | [I] |
+| A client leaves the game; a player dies | `ClientRemove`, `InteractEndOnDeath` → `TradeAbort` | [I] |
+| A player is saved | `PLRSAVE_Save` → `SaveItemListOrSnapshot` | [I] |
 
 The sections below say which branches the run covers. [C]
 

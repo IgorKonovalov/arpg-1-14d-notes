@@ -20,15 +20,15 @@ it belong to [items/tc](../../spec-items/tc/). What a shrine, a well, a trap or 
 
 | When | Function | Tag |
 |---|---|---|
-| Game creation: the object region and its seed (right after the monster regions) | `OBJRGN_Create`, called | [C] |
-| First activation of a room, in the room driver: presets, restore, objects, then the monster pass | — | [C] |
-| DS1 preset units of the room (objects first, then monsters) | — | [C] |
+| Game creation: the object region and its seed (right after the monster regions) | `OBJRGN_Create`, called from `GameCreate` | [C] |
+| First activation of a room, in the room driver: presets, restore, objects, then the monster pass | `NewRoomsUpdate` | [C] |
+| DS1 preset units of the room (objects first, then monsters) | `RoomPresetUnits` → `PresetUnitDispatch` | [C] |
 | DS1 pseudo-objects 574..582 | `OBJ_PresetPseudoDispatch` | [C] |
-| Inactive-unit restore (nothing on a first activation; a full re-creation on a revisit) | — | [C] |
-| Random object population of the room | — | [C] |
-| Every object creation | → `OBJ_ServerInit` | [C] |
+| Inactive-unit restore (nothing on a first activation; a full re-creation on a revisit) | `RoomInactiveUnitsRestore` | [C] |
+| Random object population of the room | `RoomObjectsPopulate` | [C] |
+| Every object creation | `SUnitCreate` → `OBJ_ServerInit` | [C] |
 | A player operates an object | `OBJ_OperateDispatch` | [C] |
-| A chest or container drops (into items/tc) | → `TC_ResolveDrops` | [C] |
+| A chest or container drops (into items/tc) | `ObjectChestDrop` → `TC_ResolveDrops` | [C] |
 | An object timer event runs from the game's event queue | `g_ObjEventFns` | [C] |
 
 - [C] Everything here runs on the server; the room driver calls the window only while the room's flags bit 0 is clear,
@@ -960,7 +960,7 @@ run reproduces every gem and rune draw of the waves on it. The other quest objec
 |---|---|---|---|
 | the Hellforge | the first click places the soulstone (`mss`), a timer readies the forge, three strikes with the Hellforge Hammer held **and** equipped; then a timer | four gem waves (perfect, flawless, flawless, standard; `n` gems each, one quest-seed draw per gem) and, in an expansion game, one rune (`Range(questSeed, 11)`) | [C] for one player in Normal, Nightmare and Hell (the Hell rune from `r15`…`r25`, Hell ilvl 85; the click is slot 49 and the waves are event 7); `n` > 1 is items/quest-drops § D5's, inferred |
 | the Act II quest chests (`tr1`, `msf`, `box`) and the altar (`vip`, from object 149 `taintedsunaltar`) | the chest's quest item (one per player its gate passes), then the chest's ordinary drop (§ J3) | then `5 + QuestPick(5)` gold piles on the quest seed | [C] the three chests: five operates in mode 0 logged the item when its gate passed, then `ObjectChestDrop`, one `QUESTS_GetSeed`, then the piles (9 for `tr1`, 5 twice for `box`, 9 twice for `msf`, each the count on the logged quest seed); a held cube refused `box` and the drop and the piles still ran. [I] the altar, not run |
-| the Khalim chests (`qhr`, `qey`, `qbr`) | the quest seed and `5 + QuestPick(5)` gold piles **first**, then the chest's part (one per player holding neither the part nor `qf2`), then the chest's ordinary drop (§ J3) | the gold, the part, then the drop | [C] all three chests: each logged `QUESTS_GetSeed`, the gold piles first (8 for the heart, 5 for the eye, 7 for the brain chest, each the count on its logged quest seed), the callback's two `PlayerFindItemByCode` calls (the part and `qf2`, neither found), the part, then `ObjectChestDrop` (with its follow-up). [I] the gate's refusal of a player holding the part or `qf2`, read and not run |
+| the Khalim chests (`qhr`, `qey`, `qbr`) | the quest seed and `5 + QuestPick(5)` gold piles **first**, then the chest's part (one per player holding neither the part nor `qf2`), then the chest's ordinary drop (§ J3) | the gold, the part, then the drop | [C] all three chests: each logged `QUESTS_GetSeed`, the gold piles first (8 for the heart, 5 for the eye, 7 for the brain chest, each the count on its logged quest seed), the callback's two `PlayerFindItemByCode` calls (the part and `qf2`, neither found), the part, then `ObjectChestDrop` (with its follow-up; `A3Q2_HeartChest`, `A3Q2_EyeChest`, `A3Q2_BrainChest`, `DropItemCodeAt`). [I] the gate's refusal of a player holding the part or `qf2`, read and not run |
 | Wirt's body (268) | the first operate (slot 33: the leg, then event 7) | 10–19 gold piles, `RandLoHi(questSeed, 10, 20)`, one per event-7 timer | [C] the body in mode 0 ran slot 33, created `leg` on the unchanged quest seed, then 18 events 7 ran `WirtGold`, one pile each; the first drew the quest seed once, and `RandLoHi` gives 18 on that seed |
 | the objects of `leg`, `bks` (the Inifuss tree), `hdm` (the Malus) and `bbb` | the operate, gated by quest bits | one quest item each, no draw | [C] `leg` (Wirt's body), `bks` (the tree, word 4 clear, neither `bkd` nor `bks` held) and `bbb` (the tome, word 17 clear): one item each on the unchanged quest seed, no draw; `bks` and `bbb`, asked at quality 2, were created at quality 7 (`bbb` in its follow-up). [I] `hdm` (not run), the refusals (the tome's word-17 refusal among them), and the 7 as the base `unique` override |
 | the Horadric orifice | opens when the player holds `hst`; placing the staff sets word 10 bits 0 and 13 | no item | [C] the bits: in the kept log of a Duriel session placing the staff wrote word 10 bit 0, then bit 13, both inside `StaffPlaced`. [I] the `hst` gate (no operate without `hst` was logged) and the party credit |

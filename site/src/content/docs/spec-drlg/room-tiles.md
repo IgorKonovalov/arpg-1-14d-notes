@@ -19,13 +19,13 @@ room's data and the state of its already built neighbours. How rooms come to exi
 
 | When | Function | Tag |
 |---|---|---|
-| Room activated (both act copies) | — | [C] |
-| Re-seed and grid prepare | → type 1, type 2 | [C] |
-| Tile build | → type 1, type 2 | [C] |
+| Room activated (both act copies) | `RoomActivateB`, `RoomActivateA` | [C] |
+| Re-seed and grid prepare | `DrlgRoomReseed` → type 1 `OutRoomGridPrepare`, type 2 `PresetRoomGridPrepare` | [C] |
+| Tile build | `DrlgRoomTypeInit` → type 1 `OutRoomTilesBuild`, type 2 `PresetRoomTilesBuild` | [C] |
 | Activation draw, active room | `DRLG_RoomActivate` | [C] |
 | DT1 list (before the window) | `DRLG_LevelDt1ListBuild` | [C] |
-| RoomTile freed | — | [C] |
-| Built room released (tiles and grids freed, bit `0x100000` cleared) | — | [C] |
+| RoomTile freed | `RoomTileFree` | [C] |
+| Built room released (tiles and grids freed, bit `0x100000` cleared) | `RoomTilesRelease` | [C] |
 
 ## Inputs
 
@@ -66,8 +66,8 @@ room's data and the state of its already built neighbours. How rooms come to exi
 | fixed DT1 files, after the mask files | `DATA\GLOBAL\Tiles\Act1\Outdoors\Blank.dt1`, `…\Act1\Barracks\InvisWal.dt1`, `…\Act1\Barracks\Warp.dt1` | `DRLG_LevelDt1ListBuild` | [C] |
 | mask-file prefix | `DATA\GLOBAL\TILES\` | `DRLG_LevelDt1ListBuild` | [C] |
 | candidate cap | 40 tiles per pick (`push 0x28`); never binds on stock data, where no key has more than 28 candidates in any list a level type can build | `DRLG_PickTileByRarity` | [I] |
-| filler floor cell | `0xF << 21`; `(0xF << 21) + 0x100` in level 74 | — | [C] |
-| theme fill value by level type | 16 → `0x100`, 21 → `0x12 << 16`, 22 → `0x100000`, 27 → `0xA << 20`, 28 → `0x16 << 20`, 31 → `0x6 << 20` in level 117 else 0, other → 0 | — | [C] |
+| filler floor cell | `0xF << 21`; `(0xF << 21) + 0x100` in level 74 | `RoomCellBuild` | [C] |
+| theme fill value by level type | 16 → `0x100`, 21 → `0x12 << 16`, 22 → `0x100000`, 27 → `0xA << 20`, 28 → `0x16 << 20`, 31 → `0x6 << 20` in level 117 else 0, other → 0 | `OutRoomGridPrepare` | [C] |
 | merge row table | `s32[20]`, new orientation 0–19 → row 0–5, −1 keep, −2 no merge: `−1, 0, 1, 2, −1, 3, 4, 5, −2, −2, −1, −1, −1, −2, −1, −1, −1, −1, −1, −1` | `g_Bit2OrientRow` | [I] |
 | merge orientation table | `s32[row·7 + old orientation]`, rows 0–5, old orientation 0–7 (43 cells; column 7 of row r is column 0 of row r + 1). Row 0 `0 1 3 3 4 1 3 1`, row 1 `1 1 2 3 4 3 2 2`, row 2 `2 3 3 3 4 3 3 3`, row 3 `3 1 3 3 4 5 6 1`, row 4 `1 3 2 3 4 3 6 2`, row 5 `2 1 2 3 4 1 2 7` | `g_Bit2OrientMerge` | [I] |
 
@@ -586,7 +586,8 @@ Step notes:
    equals `LevelType`) `LvlTypes` `Expansion` and `Act` are read only by two DT1 preloads outside the
    build (at start-up, which stops at the first `"0"` cell and skips `Expansion` types without the expansion
    archive, and per act); neither is on the level-build path, and the room's list has no such test. [C]
-   (`LvlTypes.txt:Expansion`, `LvlTypes.txt:Act`; the three `+0x780`/`+0x784` operands of `.text`, the third in a
+   (`LvlTypesDt1Preload`, `ActDt1Preload`,
+   `LvlTypes.txt:Expansion`, `LvlTypes.txt:Act`; the three `+0x780`/`+0x784` operands of `.text`, the third in a
    wrapper nothing references) The mask comes from creation: `LvlPrest.Dt1Mask` for every preset room,
    maze rooms included (464 rooms), and for an outdoor room the level-type value OR the `Dt1Mask` of the
    SubType records its creation roll picked ([the DRLG overview](../overview/) step 8a). [C]
@@ -632,7 +633,7 @@ Step notes:
    border state is the same in every view, and the shared-cache writes cannot show on stock data. [I]
  The view's stride is the
    preset width + 1, which equalled the DS1 row length in every room. [C]
-   (an off-by-one stride gives 1393
+   (`PresetRoomGridPrepare`: an off-by-one stride gives 1393
    mismatches) The client-only `DRLG_PresetClientObjects`,
    which runs before the window, reads floor layer 0 and adds object preset units; it writes no grid, and
    the client grids match the same prepare. [C] for the code (a walk of the decoded instructions finds no store into a grid cell), [C] for the grids
@@ -723,7 +724,8 @@ Step notes:
     either way. [C]
 12. `T[+0x18]` and `T[+0x20]` are the wall and floor entry counts after the build (the builder copies the
     used counters over the capacities, `+0x08` → `+0x18` and `+0x0C` → `+0x20`, and `DRLG_RoomActivate` tests
-    both). [C] (`DRLG_RoomActivate`:
+    both). [C] (`OutRoomTilesBuild`, `PresetRoomTilesBuild`,
+    `DRLG_RoomActivate`:
     2066 activations equal the model's counts, 5 exceed them by animation frames) So the activation draw happens
     iff the room got at least one wall or floor entry, whether or not any pick drew; a room with no entry was not
     reached. [I] No room without tiles occurred in the run. [C]

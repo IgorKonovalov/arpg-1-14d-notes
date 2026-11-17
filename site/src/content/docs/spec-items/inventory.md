@@ -31,11 +31,11 @@ flowchart LR
 
 | When | Function | Tag |
 |---|---|---|
-| Client packets `0x13`, `0x16`: interact with a unit, an item on the ground among them | — | [C] both handlers end at `UnitInteract` (family `act`, 1 200 cases) |
+| Client packets `0x13`, `0x16`: interact with a unit, an item on the ground among them | `Pkt16UnitAction`, → `UnitInteract` | [C] both handlers end at `UnitInteract` (family `act`, 1 200 cases) |
 | Client packets `0x17`..`0x1F`, `0x21`..`0x25`, `0x63`: the moves (§ D) | `g_SrvPacketTable` | [C] |
-| A monster or chest drops | — | [C] 28 ground drops at creation, each after a `GDI` returning into `DropCreateItem`; the log does not tell a monster's drop from a chest's |
-| Other callers of the ground drop (§ J4) | — | [C] 20 rel32 call sites in 18 functions, no abs32 (the raw scan) |
-| Every 1 500 frames: the sweep of active rooms | K3 | [C] |
+| A monster or chest drops | `DropCreateItem` | [C] 28 ground drops at creation, each after a `GDI` returning into `DropCreateItem`; the log does not tell a monster's drop from a chest's |
+| Other callers of the ground drop (§ J4) | `GroundDropCell` | [C] 20 rel32 call sites in 18 functions, no abs32 (the raw scan) |
+| Every 1 500 frames: the sweep of active rooms | `ActExpiredItemsFree`, K3 | [C] |
 
 ## Inputs
 
@@ -57,8 +57,8 @@ flowchart LR
 | State | Type | Source |
 |---|---|---|
 | inventory | `0x40` bytes, magic 16 909 060 (the bytes 04 03 02 01 in memory): `+0x08` owner, `+0x0C`/`+0x10` the item list, `+0x14` the pages, `+0x18` their count, `+0x20` the cursor item, `+0x28` the item count | `INV_Create` |
-| page table | index `page + 2`, entries of 16 bytes: `+8` width, `+9` height, `+0xC` the cells, u32 unit pointers at `row × width + col` | — |
-| item data `+0x24` | i32, the ground expiry | — |
+| page table | index `page + 2`, entries of 16 bytes: `+8` width, `+9` height, `+0xC` the cells, u32 unit pointers at `row × width + col` | `InvPageGet` |
+| item data `+0x24` | i32, the ground expiry | `ItemPlaceOnGround` |
 | game frame | i32, `Game+0xA8` | a drop handled while it is `N` uses `N`; the sweep tests at the frame's own `N` |
 
 ### Constants
@@ -230,17 +230,17 @@ A handler's "refuse" is a return of 3 or 2, discarded at the drain. Every row pa
 
 | Packet | Handler | Body | Tag and anchor |
 |---|---|---|---|
-| `0x13`, `0x16` | — | `UnitInteract(type ≤ 5, guid, action)`, ECX the player, EDX the type; `0x13`'s action is 0 (§ I); a type of 6 up returns 2; `0x16` with type 0 and the player's own guid returns 3 | [C] (family `act`) |
+| `0x13`, `0x16` | — | `UnitInteract(type ≤ 5, guid, action)`, ECX the player, EDX the type; `0x13`'s action is 0 (§ I); a type of 6 up returns 2; `0x16` with type 0 and the player's own guid returns 3 | [C] (family `act`; `UnitInteract`) |
 | `0x17` | — | a cursor item; when `PlayerIsBusy` is non-zero, `InteractIsPlayer` non-zero returns 3 (it reads no argument); `CursorDrop` | [C] 90 logged `0x17` pairs reach `CursorDrop`'s search and place; [C] the refusal (family `mv`) |
 | `0x18` | — | § E; `ItemSetPage(item, page)`, then `InvPlaceItem(…, x, y, 0, 1, 0)` | [C] to `InvPlaceItem`, the page byte written first |
 | `0x19` | — | an owned item in mode 0, else 1; page byte 1, else 3; a non-empty cursor ends at `NoManaMsg`; trade test, whose 0 returns 0 with nothing moved; `InvItemToCursor` | [C] 91 logged pairs; [C] the refusals (family `mv`) |
-| `0x1A`..`0x1E` |  | equip and swap with a body location: each takes the slot with `s − 1 ≤ 9` unsigned, else 2; `0x1C`, `0x1D`, `0x1E` call `InvMoveInteractTest` (0 returns 0); `0x1D` and `0x1E` need an item at the slot, else 1; `0x1D` at slot 8 first needs `TradeBeltLock` (0 returns 0); `0x1E` takes slots 4 and 5 only, else 3; `0x1A` passes the slot as a dword whose bits 8..31 are the frame's old bytes (take the byte) | [C] (family `body`, 3 000 cases) |
-| `0x1F` | — | `PktIsCursorItem` on `+1`, `PktInvItemBad` on `+5` (mode 0, owned); that item on page 1 or 2 returns 3; `InvMoveInteractTest`; `PageSwapCursor(+1, +5, x +9, y +0xD)` | [C] (family `req`) |
-| `0x21` | — | two owned items (`PktOwnedItemBad` on `+1`, then `+5`), unequal guids, else 3; `StackRequest` (§ G) | [C] (family `req`) |
+| `0x1A`..`0x1E` |  | equip and swap with a body location: each takes the slot with `s − 1 ≤ 9` unsigned, else 2; `0x1C`, `0x1D`, `0x1E` call `InvMoveInteractTest` (0 returns 0); `0x1D` and `0x1E` need an item at the slot, else 1; `0x1D` at slot 8 first needs `TradeBeltLock` (0 returns 0); `0x1E` takes slots 4 and 5 only, else 3; `0x1A` passes the slot as a dword whose bits 8..31 are the frame's old bytes (take the byte) | [C] (family `body`, 3 000 cases; `ItemEquip`, `EquipCursorAtSlot`, `BodyToCursor`, `BodySwapCursor`, `BodySwapCursor2`) |
+| `0x1F` | — | `PktIsCursorItem` on `+1`, `PktInvItemBad` on `+5` (mode 0, owned); that item on page 1 or 2 returns 3; `InvMoveInteractTest`; `PageSwapCursor(+1, +5, x +9, y +0xD)` | [C] (family `req`; `PageSwapCursor`) |
+| `0x21` | — | two owned items (`PktOwnedItemBad` on `+1`, then `+5`), unequal guids, else 3; `StackRequest` (§ G) | [C] (family `req`; `StackRequest`) |
 | `0x22` | — | an owned item; the stub (§ G) | [C] |
-| `0x23` | — | a cursor item; `ItemToBelt(guid, box, 0)`, the box as `u32` | [C] (family `req`) |
-| `0x24` | — | a belt item (`PktBeltItemBad`); the trade test, `InvMoveInteractTest` with an item of 0; a full cursor returns 2; `BeltToCursor` | [C] (family `req`) |
-| `0x25` | — | a cursor item and a belt item; `BeltSwapCursor` | [C] (family `req`) |
+| `0x23` | — | a cursor item; `ItemToBelt(guid, box, 0)`, the box as `u32` | [C] (family `req`; `ItemToBelt`) |
+| `0x24` | — | a belt item (`PktBeltItemBad`); the trade test, `InvMoveInteractTest` with an item of 0; a full cursor returns 2; `BeltToCursor` | [C] (family `req`; `BeltToCursor`) |
+| `0x25` | — | a cursor item and a belt item; `BeltSwapCursor` | [C] (family `req`; `BeltSwapCursor`) |
 | `0x63` | — | an item passing `PktInvItemBad` (mode 0, owned); a full cursor calls `NoManaMsg` and returns 2; beltable (ItemTypes `+0x19`), else 2; a page byte ≠ 0 returns 3; `BeltFreeSlot(inventory, item, &slot)`, then to that box | [C] |
 
 - D. [C] **Lengths, tested first by each handler:** 3 bytes `0x1C` (a `u16` slot at `+1`, no guid); 5 bytes `0x17`, `0x19`, `0x22`, `0x24`, `0x63`; 9 bytes `0x1A`, `0x1B`, `0x1D`, `0x1E`, `0x21`, `0x23`, `0x25`; 17 bytes `0x18`, `0x1F`; any other length returns 3. Fields, as `u32`: `0x18` guid `+1`, x `+5`, y `+9`, page `+0xD`; `0x23` guid `+1`, box `+5`.
@@ -580,7 +580,7 @@ Step notes:
 - J2. [C] **Rings**: ring 50 is never looked at. The pair form pushes radius 50 and step 1, and after ring `r` the loop goes on only while `r + 1 < 50`.
 - J2. [C] **The base room moves.** The lookup that finds a candidate's room starts from the last non-null room a lookup returned, not from `room`, and the first lookup's result is kept even when null. A cell is reachable only through that room's near list, and the walk is tested from the candidate's room. The result's lookup uses the moved base too, so with no free cell and `fallback` 1 the return can be null though the start cell lies in the first room, and a found cell's return can be null too when the last room tried does not list it. **By emulation only: no live search has separated it** (`fixedbase` fails 95 of 4 000 cases on declared rooms, 0 of 81 live).
 - J2. [C] **No free cell:** `fallback` 1 takes the start cell, blocked or not, in the room the last lookup gives; `fallback` 0 returns null and `out` keeps the start.
-- J2. [C] **The search makes no draw:** it is given no seed, and the 567 functions of its closure (463 bodies, 104 external) hold no step and no `RNG_` call; 54 indirect calls unfollowed. The live pairs of J5 bound only the player's and the game's seeds around `0x17`. (`rcg-summary.txt`)
+- J2. [C] **The search makes no draw:** it is given no seed, and the 567 functions of its closure (463 bodies, 104 external) hold no step and no `RNG_` call; 54 indirect calls unfollowed. The live pairs of J5 bound only the player's and the game's seeds around `0x17`. (`GroundDropCell`, `rcg-summary.txt`)
 - J2. [I] A refused allocation is the fatal line `0x730`, and gives no output.
 - J3. [C] `line`: `linediag` 69, `lineorigin` 18, `lineall` 281 of 800. The field is `expfield.d2`: row `128 + y − oy`, column `128 + x − ox` of the 256 × 256 bytes after the file's 10-byte header; byte `d` steps `dx[d]`, `dy[d]`, with `dx` = 0, 1, 1, 1, 0, −1, −1, −1, 0 and `dy` = −1, −1, 0, 1, 1, 1, 0, −1, 0; 8 is the centre. Over the whole file every one of the 65 536 cells walks to the one byte 8 at `(128, 128)`, longest in 128 steps, none leaving the table, each walk as long as the Chebyshev distance.
 - J3. [C] The 128 is declared to the run; the loader stores half the file's 256 rows and columns: `FieldLoad` stores width `+2` and height `+6` each `>> 1`, and `expfield.d2`'s header is 256 × 256. The candidates stay within 52 of the origin, inside the ±127 the table covers.
@@ -648,7 +648,7 @@ K3. Every frame with frame mod 1500 = 0, for acts 0..4: ActExpiredItemsFree, the
 
 Step notes:
 
-- K1. [C] **Live: `ItemPlaceOnGround`'s expiry by quality and base, 80 of 80 drops, 21 (base, quality) groups, each delta in the a-priori table**: `+15000` for qualities 1, 2, 3 (potions, rings), `+30000` for quality 4 and for the filler (gems, runes, a jewel), `+45000` for qualities 5, 6, 7, 8. Run:2026-11-04-inventory's 10 of 10 quality-2 `+15000` agree. Qualities 1, 3, 8 and the jewel and runes are built states of the recipe, each drop a real click. **Not run:** gold, a quest item, quality 9, a socketed item.
+- K1. [C] **Live: `ItemPlaceOnGround`'s expiry by quality and base, 80 of 80 drops, 21 (base, quality) groups, each delta in the a-priori table**: `+15000` for qualities 1, 2, 3 (potions, rings), `+30000` for quality 4 and for the filler (gems, runes, a jewel), `+45000` for qualities 5, 6, 7, 8. The first inventory run's 10 of 10 quality-2 `+15000` agree. Qualities 1, 3, 8 and the jewel and runes are built states of the recipe, each drop a real click. **Not run:** gold, a quest item, quality 9, a socketed item.
 - K2. [C] Family `expiry`, 600 cases, 4 distinct outcomes: `goldgeq` fails 6, `q4eq45` 50, `fillerplain` 67. Gold's two branches and the quest base's 0 rest here. [drlg/lifecycle G1](../../spec-drlg/lifecycle/#g-the-records) counts the logged branches.
 - K2. [C] The add wraps as `i32`: for `+45000`, frame 2 147 438 647 still fits and 2 147 438 648 wraps negative, and a negative expiry is `≤ frame` at the next sweep. No game reaches that frame: about 2.7 years at 25 frames a second.
 - K2. [C] **Quality 9** is in the code's `5..9`: it adds 45 000 (family `expiry`, 800 cases with quality 9 weighted; `q9plain` separates 166, `q9as4` 190). [C] No enabled stock CubeMain row gives an output of quality 9: the token `tmp` is in rows 142–145 only, all with `enabled` blank. [I] No stock path makes one (the cube's tempered rows are disabled, [items/cube](../cube/)); the code path that can is `RecipeOutputCreate`, which sets quality 9 when the recipe output's byte `+0x06` is 9; the creation request's `+0x30` writers and any direct store to the item's quality byte were not read.
@@ -657,7 +657,7 @@ Step notes:
 - K3. [C] So 15 000 frames is 10 minutes at 25 a second, and the free falls up to 1 499 frames later: 35 logged sweeps all at multiples of 1 500, 26 frees with lags 0..1 322, every due listed item freed. [I] A held item keeps its old `+0x24`, unread: only a room's list is swept, and a new drop overwrites it.
 - Row 1. [C] **Live: a drop made through `DropCreateItem` has `+0x24 = 0` at creation, 27 of 27**, after `ItemCreate`, and five of them (ids 58, 64, 65, 66, 67, frames 2 698..5 013) were listed in every sweep dump from the first after their creation to the last (frame 22 500), 12 to 14 dumps each, `+0x24 = 0` every time, none freed: 79 sightings. Scope: this path, the 27 creations and the 5 items followed. The log does not tell a monster's drop from a chest's, and the session's source was kills.
 - Row 1. [I] **"Never swept" stays the reading**: a longer life than that session, `DropGoldPile`, and any writer the scan's form misses (`ItemCopy`, a block copy; `ItemCreate`'s deeper chains) were not followed. `ItemCreate` goes through `SUnitCreate`, whose item data is zeroed, and neither calls `ItemGroundExpiry`.
-- Row 2. [C] The placement and the expiry's write, K1. Its callers: 12 rel32 call sites, no other, no abs32, by the raw scan. [C] (`static.txt`)
+- Row 2. [C] The placement and the expiry's write, K1. Its callers: 12 rel32 call sites, no other, no abs32, by the raw scan. [C] (`ItemPlaceOnGround`, `static.txt`)
 - Row 3. [C] **Live: the restore's write, 40 of 40**: the item's `+0x24` is `frame + 15000` in 26 (qualities 1, 2, 3: `saved` below the limit) and the saved word in 14 (the items of `+30000` or `+45000`). Scope: restores in the town (36 at frame 4 678) and the City of the Damned (4 at frame 4 131).
 - Row 3. [I] **Not observed: a saved word of 0 ("0 stays 0") and `saved` equal to the limit.** No quest base or zero-expiry item was saved.
 - Row 3. [C] **Live: `InactiveItemSave`'s saved word is `ItemGroundExpiry(item, frame)` computed afresh, 45 of 45**, not the old `+0x24`: monster drops with `+0x24` 0 (a City monster drop, 1 case) and player drops with `+0x24` set (44) alike. So a player's drop is lengthened too.
@@ -669,7 +669,7 @@ Step notes:
 | Path | Draws | Tag |
 |---|---|---|
 | The search, `InvGridFree`, the score, `InvRowForUnit`, the table readers, `BeltFreeSlot`, `ItemsCanStack`, each to its return | 0: no traced access to a unit's seed (`unit+0x20`) | [C] |
-| `GroundDropCell`, `FieldWalkBlocked`, `ItemGroundExpiry`, the distance | no seed is given; closures of 567, 551, 556, 551 functions, 0 with a step, 54 indirect unfollowed each | [C] (`rcg-summary.txt`; the same second walk) |
+| `GroundDropCell`, `FieldWalkBlocked`, `ItemGroundExpiry`, the distance | no seed is given; closures of 567, 551, 556, 551 functions, 0 with a step, 54 indirect unfollowed each | [C] (`GroundDropCell`, `rcg-summary.txt`; the same second walk) |
 | `ItemPlaceOnGround`: closure 711 functions, 1 with a step: `RNG_RangeB` on `unit+0x20`, in `UNIT_AnimInit`'s type-2 branch; family `ground` takes the item branch | 0 for an item | [C] |
 | `0x17`, `0x19`: the player's and the game's seeds around the handler | unchanged, 160 of 160 | [C] |
 | The moves: 2 096..2 122 functions, 118 with a step, 112 indirect | not bounded | [I] (`rcg-summary.txt`) |

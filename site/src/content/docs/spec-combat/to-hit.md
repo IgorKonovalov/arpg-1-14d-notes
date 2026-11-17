@@ -144,11 +144,11 @@ Step notes:
   100)`. Before the test the binary passes `c` and `r` to an empty debug stub. [C]
 - A6. `PreventHealHook` tests for a player attacker (`*unit = 0`), so stat 117 on a mercenary's items applies no state:
   emulated with hireling and other attackers, it reaches `STATE_ApplyTimed` only for a type-0 attacker. [C]
-  (row 27)
+  (`PreventHealHook`, row 27)
 - A6. On a hit, `PreventHealHook` runs inside `COMBAT_ToHitRoll`'s success branch, after the draw: for a player
   attacker with stat 117 ≠ 0 and a monster defender whose class is outside 704–709 (a signed test), it applies state 52
   (`STATE_ApplyTimed`, its record the nine words attacker, defender, 0, 1, 120 000, 31, 0, 52, 0: 120 000 frames,
-  stat 31 = 0, state 52). [C] (509 state-52 lines of length 120 000, stat 31, value 0, from a player attacker: the class bounds and the record emulated) **It draws nothing**, so the state
+  stat 31 = 0, state 52). [C] (`PreventHealHook`: 509 state-52 lines of length 120 000, stat 31, value 0, from a player attacker: the class bounds and the record emulated) **It draws nothing**, so the state
   is applied between the to-hit draw and the defence rolls: 271 state-52 lines of the attacker between the two, each
   with both seeds asserted after it and no step between, beside the code reading of the hook (no RNG call). [C]
 
@@ -382,8 +382,8 @@ case shows the running defender: no to-hit draw, and a third of the capped block
 
 ## Reimplementation notes
 
-- **`ToHitFactor` is not a level bonus.** Add it to the attack rating (A2); 1.14d has no class term in `2·alvl/(alvl
-  + dlvl)`. [C]
+- **`ToHitFactor` is not a level bonus.** Add it to the attack rating (A2); 1.14d has no class term in
+  `2·alvl/(alvl + dlvl)`. [C]
 - **Truncate the percent first.** `c = 100·AR/(AR+DEF)` is an integer before the level factor; computing
   `100·AR·2·alvl / ((AR+DEF)·(alvl+dlvl))` in one step gives different values. [C]
 - **The clamp uses `≤ 5` and `≥ 95`**, so a hit is never certain and never impossible for a rolled attack. [C]

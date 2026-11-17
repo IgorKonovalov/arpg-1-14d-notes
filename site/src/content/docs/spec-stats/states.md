@@ -33,11 +33,11 @@ stateDiagram-v2
 | A timed state is applied (skills, auras, shrines, open wounds, prevent-heal) | `STATE_ApplyTimed` | [C] (3 643 calls) |
 | A timed list's end frame is reached (unit event 12) | `EVENT_TimedListExpire` → `UNIT_ExpireTimedLists` | [C] (2 749 runs) |
 | States of one `group` are cleared | `STATE_GroupClear` | [C] (450 calls; 43 different-state clears; 24 in group 3) |
-| A player's regeneration tick (player event 3, every frame) | — | [C] (54 719 ticks) |
+| A player's regeneration tick (player event 3, every frame) | `RegenEvent` | [C] (54 719 ticks) |
 | An aura runs (unit events 8 and 9) | `EVENT_SelectedAuraTick`, `EVENT_ItemAuraTick` | [C] (3 629 runs) |
 | A shrine is operated (OperateFn 2) | `OBJOP_Shrine` | [I] (16 operates over) |
 | A well is used (OperateFn 22) | — | [I] (5 uses) |
-| A unit dies, or changes mode | — | [I] |
+| A unit dies, or changes mode | `StatListsPurgeOnDeath`, `StatListsDropOnMode` | [I] |
 
 ## Inputs
 
@@ -191,7 +191,7 @@ Step notes:
 - B3. [C] **Use kinds 6 and 9 only** (`ItemUseTimedState`: `yps`, `wms`, `vps`, `hrb`) run the group clear
   (§ D) before they apply. Healing and mana potions do not: they are kind 3, `ItemUsePotion`, with no call
   of it. Of `STATE_GroupClear`'s nine call sites only one lies in the use entries (in the range..).
-  (`STATE_GroupClear`; the nine sites and no abs32
+  (`ItemUseTimedState`, `ItemUsePotion`, `STATE_GroupClear`; the nine sites and no abs32
   reference (a second tool); the use kinds:
   [items/use § E](../../spec-items/use/#e-the-kinds), a potion's amount and rate [§ F](../../spec-items/use/#f-kinds-3-and-4-the-amount-and-the-two-draws))
 

@@ -20,12 +20,12 @@ here; which event sets each bit is [quests/progression](../../spec-quests/progre
 
 | When | Function | Tag |
 |---|---|---|
-| A monster dies: TC choice, then the quest TC switch | → → → `MONSTER_DropItems` | [C] |
+| A monster dies: TC choice, then the quest TC switch | `UnitKilled` → `MonSetMode` → `MonDeathEvent` → `MONSTER_DropItems` | [C] |
 | The same death, after the drop: the quest scripts' death event (event 8) | `QUESTS_MonsterDeathEvent` → `Quest+0xC0` of each quest the monster is hooked to | [C] |
 | Game creation: the quest objects and the quest seed | `QUESTS_InitGame` | [C] |
 | A quest object is operated (the Hellforge, quest chests, the altar, item objects): the quest script is the object's `OperateFn` slot itself | `OBJ_OperateDispatch` → `g_ObjOperateFns[OperateFn]` (slots in § E and § D4) | [I] (§ 9) for the altar (24), the Malus (21) and the orifice (25); [C] the Hellforge's slot 49 (the only reference to `ForgeOperate`), and the slots logged on the operates: 33 Wirt's body, 12 the Inifuss tree, 28 the tome, 39–41 the cube, scroll and staff chests, 57–59 the heart, eye and brain chests |
-| Object event 7, a timer some operate slots and scripts queue on a quest object (the forge's waves, Wirt's gold piles): dispatch by object class | — | [C] for classes 268 (Wirt's body →, 18 events) and 367 (the Kurast sewer lever →, one event), the logged chain; the Hellforge's (376) [C] below; [I] the other classes' targets (§ 9) |
-| The Hellforge's timer, after the third strike | `QUESTS_ObjectEvent` → | [C] (the only references in the image force the event-7 route, § 9) |
+| Object event 7, a timer some operate slots and scripts queue on a quest object (the forge's waves, Wirt's gold piles): dispatch by object class | `GameRunUnitEvents` → `ObjEventsRun` → `OBJ_EventDispatch` → `g_ObjEventFns` entry 7 → `ObjEvent7Thunk` (one `jmp`, no frame) → `QUESTS_ObjectEvent` → the class's target | [C] for classes 268 (Wirt's body → `A1Q4_WirtGold`, 18 events) and 367 (the Kurast sewer lever → `A3Q2_SewerLeverEvent7`, one event), the logged chain; the Hellforge's (376) [C] below; [I] the other classes' targets (§ 9) |
+| The Hellforge's timer, after the third strike | `QUESTS_ObjectEvent` → `A4Q3_ForgeWave` | [C] (the only references in the image force the event-7 route, § 9) |
 | An NPC menu action: imbue (Charsi), socket (Larzuk), personalize (Anya) | `NPC_MenuAction` | [C] |
 | An NPC message that gives an item (Akara, Ormus, Alkor, Meshif, Qual-Kehk, Malah, Anya) | the act scripts' NPC message callbacks → `QUESTS_GiveItem` | [C] (20 calls, each NPC's from its handler's call site) |
 
@@ -132,7 +132,8 @@ Step notes:
   for Act I (objects 0–6) and differ after (7 → 8 … 13 → 14, 14 → 16 … 20 → 22, 21 → 24 … 24 → 27, 25 → 29, 26 → 30,
   27 → 31, 28 → 32, 29 → 33, 30 → 41, 31 → 35 … 36 → 40). This is the word `QuestsPlayerJoin` uses: it
   walks the records and reads `+0x14` as the word of its `GetState(…, 0)`, `GetState(…, 15)` and the game record's
-  `SetState(…, 15)`. (`g_QuestDescs`, qd 8)
+  `SetState(…, 15)`. (`g_QuestDescs`, `QuestsPlayerJoin`,
+qd 8)
 - A1. [C] **The scripts' own word is not always the table's.** Each object's init function stores a word at
   `Quest+0xE0`, and it equals `+0x14` for 35 of the 37 objects; object 28 (Act III, table word 32) stores **16**, and
   object 30 (Act I, table word 41), which shares its init function with object 25, stores **29**.
@@ -229,7 +230,7 @@ reproduces both drops.
   four give a special record only for modes 4, 5, 8, 9, 10 or 11, and the fifth, like every class outside the ranges,
   falls to `g_MonModeRecords[mode]` (16 bytes a record). The run reached the default record and Baal's block; Diablo's block and
   the two others were not run, so Diablo's record and his drop-before-script order rest on this reading.
-  (qd 13)
+  (`MonModeRecord`, qd 13)
 
 **The quest-dependent TCs.** Exactly five classes have a `TCQuestId`, and each has all three `TreasureClass4` cells.
 [C]
@@ -238,9 +239,9 @@ reproduces both drops.
 |---|---|---|---|---|---|---|
 | `andariel` (156) | 6 | 1 | `Andarielq` / `Andarielq (N)` / `Andarielq (H)` | 13, 1 on the killer when bits 0 and 1 are clear (`A1Q6_SetKilled`) | 15, 1, 1 | [C] |
 | `duriel` (211) | 14 | 5 | `Durielq` … | 5 on the killer when bits 0, 3, 4, 5 are clear | 15, 1, 5 | [C] |
-| `mephisto` (242) | 22 | 0 | `Mephistoq` … | 13, 0, 11 (`A3Q6_SetDone`) | 15, 1, 0 | [C] (returns: the fresh kill) |
+| `mephisto` (242) | 22 | 0 | `Mephistoq` … | 13, 0, 11 (`A3Q6_SetDone`) | 15, 1, 0 | [C] (`A3Q6_SetDone` returns: the fresh kill) |
 | `diablo` (243) | 26 | 0 | `Diabloq` … | — | 15, 1, 0 | [I] |
-| `baalcrab` (544) | 40 | 0 | `Baalq` … | — | 15, 1, 0 | [C] (returns: the fresh kill) |
+| `baalcrab` (544) | 40 | 0 | `Baalq` … | — | 15, 1, 0 | [C] (`A5Q6_BaalDeath`, `A5Q6_Credit` returns: the fresh kill) |
 
 **What each state of the word gives.**
 
@@ -253,9 +254,9 @@ reproduces both drops.
 | Duriel | clear, or bit 0 only | quest TC | [C] |
 | Duriel | bit 5 (after the first kill) | normal TC | [C] |
 | Mephisto | clear | quest TC | [C] |
-| Mephisto | bit 0 (after the first kill) | normal TC (`Mephisto` 848, not `Mephistoq` 851), and no `mss` | [C] (owner-played: word 22 = `0x0001`) |
+| Mephisto | bit 0 (after the first kill) | normal TC (`Mephisto` 848, not `Mephistoq` 851), and no `mss` | [C] (owner-played: word 22 = `0x0001`; `A3Q6_MephistoDeath`) |
 | Baal | clear (word 40 `0x0004`) / bit 0 (`0x0401`, `quests: all`) | quest TC (`Baalq` 884) / normal TC (`TreasureClass` 881, no write of word 40 at the kill) | [C] |
-| Diablo | clear / bit 0 | quest TC / normal TC | [I] (not killed in any run) |
+| Diablo | clear / bit 0 | quest TC / normal TC | [I] (`A4Q2_DiabloDeath`; not killed in any run) |
 
 - [C] **Andariel's quest TC comes back.** Warriv's message (npc 155, `0xB7`) with bit 1 set clears bit 1 and sets bit
   0, and nothing else writes bits 0, 1 or 15 of word 6. With `TCQuestCP` 1 the test is "bits 15 and 1 clear", so after
@@ -469,7 +470,8 @@ D6. BaalDeath, killer present, killer word 40 bit 0 clear:          [C] (one pla
   direct-call walk from Diablo's death function and from every callback of the a5q4 and a5q5 objects, stopped at the
   engine entries they call (`MonSetMode`, `PortalObjectCreate`, `SUnitCreate`, `UnitKilled`, `PLAYER_LevelUp`),
   reaches no item creator. Through those engine entries it does reach creators (a new monster's equipment, room
-  restores, a level-up's items), which are not the scripts' drops. (qd 28)
+  restores, a level-up's items), which are not the scripts' drops. (`A4Q2_DiabloDeath`,
+qd 28)
 - [I] So their drops are their TCs (Diablo's through B6); Diablo was not killed in any run, and no kill of the others
   is compared here.
 - [C] **The death handler's class map** (mod 22, event 1, `g_UModEventFns[6·22 + 1]` =): over all 734 classes in mode 0, classes 704, 705 and 709 and no other reach `UberTristramDrop`; the classes 156, 229, 242, 256, 267, 479 and 540–542 have their own callee, the rest none; any other mode none. Each case ends at the arm's callee or the return, and the handler's byte and jump tables are read from the image, so this is the code against its own tables with the arms' call sites as the check.
@@ -484,7 +486,7 @@ D6. BaalDeath, killer present, killer word 40 bit 0 clear:          [C] (one pla
 | item | source | the script's gate | count | quality asked (created) | draws | Tag |
 |---|---|---|---|---|---|---|
 | `leg` | its object's operate | object not yet used (mode 0) | 1 | 2 | — | [C] the creation in mode 0, on the unchanged quest seed; [I] the used-object half (no second operate was reached) |
-| gold | Wirt's body (object 268) | first operate | `RandLoHi(questSeed, 10, 20)` piles (10–19), one per timer ([items/economy](../economy/#g-gold-payment-caps-piles-and-the-death-loss) G8a) | 2 | 1 | [C] (18 piles on another quest seed, the count `RandLoHi` gives on it) |
+| gold | Wirt's body (object 268) | first operate | `RandLoHi(questSeed, 10, 20)` piles (10–19), one per timer ([items/economy](../economy/#g-gold-payment-caps-piles-and-the-death-loss) G8a) | 2 | 1 | [C] (`A1Q4_WirtGold`: 18 piles on another quest seed, the count `RandLoHi` gives on it) |
 | `bks` | the Inifuss tree | word 4 bits 0, 1 clear, no `bks`/`bkd` held | 1 | 2 (7) | — | [C] the creation with word 4 clear and neither held, no draw; [I] the refusals |
 | `bkd` | Akara (npc 148), for `bks` | — | 1 (`GiveItem`) | 2 | — | [I] |
 | `hdm` | the Malus object | word 3 bits 0, 1 clear, clvl ≥ 8 | 1 | 2 | — | [I] |
@@ -499,7 +501,7 @@ D6. BaalDeath, killer present, killer word 40 bit 0 clear:          [C] (one pla
 | `j34` | a dying monster | killer word 19 bit 0 clear | 1 | 2 (7) | — | [C] five creations at kills by a player with word 19 = 0; [I] the refusal |
 | `g34`, `xyz` | npc 264 (Meshif) for `j34`; Alkor (npc 254) for `g34` | word 20 states | 1 each (`GiveItem`, clvl) | 2 (`g34` 7) | — | [C] `g34` given with `j34` held (Nightmare), `xyz` with word 20 bit 1 set, each at clvl; [I] the other word-20 states |
 | `qf1`, then `box` | the council's deaths | counted players | per player | 7, 2 | — | [I] |
-| `mss` | Mephisto's death | killer word 22 bit 0 clear (+ counted players) | per player | 2 (7) | — | [C] the fresh kill created it, the kill with the quest done none (return) |
+| `mss` | Mephisto's death | killer word 22 bit 0 clear (+ counted players) | per player | 2 (7) | — | [C] the fresh kill created it, the kill with the quest done none (`A3Q6_MephistoDeath` return) |
 | `hfh` | Hephasto's death callback | quest active | 1 | 7 | — | [C] |
 | `ice`, `tr2` | Malah (messages) | word 37 states; no `ice` held | 1 each (`GiveItem`, clvl) | 2 (`tr2` 7) | — | [C] `tr2` in Normal, Nightmare and Hell; [I] `ice` (offered only in a quest state no run reached, F4) |
 
@@ -583,7 +585,7 @@ Step notes:
 
 ### F. NPC item services and given items
 
-`NPC_MenuAction(game, action, npcGuid, itemGuid)`, player in EDX; the item is the player's cursor item, consumed by `CursorItemConsume`. [C] (`NPC_MenuAction`: in all 18 services the consumed item was the player's cursor item, `[[player+0x60]+0x20]`, and the call returned 1)
+`NPC_MenuAction(game, action, npcGuid, itemGuid)`, player in EDX; the item is the player's cursor item, consumed by `CursorItemConsume`. [C] (`NPC_MenuAction`, `CursorItemConsume`: in all 18 services the consumed item was the player's cursor item, `[[player+0x60]+0x20]`, and the call returned 1)
 
 - [I] The client code refuses an unidentified item, then calls the test of the window's NPC
   (154, 511, 512); these are the tests' only callers besides `NPC_MenuAction`,
@@ -631,7 +633,8 @@ F1. Imbue(player, item):                                          [C] (NPC_MenuA
   socketed item (`0x800`), and qualities 4–8 (magic, set, rare, unique, crafted); low and superior `cap` (1, 3) pass. An
   item failing two tests stops at the first (the `cap` holding a gem has `0x800` too; `hdm` stops before the quest
   test). The throwable test is skipped for every logged item: each had unit `+0xC8` bit 25 set, no call of
-  `ItemTypeThrowable` was made, and throwing knives (`tkf`) passed. (`Weapons.txt:bitfield1`: 22 imbue tests)
+  `ItemTypeThrowable` was made, and throwing knives (`tkf`) passed. (`ItemCanImbue`,
+  `ItemMagicStockable`, `ItemHoldsItem`, `Weapons.txt:bitfield1`: 22 imbue tests)
 - F1. [I] The test also refuses `ITEMS_GetType` 4, item flag `0x1000`, quality 9 and, when unit `+0xC8` bit 25 is
   clear, a throwable (ItemTypes `+0x10`); none was reached, and what sets bit 25 is not read. So only low, normal and
   superior bases (1–3) are imbued.
@@ -645,7 +648,7 @@ F1. Imbue(player, item):                                          [C] (NPC_MenuA
   (an operand scan of the creation, fallback, staff-mods, affix and rare-name code finds no other reader). The imbue
   writes quality 6, which an override can change only to 4 or 7. [C] No imbued item takes the unique path: every stock base with the `unique` flag is a
   `quest` item other than `leg` or has `bitfield1` bit 0 clear (`std`), so `ItemCanImbue` refuses it. (data check,
-  `Weapons.txt:unique`, `Misc.txt:bitfield1`)
+  `Weapons.txt:unique`, `Misc.txt:bitfield1`, `ItemCanImbue`)
 - F1. [C] The service tests word 3 bit 1 only: the imbue branch makes one quest test, `GetState(rec, 3, 1)`, and the run's reward saves had bit 15 beside bit 1 (the loader's copy) and were served 17 times.
 
 
@@ -792,7 +795,8 @@ sequenceDiagram
   its `QUESTS_GetSeed` call and calls no item creator; 22 call sites in 17 functions in all), so in general its state
   at a drop depends on the game's quest history and is asserted, not derived (§ Inputs and oracles). Baal's death
   (`RNG_RandLoHi`) draws it too, for its gold piles, which are items (D6).
-  (`QUESTS_GetSeed`, qd 49)
+  (`QUESTS_GetSeed`, `A5Q6_BaalDeath`,
+qd 49)
 - [C] No scripted drop's item creation steps the quest seed; the created items draw the game seed and their own seeds
   like every item.
 

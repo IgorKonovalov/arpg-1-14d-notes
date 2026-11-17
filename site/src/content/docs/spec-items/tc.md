@@ -19,10 +19,10 @@ in [data/excel § G](../../spec-data/excel/#g-treasure-classes).
 
 | When | Function | Tag |
 |---|---|---|
-| A monster dies (death event → death drop, `noNoDrop = 0`) | → → `MONSTER_DropItems` | [C] |
-| A corpse skill re-drops a monster (`noNoDrop = 1`) | → → `MONSTER_DropItems` | [C] |
+| A monster dies (death event → death drop, `noNoDrop = 0`) | `MonDeathEvent` → `MonDeathDrop` → `MONSTER_DropItems` | [C] |
+| A corpse skill re-drops a monster (`noNoDrop = 1`) | `CorpseFindItem` → `MonDropNoNoDrop` → `MONSTER_DropItems` | [C] |
 | Monster TC → level upgrade → resolver | `TC_DropByIndex` → `TC_ResolveDrops` | [C] |
-| A chest or other object drops (named only; the callers are [objects § J](../../spec-objects/overview/#j-operate-chests-and-containers-up-to-the-drop)) | → `TC_ResolveDrops` | [C] |
+| A chest or other object drops (named only; the callers are [objects § J](../../spec-objects/overview/#j-operate-chests-and-containers-up-to-the-drop)) | `ObjectChestDrop` → `TC_ResolveDrops` | [C] |
 
 - [C] **The two monster chains.** All 973 entries of `MonDeathDrop` logged in the H2a run return after its one call
   site in `MonDeathEvent`, which is reached through a table in `.rdata`; the 858 death drops that pass its guard are
@@ -61,8 +61,8 @@ Offsets are byte offsets into the owner; struct names are ours.
 | `src` | the source unit: the dying monster, or the object | argument |
 | `src.seed` | `Seed` at `Unit+0x20`, **every TC draw steps it** | [rng/seeds](../../spec-rng/seeds/#algorithm) step 7a |
 | `src.type`, `src.classId` | u32 (`1` monster, `2` object, `0` player, `4` item), class at `unit+0x04` | |
-| monster type flags | u16 at `monsterData+0x16` (`unit+0x14` → `+0x16`): `0x02` superunique, `0x04` champion, `0x08` unique, `0x10` minion | — |
-| superunique id | `monsterData+0x26` | — |
+| monster type flags | u16 at `monsterData+0x16` (`unit+0x14` → `+0x16`): `0x02` superunique, `0x04` champion, `0x08` unique, `0x10` minion | `MonTypeFlag` |
+| superunique id | `monsterData+0x26` | `MonSuperUniqueId` |
 | unit stats | stat 12 `level`, 14 `gold`, 79 `item_goldbonus`, 100 `monster_playercount` (itemstatcost ids) | |
 | `killer` | the unit credited with the kill (player, or a monster that may have an owner) | argument |
 | TC array | `g_pTreasureClasses`, `g_nTreasureClasses` entries of 0x2C bytes | `g_pTreasureClasses`, `g_nTreasureClasses` |
@@ -742,7 +742,7 @@ Step notes:
   quality roll. [I]
 - H7. **The record as logged:** flag bit 0 is set for exactly the `hellbovine` drops (221 of 221 cow drops, 0 of 4 796
   others), the upgrade bits are 0, the quality is the resolver's, and the level is the source monster's (5 017 drops).
-  The level for an object or player source is not logged. [C]
+  The level for an object or player source is not logged. [C] (`DropCreateItem`)
 - H7. [I] Record `+0x2A` takes `game+0x78`, the game's item version (u16): 101 in every logged expansion record, 2 in
   the classic ones. Flag bit 0 (the `hellbovine` source) is what lets set 29 be picked
   ([items/uniques-sets](../uniques-sets/) D2).

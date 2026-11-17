@@ -103,15 +103,22 @@ Constant data in `Game.exe`:
 | Name | Value | Anchor | Tag |
 |---|---|---|---|
 | champion chance | `Range(100) <` 20 (MonUMod row 0 `constants`) | `MonUMod.txt:constants` | [C] |
-| unique mod count | `1 + difficulty`, at most 9 mods in all | — | [C] for the count; the cap is [I] |
-| unique minions of a random unique | 3 … 6 | — | [C] |
-| `PACK_MOD` | 16 `champion`, the only mod of a pack member or a preset champion | — | [C] |
-| `QUEST_MOD` | 22 `questcomplete`, appended to every superunique | — | [C] |
+| unique mod count | `1 + difficulty`, at most 9 mods in all | `SpecialModsRoll` | [C] for the count; the cap is [I] |
+| unique minions of a random unique | 3 … 6 | `UniqueMinions` | [C] |
+| `PACK_MOD` | 16 `champion`, the only mod of a pack member or a preset champion | `ChampionMemberMark` | [C] |
+| `QUEST_MOD` | 22 `questcomplete`, appended to every superunique | `SuperUniqueSpawn` | [C] |
 | `THIEF` | 24, dropped from a superunique's fixed mods | — | [I] |
-| aura classes | 704 `ubermephisto`: Conviction (skill 123) at level 20; superunique 37 (Lord De Seis): index 5 | — | [C] the 704 arm to `UnitSkillAdd`, not its reach in play: § C3, § J; [I] index 5 |
+| aura classes | 704 `ubermephisto`: Conviction (skill 123) at level 20; superunique 37 (Lord De Seis): index 5 | `UModAura` | [C] the 704 arm to `UnitSkillAdd`, not its reach in play: § C3, § J; [I] index 5 |
 | name formats | `string.tbl` 1721 `"%0 %1"`, 1722 `"%0 %1 %2"`; `patchstring.tbl` 11072 `"%0 %1"` | — | [C] |
 
 ### Inputs and oracles
+
+The model of this spec takes the place of every special-path oracle the earlier spawn model read from the logs:
+70 special-mods rolls, 169 picks, 606 handler calls on specials and 1667 on group members,
+130 `rndname` steps, 12 aura draws, 277 transferred minion lists, 11 superuniques, 4 + 4 MonPlace presets and 94 client
+name rolls, in all three difficulties, classic and expansion, `monspawn: 390144 checks, 0 mismatches`. [C]
+
+What remains are inputs owned by other subsystems; every `[C]` below holds under them.
 
 | Input | Kind | What this spec needs | Owner | Tag |
 |---|---|---|---|---|
@@ -244,14 +251,14 @@ B4. MonTypeIsA(class, t) → bool:                                  [C]
 
 Step notes:
 
-B1. The weights are u16 fields read as signed shorts, and only those above 0 count. The draw is one `Range` over the total, and the first candidate whose cumulative weight exceeds it wins. [C] (the candidate list, total and draw of all 16 champion and 153 unique picks) The unique pick inlines the draw: a power-of-two total masks the low word, any other total takes the unsigned remainder. Both give `low mod total`, so it is `Range`: 284 unique picks, each reproduced as `Range`. [C] None of their totals was a power of two, and none can be on stock data (every `upick` weight is 6, so a total is `6·k`): the masked form is a code reading. [I]
+B1. The weights are u16 fields read as signed shorts, and only those above 0 count. The draw is one `Range` over the total, and the first candidate whose cumulative weight exceeds it wins. [C] (`ChampionModPick`, `UniqueModPick`: the candidate list, total and draw of all 16 champion and 153 unique picks) The unique pick inlines the draw: a power-of-two total masks the low word, any other total takes the unsigned remainder. Both give `low mod total`, so it is `Range`: 284 unique picks, each reproduced as `Range`. [C] None of their totals was a power of two, and none can be on stock data (every `upick` weight is 6, so a total is `6·k`): the masked form is a code reading. [I]
 
 B2. With stock data a classic game has one champion candidate, `champion` (16). The other four champion mods (`ghostly`,
 `fanatic`, `possessed`, `berserk`) have `version` 100. Classic and expansion have the same unique candidates, 12 in normal
 and 13 in nightmare and hell (`resist`, 8, gets its weight there), before the class tests of `ModEligible`. Every stock weight is 1 (champion) or 6 (unique), so the
 candidates of a pick are equally likely. [C]
 
-B3. `ModEligible` runs before the `have` test, so a mod already in the list is still tested (with its `MonTypeIsA` calls) and then skipped. This changes no draw. [C] (153 `MonTypeIsA` calls predicted in number and result) `fPick` 1 is `teleport`, 2 `multishot`, 3 `fast`; the run's candidate lists agree with the three tests over every class rolled. [C]
+B3. `ModEligible` runs before the `have` test, so a mod already in the list is still tested (with its `MonTypeIsA` calls) and then skipped. This changes no draw. [C] (`UniqueModPick`: 153 `MonTypeIsA` calls predicted in number and result) `fPick` 1 is `teleport`, 2 `multishot`, 3 `fast`; the run's candidate lists agree with the three tests over every class rolled. [C]
 
 B4. Row `t` of the matrix holds every MonType reachable from `t` through `equiv1`..`equiv3`, `t` included. An `exclude`
 type therefore excludes its own classes and those of the types it lists as `equiv`, not the classes of the types that list
@@ -334,37 +341,37 @@ its group. No handler draws on the room or game seed. The effect column only nam
 | Row | Mod | Server handler | Draws, flag 1 | Flag 0 | Effect (named) | Tag |
 |---|---|---|---|---|---|---|
 | 0 | `none` | null | — | — | its `constants` is the champion chance | [I] |
-| 1 | `rndname` | always run | **1 unit-seed step**; name seed | nothing | name seed | [C] |
-| 2 | `hpmultiply` | always run | none | runs | hit points | [C] |
+| 1 | `rndname` | `UModRndName`, always run | **1 unit-seed step**; name seed | nothing | name seed | [C] |
+| 2 | `hpmultiply` | `UModHpMultiply`, always run | none | runs | hit points | [C] |
 | 3 | `light` | null, always tried | — | — | — | [C] |
-| 4 | `leveladd` | always run | none | runs | level + 3, experience × 5 | [C] |
-| 5 | `strong` | — | none | runs | to-hit, damage | [C] |
-| 6 | `fast` | — | none | runs | velocity | [C] |
+| 4 | `leveladd` | `UModLevelAdd`, always run | none | runs | level + 3, experience × 5 | [C] |
+| 5 | `strong` | `UModStrong` | none | runs | to-hit, damage | [C] |
+| 6 | `fast` | `UModFast` | none | runs | velocity | [C] |
 | 7 | `curse` | null | — | — | elsewhere | [C] |
-| 8 | `resist` | — | none | nothing | resistances | [C] |
-| 9 | `fire` | — | none | runs, `resist` part skipped | enchant damage, resistance | [C] |
+| 8 | `resist` | `UModResist` | none | nothing | resistances | [C] |
+| 9 | `fire` | `UModFire` | none | runs, `resist` part skipped | enchant damage, resistance | [C] |
 | 10, 11, 13, 14, 15 | `poisondead`, `durieldead`, `rage`, `spcdamage`, `partydead` | null | — | — | post-create mods (§ J) | [C] for 10 and 13, skipped in every window that listed them; [I] for 11, 14, 15, in no logged list |
 | 12 | `bloodraven` | null (client: the name) | — | — | Blood Raven's name | [C] (`g_ClientUModHandlers`: written by the preset path with no `SpecialModsApply` window; the client builder names it) |
-| 16 | `champion` | — | none | nothing | level − 1, experience, to-hit, damage, velocity | [C] |
-| 17 | `lightning` | — | none | runs, `resist` part skipped | enchant damage, resistance | [C] |
-| 18 | `cold` | — | none | runs, `resist` part skipped | enchant damage, resistance | [C] |
+| 16 | `champion` | `UModChampion` | none | nothing | level − 1, experience, to-hit, damage, velocity | [C] |
+| 17 | `lightning` | `UModLightning` | none | runs, `resist` part skipped | enchant damage, resistance | [C] |
+| 18 | `cold` | `UModCold` | none | runs, `resist` part skipped | enchant damage, resistance | [C] |
 | 19, 21 | `hireable`, `killself` | null | — | — | — | [I] |
 | 20 | `scarab` | null | — | — | post-create mod of `scarab1` classes | [C] |
 | 22 | `questcomplete` | null | — | — | appended to every superunique | [C] |
-| 23 | `poisonhit` | — | none | runs, `resist` part skipped | enchant damage | [I] |
+| 23 | `poisonhit` | `UModPoisonHit` | none | runs, `resist` part skipped | enchant damage | [I] |
 | 24 | `thief` | null | — | — | never written (§ G) | [I] |
-| 25 | `manahit` | — | none | runs, `resist` part skipped | enchant damage | [C] |
-| 26 | `teleport` | — | none on unit, room or game seed (skill setup asserted) | nothing | teleport skill | [C] |
-| 27 | `spectralhit` | — | none | nothing | resistances | [C] |
-| 28 | `stoneskin` | — | none | nothing | resistances | [C] |
+| 25 | `manahit` | `UModManaHit` | none | runs, `resist` part skipped | enchant damage | [C] |
+| 26 | `teleport` | `UModTeleport` | none on unit, room or game seed (skill setup asserted) | nothing | teleport skill | [C] |
+| 27 | `spectralhit` | `UModResist` | none | nothing | resistances | [C] |
+| 28 | `stoneskin` | `UModResist` | none | nothing | resistances | [C] |
 | 29 | `multishot` | null | — | — | elsewhere | [C] |
-| 30 | `aura` | — | **`Range(Init(nameSeed), n)`** on a local seed | nothing | aura skill and level | [C] |
+| 30 | `aura` | `UModAura` | **`Range(Init(nameSeed), n)`** on a local seed | nothing | aura skill and level | [C] |
 | 31–35, 40, 42 | `goboom`, `firespike_explode`, `suicideminion_explode`, `ai_after_death`, `shatter_on_death`, `worms_on_death`, `lightningdeath` | null | — | — | — | [C] for 34 and 35, in 17 applied lists with no call; [I] for 31–33, 40, 42, in no logged list |
-| 36 | `ghostly` | — | none | nothing | flag `0x40`/`0x20`, then `champion`'s effects | [C] |
-| 37 | `fanatic` | — | none | nothing | flag `0x40`/`0x20`, then `champion`'s effects | [C] |
-| 38 | `possessed` | — | none | nothing | flag `0x40`/`0x20`, then `champion`'s effects | [C] |
-| 39 | `berserk` | — | none | nothing | flag `0x40`/`0x20`, then `champion`'s effects | [C] |
-| 41 | `always_run_ai` | — | none on the three seeds (AI event, not reached) | runs | AI timer | [I] |
+| 36 | `ghostly` | `UModGhostly` | none | nothing | flag `0x40`/`0x20`, then `champion`'s effects | [C] |
+| 37 | `fanatic` | `UModFanatic` | none | nothing | flag `0x40`/`0x20`, then `champion`'s effects | [C] |
+| 38 | `possessed` | `UModPossessed` | none | nothing | flag `0x40`/`0x20`, then `champion`'s effects | [C] |
+| 39 | `berserk` | `UModBerserk` | none | nothing | flag `0x40`/`0x20`, then `champion`'s effects | [C] |
+| 41 | `always_run_ai` | `UModAlwaysRunAi` | none on the three seeds (AI event, not reached) | runs | AI timer | [I] |
 
 - [C] A `[C]` row is a mod that was in some logged special's list (or always run), with its handler calls seed-asserted:
   in the special-monsters run, and for rows 10, 12, 13, 34 and 35 in the later runs named in their rows. The `[I]` rows
@@ -488,9 +495,9 @@ G1. SuperUniqueSpawn(game, room, x: i32, y: i32, id: i32) → unit | none:   [C]
 | 26, 27, 29 | Ismail Vilehand, Geleb Flamefinger, Toorc Icefist | quest hook 19, then | none | [C] |
 | 36, 37, 38 | Infector of Souls, Lord De Seis, Grand Vizier of Chaos | quest hook 23 | none | [C] for 36 and 38; [I] for 37, not created |
 | 39 | The Cow King | quest hook 4 | none | [I] |
-| 42 | Siege Boss | `EscortSpawn(minion1, radius 20, 20 ×, flags 0)`, quest hook 31, state 118 | the escorts' spawns | [C] (Shenk, 20 `minion1`) |
+| 42 | Siege Boss | `EscortSpawn(minion1, radius 20, 20 ×, flags 0)`, quest hook 31, state 118 | the escorts' spawns | [C] (`EscortSpawn`: Shenk, 20 `minion1`) |
 | 43, 44, 45 | Ancient Barbarian 1–3 | quest hook 35 | none | [I] |
-| 60 | Nihlathak Boss | links itself, `EscortSpawn(LevelClassVariant(minion1), radius 10, 20 ×, flags 0x40)`, quest hook 34 | the escorts' spawns | [C] (20 of class 458 on level 124; the 20 requests also chain with their logged placements) |
+| 60 | Nihlathak Boss | links itself, `EscortSpawn(LevelClassVariant(minion1), radius 10, 20 ×, flags 0x40)`, quest hook 34 | the escorts' spawns | [C] (`EscortSpawn`, `LevelClassVariant`: 20 of class 458 on level 124; the 20 requests also chain with their logged placements) |
 | 62 | Baal Subject 2 | `EscortSpawn(skmage_cold3, radius 20, 10 ×, flags 0x40)` | the escorts' spawns | [I] |
 
 - [C] The tail is the table's entry for the record's index, with the pushed arguments read:
@@ -504,13 +511,13 @@ G1. SuperUniqueSpawn(game, room, x: i32, y: i32, id: i32) → unit | none:   [C]
 
 Step notes:
 
-G1. **Placement.** `SpecialMonPlace` with no box and a point tries an exact `SpawnAtPos(x, y, class, radius −1, flags 0x40)` and then the same with radius 5. With `AutoPos` the point is (0, 0), and `SpawnPosPick(no box, avoidWarp: false)` first draws a point anywhere in the room rectangle on the room seed. The point is not near the preset except because the preset lies in that room. The superunique is marked special (`nSpecial` + 1) and gets flag `0x01`. [C] (`SuperUniques.txt:AutoPos`: 5 exact placements and 6 `AutoPos` ones, e.g. Griswold at (25141, 5179) for the preset point (25131, 5191))
+G1. **Placement.** `SpecialMonPlace` with no box and a point tries an exact `SpawnAtPos(x, y, class, radius −1, flags 0x40)` and then the same with radius 5. With `AutoPos` the point is (0, 0), and `SpawnPosPick(no box, avoidWarp: false)` first draws a point anywhere in the room rectangle on the room seed. The point is not near the preset except because the preset lies in that room. The superunique is marked special (`nSpecial` + 1) and gets flag `0x01`. [C] (`SpecialMonPlace`, `SuperUniques.txt:AutoPos`: 5 exact placements and 6 `AutoPos` ones, e.g. Griswold at (25141, 5179) for the preset point (25131, 5191))
 
 G2. **Fixed mods.** `Mod1`–`Mod3` are MonUMod row indices, written as they are after any post-create mods, and they skip `ModEligible`. So `rndname`, `poisonhit` or a mod whose `fPick` or `exclude` test would fail can be fixed. [C] for the writing order (Beetleburst entered with its post-create mod 20, then its fixed mods) [I] for the skipped test
 
 G3. **Extra mods.** The `difficulty` extra picks are the unique pick of § B on the unit seed, with only the fixed mods in `have`. An extra never repeats a fixed mod, but it can repeat a post-create mod. No `Range(1)` precedes them. The run had 7 superuniques with 1 extra in nightmare or 2 in hell. [C] (`memset`)
 
-G4. **Minions.** The count is `min + RangeB(u.seed, max − min + 1)` from § E, after the difficulty bonus. A record with `MinGrp` = `MaxGrp` = 0 still makes one `RangeB(1)` draw and gets no minion. The minions are of `minion1`, or of the superunique's own class when it has none. [C] (Rakanishu 8, 9 and 10 in normal, nightmare and hell; Griswold ×4 and Threash Socket with `MinGrp` 0; Megaflow Rectifier 8 of its own class) A record with only one of the two bounds non-zero gets no bonus. [I]
+G4. **Minions.** The count is `min + RangeB(u.seed, max − min + 1)` from § E, after the difficulty bonus. A record with `MinGrp` = `MaxGrp` = 0 still makes one `RangeB(1)` draw and gets no minion. The minions are of `minion1`, or of the superunique's own class when it has none. [C] (`UniqueMinions`: Rakanishu 8, 9 and 10 in normal, nightmare and hell; Griswold ×4 and Threash Socket with `MinGrp` 0; Megaflow Rectifier 8 of its own class) A record with only one of the two bounds non-zero gets no bonus. [I]
 
 G5. A record with `Stacks` 0 whose placed bit is set is refused: three such calls on the kept logs returned with no unit, and every first call of those records created its unit. `SuperUniqueSpawn` makes no quest test of its own that a done quest fails: all 18 superuniques of the earlier logs were placed for characters with every quest done in every difficulty. [C] That `Stacks` is the only "may appear again" switch, and that no test fails on an open quest either (the quest hooks of the tails register the unit; they do not gate it), rest on the reading: every logged character had all quests done. [I]
 
@@ -672,7 +679,7 @@ I4. `UniqueTitle` is loaded and freed, and nothing reads it: access watchpoints 
   | 366 `compellingorb` | 22 | quest hook 19, unit flag `0x20000` | [I] |
   | 402 `smith` | 22 | — | [I] |
   | 526 `nihlathakboss` | 22 | quest hook 34 | [C] the mod; [I] the hook |
-| 175 `warriv2`, 229 `radament`, 250 `summoner`, 340–343 `boneprison1`..`4`, 407 `fetish11`, 409 `hephasto`, 434 `prisondoor`, 540 `ancientbarb1`..`3` | none | quest hooks (229: 8; 250: 12, then unit flag `0x800`; 407: 17; 409: 24; 434: 32); unit flag `0x20000` (340–343); the gear call (540); an unnamed call (175) | [I] (for 540, for 175) |
+| 175 `warriv2`, 229 `radament`, 250 `summoner`, 340–343 `boneprison1`..`4`, 407 `fetish11`, 409 `hephasto`, 434 `prisondoor`, 540 `ancientbarb1`..`3` | none | quest hooks (229: 8; 250: 12, then unit flag `0x800`; 407: 17; 409: 24; 434: 32); unit flag `0x20000` (340–343); the gear call (540); an unnamed call (175) | [I] (`MonPostCreateBoss`, for 540, for 175) |
 
 - [C] **The first call of `MonPostCreateBoss`, for six `BaseId`s.** For `BaseId`s 156, 211, 242, 243, 256 and 544, the table's rows above: by class, the first `ModAppendApply(game, unit, mod, 1)` or `QUESTS_HookMonster` is the one each row names, so `mephisto` and `baalcrab` reach their quest hook before their mod 22, and `duriel` its hook 13 first. Each case ends at that first callee. This covers neither the callee, nor the later mods (704 → 22, 30, 17, 8, 6; 705 → 22, 8, 6; 709 → 22, 18, 8, 6, which stay `[I]`), nor reach: a p-code run says nothing about whether a unit of an uber class exists.
 - [I] **No Uber event found in this image.** The `uber*` cases above, the aura arm (§ C3) and the other class-gated code say what a

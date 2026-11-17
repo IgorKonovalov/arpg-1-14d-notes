@@ -39,10 +39,10 @@ flowchart TD
 
 | When | Function | Tag |
 |---|---|---|
-| The player clicks a cursor item onto an item (client) | — | [C] |
+| The player clicks a cursor item onto an item (client) | `UiCanInsertSocket` | [C] |
 | Client packet `0x28` (9 bytes) reaches the server | `SOCK_PacketInsert` → `ITEMS_InsertSocket` with option flags 1, 1, 1, 1 | [C] |
 | A socketed item is read from a save | `ITEMS_ReadInventoryList` path (call) → `ITEMS_InsertSocket` with 0, 0, 0, 0, once per child | [C] |
-| The item copier rebuilds a socketed item (Anya's personalize) | → the insert with 0, 1, 0, 0, once per child | [C] |
+| The item copier rebuilds a socketed item (Anya's personalize) | `ItemCopy` → the insert with 0, 1, 0, 0, once per child | [C] |
 | The golem reader rebuilds a socketed item | `D2S_ReadGolem` → the insert with 0, 1, 0, 0 | [I] |
 | An item gets a socket count at creation: the drop roll, the cube's `sock=`, Larzuk's socket | `ITEMS_SetSockets` | [C] |
 | An item gets a socket count from its creation record's forced count | `ITEMS_SetSockets` (call) | [I] |
@@ -171,14 +171,14 @@ A2. on false: a click on an item in a grid sends the ordinary place/swap packet
 
 | # | The client refuses when | Tag (as a refusal) | Anchor |
 |---:|---|---|---|
-| 1 | the UI state word is 10 or 11 | [I] | — |
+| 1 | the UI state word is 10 or 11 | [I] | `UiCanInsertSocket` |
 | 2 | the cursor item is not a socket filler (type 53 `sock`) | [C] | — |
 | 3 | the target lacks the socketed flag (bit 11) | [C] | — |
 | 4 | the target base has `hasinv` 0 | [C] | — |
 | 5 | `ItemMaxSockets(target)` is 0 | [C] | — |
-| 6 | the target is not identified (bit 4) | [I] | — |
+| 6 | the target is not identified (bit 4) | [I] | `UiCanInsertSocket` |
 | 7 | the target has flag bit 8 (`0x100`) | [C] | — |
-| 8 | the target has no inventory | [I] | — |
+| 8 | the target has no inventory | [I] | `UiCanInsertSocket` |
 | 9 | the target's children already number its stat 194 (full) | [C] | — |
 
 Step notes:
@@ -397,7 +397,7 @@ Step notes:
 - C2. **The link.** After each insert the parent's lists were its lists before plus the child's own stat list (seen
   from the parent as a state-0 list with flags `0x80000000`). When the list already belongs to the owner, only its
   enable bit `0x40000000` is toggled. The child's flag `0x100` would suppress the link when the call's own flag is 0,
-  which it is on this path. [C] for the link (the link branch in all 35 inserts, for stored, equipped and cursor
+  which it is on this path. [C] for the link (`StatListLinkOwner`: the link branch in all 35 inserts, for stored, equipped and cursor
   parents); the toggle and the `0x100` case are [I], and no stock case reaches them on the socket path: in every
   logged insert the child's list had owner 0 before the link, and no socket filler has durability (69 `sock` rows),
   so none can carry `0x100`, which `ItemBreak` sets with durability 0

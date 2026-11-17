@@ -38,14 +38,14 @@ flowchart LR
 | A server player or monster mode starts | `SUNIT_AnimInit` | [C] (its rate call precedes all 46 722 schedules) |
 | A scheduled mode's events are queued | `SUNIT_ScheduleModeEvents` | [C] (25 848 schedules) |
 | An every-frame mode starts | `SUNIT_ModeEveryFrame` | [C] (9 682 starts) |
-| Each game frame, the unit event lists run | — | [C] (families `tick` and `run`) |
+| Each game frame, the unit event lists run | `GameRunUnitEvents` | [C] (families `tick` and `run`) |
 | An every-frame monster's frame advances | `UNIT_AnimAdvance` | [C] (4 110 advances over both parts) |
 | A unit's rate is (re)computed | `UNIT_AnimSetRate` | [C] (298 373 calls) |
-| A player's mode ends | — | [C] (10 718 kind-1 dispatches; `g_PlayerEventFuncs[1]` is this function) |
-| A monster's mode command | — | [C] the start's order, rate, cancels, then schedule or every-frame event (140 936 starts); [I] that each logged start is `MonSetMode`'s (`SUNIT_AnimInit`'s callers not scanned) |
+| A player's mode ends | `PlayerModeEnd` | [C] (10 718 kind-1 dispatches; `g_PlayerEventFuncs[1]` is this function) |
+| A monster's mode command | `MonSetMode` | [C] the start's order, rate, cancels, then schedule or every-frame event (140 936 starts); [I] that each logged start is `MonSetMode`'s (`SUNIT_AnimInit`'s callers not scanned) |
 | A hit reaches the defender's mode | `COMBAT_GetHit` | [C] the commands by result bit; [I] the town return and the kill branch (M1) |
-| The get-hit decision | — | [C] (7 195 calls) |
-| A player mode request is tested | — | [C] (26 574 `PlrModeLeaveOk` and 50 321 `PlayerModeAllowed` returns at the requests) |
+| The get-hit decision | `GetHitRoll` | [C] (7 195 calls) |
+| A player mode request is tested | `PlrModeLeaveOk`, `PlayerModeAllowed` | [C] (26 574 `PlrModeLeaveOk` and 50 321 `PlayerModeAllowed` returns at the requests) |
 
 ## Inputs
 
@@ -426,7 +426,8 @@ G3. the sequence advance (in UNIT_AnimAdvance, monster mode 14):   [C] (UNIT_Ani
   advanced on the server; at each of its frame events `PlrModeSkillFrame` writes the running event's index `b` into
   `+0x38 >> 8` when a skill is in use. So for a player `+0x38 >> 8` is the index of the code-1/2/4 event being run (0
   for the first), which is what skills/dispatch's sequence delay gate and do 35's parity read.
-  (the writer and its readers `SKILLS_SrvDo` and do 35 by a second read, with no server advance of
+  (`PlrModeSkillFrame`, `UnitSetSeqPos`;
+  the writer and its readers `SKILLS_SrvDo` and do 35 by a second read, with no server advance of
   a player)
 
 ### H. The event queue and the frame order
@@ -441,7 +442,8 @@ flowchart LR
 
 - H1. [C] `UnitQueueEvent(game, unit, kind, frame, a, b)` takes kinds below 15, raises a frame at or below the current
   one to the current + 1, and appends the record to slot `frame & 63` of the unit type's list; a frame of −1 puts it
-  at the head of the type's every-frame list. (`Game+0xA8`: family `qat`, 400 cases, the refused kinds, the raise, the slot and the every-frame head)
+  at the head of the type's every-frame list. (`UnitQueueEvent`,
+  `EventQueueAt`, `EventQueueEveryFrame`, `Game+0xA8`: family `qat`, 400 cases, the refused kinds, the raise, the slot and the every-frame head)
 - H1. [C] A queued kind-0 event with `a ≠ 0` and a kind-1 event fire at the queued frame with the queued `(a, b)`,
   from the schedulers (E1) and from the catalogue's own calls (E1, 83 dispatches). Kinds 2 and 12 are not compared:
   `[I]`.
@@ -498,11 +500,11 @@ stateDiagram-v2
 
 | Mode | Start | Events | End → | Tag |
 |---|---|---|---|---|
-| 1 NU, 5 TN | `PlrModeStartNeutral` (5 in a town room) | none | — | [C] (1 in the field 20 201, 5 in a town 131; the start table) |
+| 1 NU, 5 TN | `PlrModeStartNeutral` (5 in a town room) | none | — | [C] (`PlrModeStartNeutral`: 1 in the field 20 201, 5 in a town 131; the start table) |
 | 2 WL, 3 RN, 6 TW, 19 KB | `PlrModeStartMove` | every frame (`PlrModeMoveFrame`) | neutral on arrival | [C] 2, 3 and 19: every start queues an every-frame event and no schedule, and the arrival sets the mode in its frame; [I] 6, not met |
-| 4 GH, 9 BL | `PlrModeStartGetHit`, `PlrModeStartBlock` | scheduled | neutral | [C] (756 GH and 1 442 BL starts) |
+| 4 GH, 9 BL | `PlrModeStartGetHit`, `PlrModeStartBlock` | scheduled | neutral | [C] (`PlrModeStartGetHit`: 756 GH and 1 442 BL starts) |
 | 7, 8, 10–16, 18 | `PlrModeStartSkillXY` / `…Unit` | scheduled (`PlrModeSkillFrame`) | neutral | [C] modes 7, 10–12, 14–16 and 18; [I] 8 and 13, not met |
-| 0 DT | `PlayerDeath` | scheduled | 17 DD | [C] (41 death starts, 39 ends) |
+| 0 DT | `PlayerDeath` | scheduled | 17 DD | [C] (`PlayerDeath`: 41 death starts, 39 ends) |
 
 - I1. [C] `PlrModeStartMove`: a walk sets 2 in the field (1 930) and a run keeps 3 in a town (981); a run with
   stamina 0 becomes a walk ([anim/movement § D](../movement/#d-the-run-drain): 75 turns in the drain's frame). Every
@@ -515,7 +517,8 @@ stateDiagram-v2
 
 - I1. [C] `PlrModeStartGetHit` and `PlrModeStartBlock`: `SUNIT_SetMode(4 or 9)`, `SUNIT_AnimInit`, clear the used
   skill, cancel, schedule; `PlrModeStartSkillXY`: path target, `SUNIT_SetMode`, `SUNIT_AnimInit`, cancel, schedule,
-  clear `+0xC4` bit 6, `SKILLS_StartUsedSkill`. (the rate, cancel and
+  clear `+0xC4` bit 6, `SKILLS_StartUsedSkill`. (`PlrModeStartGetHit`,
+  `PlrModeStartBlock`, `PlrModeStartSkillXY`; the rate, cancel and
   schedule order in every logged start; the rest by a second read)
 
 #### I2. Monsters
@@ -552,13 +555,13 @@ stateDiagram-v2
   and the attack stats; the record's start (0 → clear the used skill and start neutral); then `+0xC4 |= 0x80000`,
   `SUNIT_AnimInit`, `MonModeVelocity`,
   `UNIT_SetUsedSkill(unit, 0)` again, cancel kinds 0 and 1, and by the record of the **resulting** mode:
-  `schedule` 0 → no event, else every frame (A1) or `SUNIT_ScheduleModeEvents`. (the order by a second read; the rate,
+  `schedule` 0 → no event, else every frame (A1) or `SUNIT_ScheduleModeEvents`. (`MonSetMode`, `MonModeEveryFrame`; the order by a second read; the rate,
   cancels and event by the resulting mode with 0 mismatches)
 - I2. [C] **Class overrides.** When MonStats `+0x1A5` (`SplGetModeChart`) is non-zero, a class switch
   gives: 243, 333 and 705 attack records for S3 (row 17) and S4 (row 16); 403 rows 18 (A1, A2) and 19 (S1, S2); 417
   and 418 row 20 for S4; 543, 544, 570 and 709 row 7 for S3. All ten have `SplGetModeChart` set; ten more stock rows
   set it with no case of the switch (404, 546–550, 559, 571–573), so they keep the plain records.
-  (`MonStats.txt:SplGetModeChart`; the jump tables
+  (`MonModeRecord`, `MonStats.txt:SplGetModeChart`; the jump tables
   and a full-table check) [I] Rows 18 and 19 each end in a mode-8 command.
 - I2. [C] **`MonAttackFrame`, no used skill, scheduled.** A code-1 kind-0 event of a no-skill A1 or A2 is followed in
   its frame by a hit of the attacker in 18 160 of 18 637 dispatches; a code-2 event by none, in 2 248 of 2 248

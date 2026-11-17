@@ -12,8 +12,8 @@ What the think function of each AI row does on an AI event: which `aip` slots it
 
 | When | Function | Tag |
 |---|---|---|
-| An AI event reaches the think call | its call | [C] |
-| A row's `init` and `alt` | — | [C] the two tables' only `.text` operands are `MonAiEntryGet`'s; its 3 calls lie in `MonAiTargetByKind` (`+0` only) and `MonAiInit`, which reads `+8`/`+0xC` and calls `[row+4]` |
+| An AI event reaches the think call | `MonAiEvent`, its call | [C] |
+| A row's `init` and `alt` | `MonAiInit` | [C] the two tables' only `.text` operands are `MonAiEntryGet`'s; its 3 calls lie in `MonAiTargetByKind` (`+0` only) and `MonAiInit`, which reads `+8`/`+0xC` and calls `[row+4]` |
 
 ## Inputs
 

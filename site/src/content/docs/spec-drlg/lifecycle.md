@@ -38,15 +38,15 @@ stateDiagram-v2
 
 | When | Function | Tag |
 |---|---|---|
-| Every game frame | — | [C] (5 500 frames, one tick each) |
-| A client's room changes | — | [C] |
-| A room gains its first distance-1 reference | — | [C] |
-| A room is needed at once (warp, waypoint, level point, preset level build, a unit spawn at coordinates) | — | [C] |
-| New rooms of an act, start of the next frame | — | [C] |
-| Release pass, `frame mod 12 = 0` | — | [C] |
-| Save test per unit of a released room | — | [C] |
-| Restore of a re-activated room | — | [C] |
-| Wanderer tick, per walked room | — | [C] |
+| Every game frame | `GameTick` | [C] (5 500 frames, one tick each) |
+| A client's room changes | `ClientRoomChange` → `DrlgRefMove` | [C] |
+| A room gains its first distance-1 reference | `DrlgEnter1Activate` → `RoomActivateA` | [C] |
+| A room is needed at once (warp, waypoint, level point, preset level build, a unit spawn at coordinates) | `RoomActivateB`; for the spawn through `RoomAtCoordsActivate` | [C] |
+| New rooms of an act, start of the next frame | `NewRoomsUpdate` | [C] |
+| Release pass, `frame mod 12 = 0` | `RoomsDeactivate` | [C] |
+| Save test per unit of a released room | `InactiveUnitSaveTest`, `InactiveMonsterSaveTest` | [C] |
+| Restore of a re-activated room | `RoomInactiveUnitsRestore` | [C] |
+| Wanderer tick, per walked room | `RoomWandererTick` | [C] |
 
 ## Inputs
 
@@ -116,7 +116,8 @@ at coordinates whose room was not active, the creation of a portal's other end a
 and a quest spawn in level 40; no jump or absolute reference names it.
 - [C] **The other call of that pass, sweeps ground items in active rooms.** A type-4 unit with
 item data `+0x24` non-zero and `≤` the frame (signed) is reached, in room order and each room's list order, up to the
-first one reached; the emulation stops at `UnitGetRoom`, so the code after it stays `[I]`. (family `sweep`)
+first one reached; the emulation stops at `UnitGetRoom`, so the code after it stays `[I]`. (family `sweep`,
+`ActExpiredItemsFree`)
 - [I] After that boundary the unit is unlinked, sent to every player and freed.
 
 - [C] **A drop made through `DropCreateItem` has `+0x24` 0 at creation, 27 of 27**, and the 5 items followed stayed unswept
@@ -131,7 +132,7 @@ field to `max(saved, frame + 15000)`, both branches, 40 of 40, so from then on t
 active: 22 of 22 restored copies resolved. A saved 0 staying 0 is not observed (§ H).
 - [C] **`ItemPlaceOnGround` writes `ItemGroundExpiry` at once**: logged for qualities 1 to 8 and the filler, 80 of 80, and swept at the
 first multiple of 1 500 at or past it for quality 2, 4 of 4.
-- [C] `ItemPlaceOnGround` has 12 direct calls in 10 functions, no jump or pointer: `CursorDrop`; the two overflows, `BeltOverflow` and `CorpseOverflowDrop`; `DropGoldAmount`; `NPC_MenuAction` three times; `CubeDropEmptied`; `QUESTS_GiveItem`, `DropEar`, `PLAYER_CorpseCreate` and `TargetBeltItemToGround`. (`NPC_MenuAction`, `QUESTS_GiveItem`, `PLAYER_CorpseCreate`, the function count) [I] What each caller drops is the callers' reading.
+- [C] `ItemPlaceOnGround` has 12 direct calls in 10 functions, no jump or pointer: `CursorDrop`; the two overflows, `BeltOverflow` and `CorpseOverflowDrop`; `DropGoldAmount`; `NPC_MenuAction` three times; `CubeDropEmptied`; `QUESTS_GiveItem`, `DropEar`, `PLAYER_CorpseCreate` and `TargetBeltItemToGround`. (`ItemPlaceOnGround`, `NPC_MenuAction`, `DropGoldAmount`, `CubeDropEmptied`, `QUESTS_GiveItem`, `DropEar`, `PLAYER_CorpseCreate`, `TargetBeltItemToGround`, the function count) [I] What each caller drops is the callers' reading.
 
 ### B. Activation: reference counts per near-list distance
 
@@ -448,7 +449,10 @@ whole-field write clears `0x08`. The three writes are
 `SpecialModsRoll`, reached from `SpecialMonSpawn` only when `SpecialMonPlace` gave a unit and from
 `MonMakeSpecial` after its own `MonMarkSpecial`; `SpecialMonRestore`, after `SpecialMonPlace`
 returned a unit; and `ChampionMemberMark`, after `MonMarkSpecial`. `SpecialMonPlace` marks
-every unit it creates, and `MonMarkSpecial` ORs `0x08` into any monster with monster data. This is a code reading: a block copy of monster data is not followed. (§ 11.1 (b))
+every unit it creates, and `MonMarkSpecial` ORs `0x08` into any monster with monster data. This is a code reading: a block copy of monster data is not followed. (§ 11.1 (b);
+`MonMarkSpecial`, `SpecialModsRoll`,
+`SpecialMonPlace`, `SpecialMonRestore`,
+`ChampionMemberMark`, `MonMakeSpecial`)
 - [C] A player's own room is always in its near set, so a released room holds no live player (0 of 12 476 save tests a
 player's, no freed room the client's current room, every new client room in its own near list, 1 144); units that the walk
 does not save and does not keep are freed with the room, and are gone for good (1 291 such monsters never met again).
@@ -459,8 +463,8 @@ All records of a released room hang off one 0x18-byte **room record**, found or 
 
 | Record | Size | Fields (offset: meaning) | Tag |
 |---|---|---|---|
-| room record | 0x18 | `+0x00` x, `+0x04` y (the key); `+0x08` item list; `+0x0C` monster list; `+0x10` unit list; `+0x14` next (x descending) | [C] (two inserters, each walk stopping at the first lower x; the three heads' writers and `InactiveRecordTake`; `InactiveRoomRec+0x00`) |
-| unit record | 0x34 | objects § B4's record (x, y, type, class, mode, frame, `+0xC4`, `+0xC8`, `+0x20` unit id or shrine timer, `+0x24` sparkle or timer, `+0x28` interact, `+0x2C` unit `+0xB8`); also type 5 and a kept player corpse | [C] (3 037 records, `InactiveUnitRec+0x20`) |
+| room record | 0x18 | `+0x00` x, `+0x04` y (the key); `+0x08` item list; `+0x0C` monster list; `+0x10` unit list; `+0x14` next (x descending) | [C] (two inserters, each walk stopping at the first lower x; the three heads' writers and `InactiveRecordTake`; `InactiveRoomRecordFind`, `InactiveRoomRec+0x00`) |
+| unit record | 0x34 | objects § B4's record (x, y, type, class, mode, frame, `+0xC4`, `+0xC8`, `+0x20` unit id or shrine timer, `+0x24` sparkle or timer, `+0x28` interact, `+0x2C` unit `+0xB8`); also type 5 and a kept player corpse | [C] (3 037 records, `InactiveRecordSave`, `InactiveUnitRec+0x20`) |
 
 **Monster record** (0x5C, `InactiveMonsterSave`):
 
@@ -500,7 +504,7 @@ packet-beta
 | `+0x1C` | group leader id (AI control `+0x2C` when the AI link type `+0x30` is 1), else −1; read into `MonSetOwnerRestore` | [C] |
 | `+0x20`, `+0x24`, `+0x28` | AI control `+0x34`, saved in the `+0x1C` branch (only when the link type `+0x30` is 1; else `+0x20` stays 0), after which the save clears AI control `+0x2C` to −1 and `+0x34` to 0; the preset path moved out of AI control `+0x38` (and moved back by the AI restore); the AI record's first dword, passed to `MonAiInit` | [C] |
 | `+0x2C` | monster data `+0x58`, passed to `MonRegionUnitLeave` at the restore | [C] |
-| `+0x30`, `+0x32`, `+0x3C` | name seed (`u16`); nine mod bytes; superunique id (`u16`); `+0x3B` and `+0x3E`–`+0x3F` are padding | [C] (for the mods; the writes and reads of all three, and no access to the padding) |
+| `+0x30`, `+0x32`, `+0x3C` | name seed (`u16`); nine mod bytes; superunique id (`u16`); `+0x3B` and `+0x3E`–`+0x3F` are padding | [C] (for the mods; the writes and reads of all three, and no access to the padding, `InactiveMonsterSave`) |
 | `+0x40`, `+0x44`, `+0x48` | stat 13; `UnitGetMaxHp` (equal to stat 7 on all 3 499 records); stat 6 | [C] |
 | `+0x4C`, `+0x50` | AI parameters (`InactiveMonAiSave`), read by the AI restore | [C] |
 | `+0x54` | game frame at the save | [C] |
@@ -598,7 +602,8 @@ flag-0 reading of H2c rests on a second tool's reading of the calls (`[C]`).
 comes back at + 3, which does not separate the flag.
 - [C] **`SpecialMonRestore` applies the flag-1 handlers through its `SpecialModsApply` call**.
 `SpecialModsApply` always calls the special's own handlers with flag 1, mods 1–4 and the saved list, and its group callback with flag 0. The code reading and the 15 champion restores above agree, and flag 0
-gives 15 mismatches, so the run separates the two readings. (§ 11.1 (c); `g_UModAlwaysMods`)
+gives 15 mismatches, so the run separates the two readings. (§ 11.1 (c);
+`SpecialModsApply`, `g_UModAlwaysMods`)
 - [C] **The 0 that `SpecialMonRestore` pushes is the `minions` argument** of `SpecialModsApply` (pushed,
 read once, where a zero skips the call of `UniqueMinions`). [I] So the special is restored without new minions: that is the skipped callee's role by its name. § 6 first read that 0 as the handler
 flag. The run does not separate "no minions" from another use of the argument.

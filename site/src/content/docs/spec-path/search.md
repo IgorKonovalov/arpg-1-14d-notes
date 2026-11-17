@@ -171,7 +171,7 @@ PathFirstLine(path, pt) → (reached, pt):                           [C]
   return PathLineFree(path, the position's subtile, pt)
 ```
 
-- A5. [C] **The planner aims the path before its own points exist,** which writes the vector, the step and the facing, and the speed gates the line. ([path/overview § H](../overview/#h-the-aim-and-the-facing-step) has the aim and the facing, [anim/movement § B](../../spec-anim/movement/#b-the-per-frame-step) the step that follows)
+- A5. [C] **The planner aims the path before its own points exist,** which writes the vector, the step and the facing, and the speed gates the line. ([path/overview § H](../overview/#h-the-aim-and-the-facing-step) has the aim and the facing, [anim/movement § B](../../spec-anim/movement/#b-the-per-frame-step) the step that follows; `PathAimNextPoint`)
 
 #### A6. Three directions: `PathTry3Dirs`
 

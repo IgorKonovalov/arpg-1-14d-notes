@@ -43,8 +43,8 @@ flowchart LR
 | … quality 4 | `ITEMS_BuildMagic` | [C] |
 | … quality 3 | `ITEMS_BuildSuperior` → `ITEMS_BuildSuperiorPick` | [C] |
 | … quality 1 | `ITEMS_BuildLow` → `ITEMS_BuildLowPick` | [C] |
-| … quality 2 | → `ITEMS_BuildNormal` | [C] |
-| After the join, expansion item, quality not 5 or 7 | the automagic step of → | [C] |
+| … quality 2 | `ItemBuildNormalCase` → `ITEMS_BuildNormal` | [C] |
+| After the join, expansion item, quality not 5 or 7 | the automagic step of `ItemCreateByQuality` → `PickAutoAffixByVersion` | [C] |
 
 - [C] Every builder above was entered from a drop, and the model of this spec reproduced
   all 3 102 logged creations (366 magic, 105 rare, 35 superior, 31 low and 2 472 normal builds, 36 automagic picks)
@@ -129,7 +129,7 @@ flowchart LR
   through that branch, and 10 non-jewel rares through the general table. `CAND_CAP`: under emulation
   `AffixCandAdd` stores a candidate and returns `count + 1` exactly when the signed count is below 0x1FF,
   and from 511 up returns the count unchanged and writes nothing (3 000 calls; a cap of 512 differs in 65).
-  (`ITEMS_GetBaseType`
+  (`ITEMS_GetBaseType`, `AffixCandAdd`
   aff 5, row 6)
 
 ### Inputs and oracles
@@ -145,7 +145,7 @@ Every confirmed statement of this spec holds under them. [C] Chained with the [i
 
 ## Algorithm
 
-All arithmetic is signed 32-bit unless a step says otherwise. "Low" is `item.seed.low` after the step just made. Section A fixes the id spaces, B the affix level, C one magic-affix pick, D to H the builders, I the staff mods, J the automagic step after the switch, K classic games. [C] Signed 32-bit arithmetic on the low word after the step reproduces every logged creation (5 144 stock, 703 from ItemRatio-only forced runs); a draw from the high word breaks 680 stock creations, an unsigned subtract walk 671. (aff 8)
+All arithmetic is signed 32-bit unless a step says otherwise. "Low" is `item.seed.low` after the step just made. Section A fixes the id spaces, B the affix level, C one magic-affix pick, D to H the builders, I the staff mods, J the automagic step after the switch, K classic games. [C] Signed 32-bit arithmetic on the low word after the step reproduces every logged creation (5 144 stock, 703 from ItemRatio-only forced runs); a draw from the high word breaks 680 stock creations, an unsigned subtract walk 671. (`ItemCreateByQuality`, aff 8)
 
 ### A. Merged affix ids
 
@@ -312,17 +312,18 @@ Step notes:
   weight with no test of the count. Under emulation, in the 207 picks with more than 511
   eligible rows the total passed to the draw sums every eligible row while the list holds 511, and in 22 of them the
   walk ended on the 511th candidate; a model that sums only the stored weights differs in 125 calls.
-  [C] (`RNG_RangeOffset`,
+  [C] (`AffixCandAdd`, `RNG_RangeOffset`,
   row 12)
 - C4. With stock data the cap is unreachable: over every base, both game versions and the three socket bands, the most
   rows of one block that pass the version and type tests are 188 (`ci0`, suffixes, expansion), and 135 of those also
   have `spawnable` and a non-zero `frequency`, which every candidate of a drop pick needs. [C]
-  (`MagicSuffix.txt:frequency`, aff 15)
+  (`AffixCandAdd`, `MagicSuffix.txt:frequency`, aff 15)
 - C5a. A classic item refuses stackable bases and `Throwable` types before any row test. In the 9 magic fallbacks of
   nine classic rare throwing weapons rebuilt by the cube (5 `tkf`, 4 `tax`, ilvl 45), the 11 candidate lists logged
   were all empty, the other 7 picks declined on their attempt bit, and all 9 magic builds ended with no affix. With
   C5a removed, the same bases at item version 1 have 30 to 35 candidates per side, so the refusal is what empties
-  them. [C] (`Weapons.txt:stackable`, aff 13)
+  them. [C] (`ItemBaseStackable`,
+  `ItemTypeThrowable`, `Weapons.txt:stackable`, aff 13)
 - C5a, R1. Each half of the test alone is read from the code: the logged `tkf` and `tax`, like all 18 classic
   throwing weapons, are both `stackable` and of a `Throwable` type, so no run tells the two-part test from a test on
   one half (a stackable base whose type is not `Throwable`, or the reverse). [I]
@@ -334,7 +335,8 @@ Step notes:
   whose first property is the `sock` property (first stat 194, `item_numsockets`) is refused. With stock data, inside
   the level window, the test alone refuses a row (`Jeweler's`, `Artificer's`, `Mechanist's`) only on the five quest
   bases `d33`, `g33`, `hdm`, `hst` and `msf`, which no drop builds as magic, so no stock drop reaches it; no logged pick
-  was refused by it. [I] (`MagicPrefix.txt:mod1code`, `Weapons.txt:hasinv`, aff 7 and 16)
+  was refused by it. [I] (`ItemBaseHasInv`,
+  `ItemMaxSockets`, `MagicPrefix.txt:mod1code`, `Weapons.txt:hasinv`, aff 7 and 16)
 - C5c–C5d. `ITEMS_UnitIsType` tests the `Equiv1`/`Equiv2` closure of the base's `type` and `type2`. Any `etype`
   match refuses before the `itype` list is read. The 27 `magicsuffix` rows with no `itype` can never be picked. [C]
 
@@ -607,7 +609,7 @@ Step notes:
 - I1. `firstSkill(c)` is the first id of the class's 30-id `Skills` run: logged on all 74 staff-mods rolls for
   classes 1 to 6 (36, 66, 96, 126, 221, 251). Class 0 (`ama`, 6) was not logged. [C]
 - I2–I6. Every `low % k` uses the unsigned low word; all draws are on the item seed. The 105 stock exit seeds are
-  predicted on the item seed, and a signed `low` breaks 9 stock creations. [C] (aff 30)
+  predicted on the item seed, and a signed `low` breaks 9 stock creations. [C] (`StaffModsRoll`, aff 30)
 - I1. `StaffMods` decides the roll: a class below 7 rolls with `firstSkill(c)` (logged 104 times, classes 1 to 6, the
   exit seed predicted 105 times), 7 draws nothing (4 457 stock calls). The bonus is 0 on every drop. In stock data
   classes 0 to 6 have 30 skills each. [C] (`ITEMS_RollStaffMods`, `Skills.txt:charclass`, aff 30)
@@ -615,12 +617,12 @@ Step notes:
   exit seeds and the stat-107 entries match (4 stock items, 39 forced), the classic tier stops at 4 (tier 5 breaks a
   classic creation), the item-type requirement refuses drawn skills (10 stock refusals; no type test breaks 4
   creations), and a low-quality expansion item draws no level (2 stock; a level draw breaks both). [C]
-  (aff 30)
+  (`StaffModsRoll`, aff 30)
 - I1–I6. Not decided by any run: the `bonus` branch (`rec+0x80 & 0x20`, no drop sets it) and the `bonus` and `bonus ÷ 2`
   terms; a class with no skills (none in stock data); class 0; the 6-try fallback; the tier cap at 4 on low quality
   (never above 4 in the logs); and whether each threshold is `>` or `≥` at its boundary value (the 90/70/30 count,
   80/30/10 tier offset, 90/60 level and ilvl 36/24/18/11 thresholds), except the classic tier stop. [I]
-  (aff 30)
+  (`StaffModsRoll`, aff 30)
 - I1. The classic body `StaffModsRollV0` (item version 0 only) has no bonus, tier 4 at most, a try loop
   that runs until a non-repeat other than 0x49, and an unconditional level draw. [I]
 
@@ -647,7 +649,8 @@ Step notes:
 - J4. The automagic pick is a § C pick over the `automagic` block with `autoGroup` = the base's `auto prefix`. It
   makes draw 1 with the bit ignored and, with candidates, draw 2. It runs the level window on the same alvl, the
   `rare` test, the type test, `frequency`, the class test and group exclusion. The 36 logged automagic rows were all
-  on class items, on qualities 2 (10), 3 (1), 4 (22) and 6 (3). [C] (`Weapons.txt:auto` prefix, `AutoMagic.txt:group`)
+  on class items, on qualities 2 (10), 3 (1), 4 (22) and 6 (3). [C] (`PickAutoAffixByVersion`,
+  `Weapons.txt:auto` prefix, `AutoMagic.txt:group`)
 - J4. **The automagic pick does not test `spawnable`** (`needSpawnable` 0). Every stock `automagic` row has
   `spawnable` 1, so no run can show the difference. [I]
 - J4. Quality 5 skips the step, and qualities 2, 3, 4 and 6 take it. One set item on an automagic base (`oba`, set

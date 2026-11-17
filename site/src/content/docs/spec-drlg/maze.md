@@ -21,9 +21,9 @@ each special room carries, and the level links, are in [warps.md](../warps/).
 
 | When | Function | Tag |
 |---|---|---|
-| Maze level record created (the `LvlMaze` row by level id); no draw (in all 1378 logged maze-level creations the level seed after the create dispatch is `Init(base + id)`) | — | [C] |
+| Maze level record created (the `LvlMaze` row by level id); no draw (in all 1378 logged maze-level creations the level seed after the create dispatch is `Init(base + id)`) | `MazeLevelCreate` → `LvlMazeByLevel` | [C] |
 | Maze level built, from `LevelInit` after the re-seed | — | [C] |
-| Conversion of each maze room into a preset instance (boundary of this spec) | [drlg/overview](../overview/) step 9a | [C] |
+| Conversion of each maze room into a preset instance (boundary of this spec) | `MazeLevelRooms`, [drlg/overview](../overview/) step 9a | [C] |
 
 - [I] With no matching row `LvlMazeByLevel` stops the game with a fatal error. Stock data has no such case: no maze level
   lacks a row.
@@ -63,16 +63,16 @@ each special room carries, and the level links, are in [warps.md](../warps/).
 
 | Name | Value | Anchor | Tag |
 |---|---|---|---|
-| direction codes | 0 W, 1 N, 2 E, 3 S; 4 NW, 5 NE, 6 SE, 7 SW (diagonals only in `MazeFillAround`) | — | [C] |
-| exit mask bits | W 1, E 2, S 4, N 8 | — | [C] |
-| `Def` base by level type (`DefFromExits`) | 3 `0x34`, 4 `0x6C`, 7 `0xA7`, 8 `0xCD`, 10 `0x101`, 13 `0x12D`, 17 `0x19D`, 18 `0x1E1`, 19 `0x1FD`, 22 `0x2F1`, 24 `0x298`, 25 `0x2C0`, 28 `0x344`, 34 `0x422` | — | [C] |
-| type 33 (Ice) | `Def = mask` when `Rooms[diff] = 1`, else `0x3EA + mask` | — | [C] |
-| corner tables (types 14, 15, 23, 32) | by mask: 14 Harem SW 356, SE 355, NW 357, NE 354; 15 Basement SW 360, SE 359, NW 361, NE 358; 23 Spider SW 659, SE 660, NW 661, NE 662; 32 Temple SW 1045, SE 1044, NW 1043, NE 1042; every other mask 0 | — | [C] |
-| type 35 (Act V lava) mask table | N 1053, S 1054, E 1055, W 1056, EW 1057, NS 1058; every other mask 0 | — | [C] |
-| theme types and bases | 3 `0x34`, 4 `0x6C`, 7 `0xA7`, 8 `0xCD`, 10 `0x101`, 13 `0x12D`, 17 `0x19D`, 22 `0x2F1`, 24 `0x298`, 25 `0x2C0` | — | [C] |
-| tee Prev records | type 17: 447, 444, 446, 445; type 34: 1075, 1077, 1076, 1074 (index 0..3) | — | [C] |
-| Act V hell start entries | 4 × `{Def, dir, idx} ×2` (§ E5) | — | [C] |
-| filler record | 836 `Act 4 - Lava X` | — | [C] |
+| direction codes | 0 W, 1 N, 2 E, 3 S; 4 NW, 5 NE, 6 SE, 7 SW (diagonals only in `MazeFillAround`) | `MazeRoomPlace` | [C] |
+| exit mask bits | W 1, E 2, S 4, N 8 | `MazeRoomDefFromExits` | [C] |
+| `Def` base by level type (`DefFromExits`) | 3 `0x34`, 4 `0x6C`, 7 `0xA7`, 8 `0xCD`, 10 `0x101`, 13 `0x12D`, 17 `0x19D`, 18 `0x1E1`, 19 `0x1FD`, 22 `0x2F1`, 24 `0x298`, 25 `0x2C0`, 28 `0x344`, 34 `0x422` | `MazeRoomDefFromExits` | [C] |
+| type 33 (Ice) | `Def = mask` when `Rooms[diff] = 1`, else `0x3EA + mask` | `MazeRoomDefFromExits`, `MazeIsSingleRoom` | [C] |
+| corner tables (types 14, 15, 23, 32) | by mask: 14 Harem SW 356, SE 355, NW 357, NE 354; 15 Basement SW 360, SE 359, NW 361, NE 358; 23 Spider SW 659, SE 660, NW 661, NE 662; 32 Temple SW 1045, SE 1044, NW 1043, NE 1042; every other mask 0 | `MazeRoomDefFromExits` (data) | [C] |
+| type 35 (Act V lava) mask table | N 1053, S 1054, E 1055, W 1056, EW 1057, NS 1058; every other mask 0 | `MazeRoomDefFromExits` | [C] |
+| theme types and bases | 3 `0x34`, 4 `0x6C`, 7 `0xA7`, 8 `0xCD`, 10 `0x101`, 13 `0x12D`, 17 `0x19D`, 22 `0x2F1`, 24 `0x298`, 25 `0x2C0` | `MazeThemes` | [C] |
+| tee Prev records | type 17: 447, 444, 446, 445; type 34: 1075, 1077, 1076, 1074 (index 0..3) | `MazeTeeStart` (data, stride 8) | [C] |
+| Act V hell start entries | 4 × `{Def, dir, idx} ×2` (§ E5) | `MazeHellStart` | [C] |
+| filler record | 836 `Act 4 - Lava X` | `MazeFillAround` | [C] |
 
 - [C] The base table of `DefFromExits` is the rotation base of `MazePresetFile` ([drlg/overview](../overview/)
   Constants), with 0x1FD (Arcane) added here. The values 0x3EA and 0x41C are used only by `MazePresetFile`.
@@ -215,7 +215,7 @@ Step notes:
 - B5. [C] `DefFromExits` is called with "unlock" at every call site, so it also **clears the lock** and resets the forced
   index (except for the two Basement levels). Basement 1 (52) takes `File3` of `Basement NW` (361). Basement 3 (54)
   takes `File4` of `Basement NW`/`Basement SE`. The two Spider substitutions give Spider Cavern (84) and Arachnid Lair
-  (85) their `Spider Chest` rooms. (52, 54,
+  (85) their `Spider Chest` rooms. (`MazeRoomDefFromExits`: 52, 54,
   84, 85)
 - B6. [C] **The merge draw is made whatever `Merge` is.** With `Merge` 1000 every edge-sharing pair links, and with
   `Merge` 0 none does, but each candidate's seed is still stepped. That step changes the next growth direction drawn
@@ -343,7 +343,7 @@ D2. Attach(entry):                                                   [C] but the
 - [C] **Temple tables** (as `matchDef → def, dir`; `idx` −1). Down has **three** entries: 1042 → 1046 (1),
   1043 → 1047 (0), 1045 → 1048 (3). Waypoint has four: 1042 → 1049 (1), 1043 → 1050 (0), 1045 → 1052 (3),
   1044 → 1051 (2). Down is placed from entry `r` of the Down table (16 bytes an entry) unless the level is 124, and
-  Waypoint on level 123 from entry `r` of the Waypoint table. (data: 122, 123)
+  Waypoint on level 123 from entry `r` of the Waypoint table. (data, `MazeSpecialsTemple`: 122, 123)
 - [C] Down reads `r` 0..2 only (the draw is `mod 3`), so the word after its third entry, which
   is Waypoint's entry 0, is never read as Down's entry 3. `MazeSpecialPlace` reads one entry and then sets
   `r ← (r + 1) mod 4`, so Waypoint is read at `r` 1..3, and its entry 0 is never read either.
@@ -442,7 +442,7 @@ E6. FillAround(def, exclude):                                        [C]
 | 34 Baal | 128–130 | tee | yes | `r`; Next; 129: Waypoint | [C] |
 | 35 Act V lava | 125–127, 135 | E5 | no | none | [C] 125–127 / [I] 135, no stock build |
 
-(the tags cite and, for caves 10–12, crypts 21–24, Jail 31, tombs 55, 56, 59, 60, 66–68, 70, 71, Lair 63, 64, Dungeon 87, 89, Baal 128, 130 and lava 126, 127, every window matched room for room with its draws; level 10 in the kept logs, re-run at the H5e review; Jail 31 and lava 126, 127 on the server copy only, as a window carries every draw. Levels 133 and 135 have no stock build: stock play does not reach 133–136 on the portal reading and the absence of a code path found ([outdoor.md § Entry points](../outdoor/#entry-points)))
+(`MazeLevelBuild`, `MazeSpecialsCave`, `MazeSpecialsCrypt`, `MazeSpecialsJail`, `MazeSpecialsCatacombs`, `MazeSpecialsLair`, `MazeSpecialsArcane`, `MazeSpecialsDungeon`, `MazeSpecialsSewerA3`, `MazeSpecialsDurance`, `MazeSpecialsTemple`, `MazeSpecialsIce`, `MazeSpecialsBaal`; the tags cite and, for caves 10–12, crypts 21–24, Jail 31, tombs 55, 56, 59, 60, 66–68, 70, 71, Lair 63, 64, Dungeon 87, 89, Baal 128, 130 and lava 126, 127, every window matched room for room with its draws; level 10 in the kept logs, re-run at the H5e review; Jail 31 and lava 126, 127 on the server copy only, as a window carries every draw. Levels 133 and 135 have no stock build: stock play does not reach 133–136 on the portal reading and the absence of a code path found ([outdoor.md § Entry points](../outdoor/#entry-points)))
 
 - F1. [C] The table order is the call order: start shape, then growth, then the finisher draw `r`, then the specials.
   The single-room Ice levels and level 61 break out of the chain after their fixed room, with no growth and no
@@ -613,7 +613,7 @@ sequenceDiagram
 - [C] Every level draw of the window is one of: a `RoomCreate` (growth, probes, attaches, fixed rooms, fillers, start
   shapes), a growth pick `Range(L.count)`, a finisher or start-shape draw (`r`, `a`, `b`, level 114's `Range(2)`), or a
   theme draw. Room draws are the growth directions, the merges, and the hell start's `Step(R0.seed)`.
-  (12388 level draws matched one by one)
+  (`MazeLevelBuild`: 12388 level draws matched one by one)
 
 ## Outputs
 

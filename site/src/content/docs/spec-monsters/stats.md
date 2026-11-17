@@ -37,13 +37,13 @@ flowchart TD
 
 | When | Function | Tag |
 |---|---|---|
-| Server monster created: base stats | — | [C] |
-| MonLvl × MonStats per mask | — | [C] |
-| Player count, its HP and XP percentages, `MonsterSkillBonus` | — | [C] |
-| Classic nightmare and hell factors | — | [C] |
-| Any later change of max HP (stat 7) | — | [C] |
-| Special-mod handlers (stat writes) | → the handlers of § G | [C] for the handlers met |
-| Attack: to-hit and damage (reference only; the attack is [combat](../../spec-combat/overview/)) | — | [C] for its draws and for stats 21, 22 and 19 from the mode's MonLvl cells; [I] for the other terms |
+| Server monster created: base stats | `MonsterInit` → `MonStatsInit` | [C] |
+| MonLvl × MonStats per mask | `MonLvlStats` | [C] |
+| Player count, its HP and XP percentages, `MonsterSkillBonus` | `MonPlayerBonus` | [C] |
+| Classic nightmare and hell factors | `MonClassicDiffAdjust` | [C] |
+| Any later change of max HP (stat 7) | `MonStatCallback` | [C] |
+| Special-mod handlers (stat writes) | `SpecialModsApply` → the handlers of § G | [C] for the handlers met |
+| Attack: to-hit and damage (reference only; the attack is [combat](../../spec-combat/overview/)) | `MonAttackStats` | [C] for its draws and for stats 21, 22 and 19 from the mode's MonLvl cells; [I] for the other terms |
 
 ## Inputs
 
@@ -82,7 +82,7 @@ difficulty and `L` the MonLvl column set (§ Runtime state).
 | `d` | u32: `min(game+0x6D, 2)`, 0 for a hireling | [pool § E](../pool/#e-the-monster-level-monstatsinit) |
 | `L` | bool: `game+0x6A ≠ 0 or game+0x74 ≠ 0` (1 in every logged single-player game) | the MonLvl column set |
 | expansion flag | game `+0x70` | game creation |
-| player count | `PlayerCount(game)`: alive players raised to the `/players` setting in game types 1–3 | — |
+| player count | `PlayerCount(game)`: alive players raised to the `/players` setting in game types 1–3 | `PlayerCount` |
 | monster level | i32 | [pool § E](../pool/#e-the-monster-level-monstatsinit) |
 | mod list, flags | `MonsterData+0x1C`, `MonsterData+0x16` | [monsters/special](../special/#runtime-state) |
 
@@ -100,10 +100,10 @@ stat not in the list, after which no logged base list holds an entry of value 0 
 | Name | Value | Anchor | Tag |
 |---|---|---|---|
 | `g_PlayerHpPct[n]`, `g_PlayerXpPct[n]`, `n` = 0..8 | `0, 0, 50, 100, 150, 200, 250, 300, 350` (both) | `g_PlayerHpPct`, `g_PlayerXpPct` | [C] |
-| HP % for `n` ≥ 9 / XP % for `n` ≥ 9 | `(n − 2)·50` / `10n + 260` | — | [I] |
+| HP % for `n` ≥ 9 / XP % for `n` ≥ 9 | `(n − 2)·50` / `10n + 260` | `PlayerHpPct`, `PlayerXpPct` | [I] |
 | constant stats at creation | 67 = 75, 68 = 100, 69 = 100, 352 = 128 | — | [C] |
 | `g_ClassicDiffAdjust` rows `{stat, nmMul, nmDiv, hellMul, hellDiv}` | `{7, 1, 2, 1, 2}`, `{31, 10, 12, 10, 12}`, `{13, 10, 17, 10, 26}` | `g_ClassicDiffAdjust` | [C] |
-| classic level | MonStats `Level` (normal) + 25·d | — | [C] |
+| classic level | MonStats `Level` (normal) + 25·d | `MonClassicDiffAdjust` | [C] |
 | `MonsterSkillBonus` by difficulty | 0 / 3 / 7 (data) | — | [C] |
 | `CDB` by difficulty | 90 / 75 / 66 (data) | `DifficultyLevels.txt:ChampionDamageBonus` | [C] |
 | MonUMod `c[1..3]` minion HP % | 100 / 75 / 50 | `MonUMod.txt:constants` | [C] |
@@ -129,7 +129,7 @@ It predicts the unit-seed draws of `MonStatsInit`, the base stats after the clas
 | mod lists and flags | value input | which handlers run, with which flag, in which order | [monsters/special](../special/#c-mod-handlers) | [C] |
 | re-created monster's stats 7, 12, 13 | specified elsewhere | the restore writes 13 and 7 from the inactive record; 12 is this spec's `MonsterInit` level plus the re-applied mods | [drlg/lifecycle § H](../../spec-drlg/lifecycle/#h-the-restore) | [C] |
 
-Out of scope: to-hit, damage and elemental damage (attack time, § H), skills, the AI and what an aura does in combat. [I]
+Out of scope: to-hit, damage and elemental damage (attack time, § H), skills, the AI and what an aura does in combat. [I] (`MonAttackStats`)
 
 ## Algorithm
 
@@ -441,7 +441,7 @@ body of `champion` without its velocity, given in the `champion` row: 71 `champi
 | 1 `rndname` | the name seed; no stat | nothing | [C] (198 / 266) |
 | 41 `always_run_ai` | AI event 7 at frame `game+0xA8` + 75; no stat | the same | [I] (not met) |
 
-Every other row has no server handler. The counts are the run's handler calls with flag 1 / flag 0. [C] The × 256 of `manahit` is on top of the build's own shift, so such a boss takes `256·v` mana: [combat/delivery B4](../../spec-combat/delivery/#b-delivery-combat_applydamage). [I] (row 13)
+Every other row has no server handler. The counts are the run's handler calls with flag 1 / flag 0. [C] The × 256 of `manahit` is on top of the build's own shift, so such a boss takes `256·v` mana: [combat/delivery B4](../../spec-combat/delivery/#b-delivery-combat_applydamage). [I] (`UModManaHit`, row 13)
 
 ```
 G1. MonHpAddPct(unit, pct: i32):                                 [C]
@@ -701,7 +701,7 @@ One of its three minions, the same class created with `RangeB(1717)` = 411: base
 
 ## Evidence
 
-- The *Out of scope* line under *Inputs and oracles* is the architect's ruling.
+- The *Out of scope* line under *Inputs and oracles* is the scope ruling.
 - Tables: MonStats,
   MonLvl, MonProp,
   DifficultyLevels, MonUMod,

@@ -49,7 +49,8 @@ flowchart TD
 
 - [C] **Each monster unit is seeded from the game seed.** Server monsters are created by the server unit
   constructor, one game-seed draw each: across 10 782 logged `SUnitCreate` calls the game seed moved exactly one step.
-  ([rng/seeds](../../spec-rng/seeds/) step 7a)
+  (`SUnitCreate`;
+  [rng/seeds](../../spec-rng/seeds/) step 7a)
 - [C] **The monster level is set at unit creation**, from the class and the level the monster is created in,
   before the stats are read from `MonLvl.txt`: MonStats `Level*`, or the area's `MonLvlEx` in expansion nightmare
   and hell. The logged cases are listed in pool.md § E, including the four hireling classes that have a `Hireling`
@@ -65,14 +66,14 @@ flowchart TD
 
 | When | Function | Tag |
 |---|---|---|
-| Game created: all monster regions built | — | [C] |
-| Server room populated | — | [C] |
-| Spawn class picked | — | [C] |
-| Normal or special decided (1 folded into 2) | — | [C] |
-| Champion or unique decided, on the boss's unit seed | — | [C] |
-| Superunique placed from a preset | — | [C] |
-| Server monster initialised: region entry, level, stats | — | [C] |
-| Client room's critters | — | [C] |
+| Game created: all monster regions built | `MonRegionsInit` | [C] |
+| Server room populated | `RoomPopulate` → `RoomPopulateGate` | [C] |
+| Spawn class picked | `MonRegionPickClass` | [C] |
+| Normal or special decided (1 folded into 2) | `SpawnTypeRoll` | [C] |
+| Champion or unique decided, on the boss's unit seed | `SpecialModsRoll` | [C] |
+| Superunique placed from a preset | `SuperUniqueSpawn` | [C] |
+| Server monster initialised: region entry, level, stats | `MonsterInit` → `MonStatsInit` | [C] |
+| Client room's critters | `ClientCritters` | [C] |
 
 ## Downstream
 

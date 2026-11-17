@@ -19,14 +19,14 @@ seed is defined in [rng/seeds](../../spec-rng/seeds/) step 1.
 
 | When | Function | Tag |
 |---|---|---|
-| Game created (single player): calls the region init after `GAME_InitSeeds` and the set-up calls listed below | — | [C] |
-| Game created, other path (same order after `GAME_InitSeeds`, three middle calls absent); no reference to it in the image, so no stock run reaches it (step note below) | — | [I] |
-| Region seed: one game-seed draw | — | [C] |
-| All regions built, level ids 1 … n−1 | — | [C] |
-| One level's pool | — | [C] |
-| One entry's appearance sets | — | [C] |
-| Server monster created: the monster level | — | [C] |
-| Client room's critters | — | [C] |
+| Game created (single player): calls the region init after `GAME_InitSeeds` and the set-up calls listed below | `GameCreate` | [C] |
+| Game created, other path (same order after `GAME_InitSeeds`, three middle calls absent); no reference to it in the image, so no stock run reaches it (step note below) | `GameCreateA` | [I] |
+| Region seed: one game-seed draw | `MonRegionsInit` | [C] |
+| All regions built, level ids 1 … n−1 | `MonRegionsBuild` | [C] |
+| One level's pool | `MonRegionPool` | [C] |
+| One entry's appearance sets | `MonVariantRoll` | [C] |
+| Server monster created: the monster level | `MonsterInit` → `MonStatsInit` | [C] |
+| Client room's critters | `ClientCritters` | [C] |
 
 ## Inputs
 
@@ -86,13 +86,13 @@ A monster class is a MonStats record position (the stored distinct-Id ordinal, u
 
 | Name | Value | Anchor | Tag |
 |---|---|---|---|
-| `POOL_MAX` | 13 entries per region | — | [C] |
+| `POOL_MAX` | 13 entries per region | `MonRegionPool` | [C] |
 | `SLOTS` | 25 slots per `mon`/`nmon`/`umon` array | `DRLG_LoadLevels` | [C] |
-| `RANGED_REDRAWS` | 20 | — | [C] |
-| `SETS_MAX` | 3 appearance sets per entry | — | [C] |
-| `DUP_TRIES` | 3 | — | [C] |
-| `MONSTATS_REC` | `0x1A8` bytes | — | [C] |
-| `REGION_SIZE` | `0x2E4` bytes | `MonRegion` | [C] |
+| `RANGED_REDRAWS` | 20 | `MonRegionPool` | [C] |
+| `SETS_MAX` | 3 appearance sets per entry | `MonVariantRoll` | [C] |
+| `DUP_TRIES` | 3 | `MonVariantRoll` | [C] |
+| `MONSTATS_REC` | `0x1A8` bytes | `MonRegionPool` | [C] |
+| `REGION_SIZE` | `0x2E4` bytes | `MonRegionsBuild`, `MonRegion` | [C] |
 | hireling classes | 271, 338, 359, 560, 561 (`roguehire`, `act2hire`, `act3hire`, `act5hire1`, `act5hire2`) | — | [C] for 271, 338, 359, 561; [I] for 560 (no `Hireling` row) |
 
 ## Algorithm

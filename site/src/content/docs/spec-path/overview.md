@@ -27,10 +27,10 @@ flowchart LR
 
 | When | Function | Tag |
 |---|---|---|
-| Every plan: 68 direct calls in 58 functions, 34 server and 34 client (§ E) | — | [C] |
-| A type is set | — | [C] |
-| A path is planned again: a blocked step (`PathStepMove`), a path ended short of `+0x18` with no target or a target moved more than 5 (`PathStepTargetCheck`) | — | [I] |
-| The record is created | — | [C] (nine calls) |
+| Every plan: 68 direct calls in 58 functions, 34 server and 34 client (§ E) | `PathPlan` | [C] |
+| A type is set | `PathSetType` | [C] |
+| A path is planned again: a blocked step (`PathStepMove`), a path ended short of `+0x18` with no target or a target moved more than 5 (`PathStepTargetCheck`) | `PathReplan` | [I] |
+| The record is created | `PATH_DynamicCreate`, under `SUnitPathCreate` (three calls) and `UnitRelocate` (three) on the server, and three client sites | [C] (nine calls) |
 | A mode reset restores the type | `PathMoveReset` | [C] (300 emulated cases, family `mreset`) |
 
 ## Inputs
@@ -95,8 +95,8 @@ The record's fields are `PathRequestFields`, 0x200 bytes zeroed at creation. Coo
 |---|---|---|---|
 | point slots | 78 | `+0x9C`..`+0x1D3` | [C] (0x200 bytes allocated and zeroed; `+0x1D4` is its own field) |
 | window | `\|dx\|`, `\|dy\|` ≤ 100, 100 itself passing | — | [C] (control `cmp` fails all 36 it separates) |
-| limit cap of `PathSetByte90` | 77 | — | [C] (control `cap` fails all 20 it separates) |
-| town levels | 1, 40, 75, 103, 109 | — | [C] (family `town`) |
+| limit cap of `PathSetByte90` | 77 | `PathSetByte90` | [C] (control `cap` fails all 20 it separates) |
+| town levels | 1, 40, 75, 103, 109 | `PathTargetNotTown` | [C] (family `town`) |
 
 ## Algorithm
 
@@ -111,7 +111,7 @@ A record holds two masks, and they are not interchangeable. [C] In the `PATH_` f
 |---|---|---|---|
 | player | `0x1C09` | `0x80` | [C] (`PATH_DynamicCreate`: every logged plan from `PlrModeStartMove`, 3 999, and Charge, 213; the other 558 are the skill overrides below, Whirlwind's `0xC01`, 158, and the Leap or Leap Attack flight's 0 / 0, 400), the marks at [drlg/collision § F](../../spec-drlg/collision/#f-unit-marks) |
 | monster | `PATH_MonTestMask`: `flying` `0x1804`, `opendoors` `0x3401`, else `0x3C01`; the wraith (`BaseId` 38) `0x804`, `PATH_DynamicCreate`'s own branch, taken before `PATH_MonTestMask` is called | `0x100` | [C] (`PATH_MonTestMask`: mark `0x100` in 21 375 of 21 375 monster plans, the test by this rule in 21 126, the function's three arms 21 099 and the wraith branch 27) |
-| a vulture after its take-off | 0: `AiVultureTakeOff` calls `PathSetCollMask(path, 0)` | `0x100` | [C] (the 249 other monster plans, classes 111 and 113) |
+| a vulture after its take-off | 0: `AiVultureTakeOff` calls `PathSetCollMask(path, 0)` | `0x100` | [C] (`AiVultureTakeOff`: the 249 other monster plans, classes 111 and 113) |
 | missile | `g_MissileCollideTypes[CollideType].mask` | 0 at creation; `0x40` when Missiles `Collision` ≠ 0 | [C] |
 | Whirlwind, the plan (start 38, no target) | `0xC01` | no zeroing found at the start | [C] the test mask, to the boundary |
 | Whirlwind, the flight | `0x401`, the old mask kept at `ebp−0x14` | no zeroing found at the start; the end restores it | [I] |
@@ -181,7 +181,7 @@ fail: +0x24 ← 0;  +0x28 ← 0;  flags &= ~0x20;  return 0
 - C. [C] A target unit at subtile x or y 0 returns 0 before the start test and clears nothing (32 `plan`, 36 `plannoop` cases); the other refusals clear.
 - C. [C] A refused request draws nothing: `EAX` 0 and the seed unchanged in all 628 + 814 refusals of the two runs (624 + 814 stock, F1). Of them, the 211 and the 281 whose reason needs the town test, the room or the free step are **observed, not predicted**: their match says only that the game returned 0.
 
-- C. [C] **`PathPointsOutsideRoom` (step 25):** flag bit 0 is cleared, then set when the path has no room or a point of `0 ..< +0x28` lies outside the room's rectangle, `x ≤ px < x + w` and `y ≤ py < y + h`, room words `+0x4C`, `+0x50`, `+0x54`, `+0x58`. A count of 0 leaves it clear. (family `outside`, 300 cases, control `le` 25)
+- C. [C] **`PathPointsOutsideRoom` (step 25):** flag bit 0 is cleared, then set when the path has no room or a point of `0 ..< +0x28` lies outside the room's rectangle, `x ≤ px < x + w` and `y ≤ py < y + h`, room words `+0x4C`, `+0x50`, `+0x54`, `+0x58`. A count of 0 leaves it clear. (`PathPointsOutsideRoom`: family `outside`, 300 cases, control `le` 25)
 
 `Blocked(room, x, y, pattern, mask)` is `COLL_PatternTestBool`: [search § A1](../search/#a1-a-cell-read-blocked).
 
@@ -268,7 +268,7 @@ PathReplan(unit, flag):                                            [C] to the fi
 
 ### D. The 17 types: planner and draws
 
-The table is PathTypes' read from the image; the shape and the point bound are [path/search](../search/). A type with flag `0x40000` has no slot: `PathPlanStraight` chooses by type, and any other type there is fatal 0x207. [C] The counts under *Draw evidence* are the logged plans of each run; F1 says which are stock.
+The table is PathTypes' read from the image; the shape and the point bound are [path/search](../search/). A type with flag `0x40000` has no slot: `PathPlanStraight` (`PathPlanStraight`) chooses by type, and any other type there is fatal 0x207. [C] The counts under *Draw evidence* are the logged plans of each run; F1 says which are stock.
 
 ```mermaid
 flowchart TD

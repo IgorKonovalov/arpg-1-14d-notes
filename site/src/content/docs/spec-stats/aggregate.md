@@ -39,11 +39,11 @@ flowchart TD
 | A list is unlinked | `STATLIST_Unlink` | [C] |
 | A state's list moves between the counting and the off chain | `UNIT_ToggleStatListByState` | [C] (19 525 toggles) |
 | An entry is added or set | `STATLIST_AddStat`, `STATLIST_SetStatEx` | [C] |
-| The change goes up the tree | `STATLIST_Propagate` → `STATLIST_CacheAdd` | [C] |
-| A full value is read | — | [C] |
-| The maxima are read | `UNIT_GetMaxMana`, `UNIT_GetMaxStamina` | [C] the getters' bodies (1 500 cases) |
-| An item is equipped or unequipped | `ITEMS_AttachToOwner`, `ITEMS_DetachFromOwner`; the body-to-cursor pickup: → `UNIT_UnlinkItemStatList` | [C] 5 973 item links through the attach and 5 695 unlinks through the detach; the pickup unlinks with no detach (260 of 278 unlinks). [C] (static) the other paths' direct callers: `StatListLinkOwner` 44 rel32 sites in 14 functions, `KeyConsume` 2. [I] which caller each logged link and unlink took |
-| The requirement refresh | — | [C] (972 refreshes) |
+| The change goes up the tree | `STATLIST_Propagate` → `STATLIST_CacheAdd` or `StatRecompute` | [C] |
+| A full value is read | `StatListGetValue` (through `StatListGetStat`, `STATS_GetUnitStat`, `UnitGetStat`) | [C] |
+| The maxima are read | `UnitGetMaxHp`, `UNIT_GetMaxMana`, `UNIT_GetMaxStamina` | [C] the getters' bodies (1 500 cases) |
+| An item is equipped or unequipped | `ITEMS_AttachToOwner`, `ITEMS_DetachFromOwner`; the body-to-cursor pickup: `InvItemRemove` → `UNIT_UnlinkItemStatList` | [C] 5 973 item links through the attach and 5 695 unlinks through the detach; the pickup unlinks with no detach (260 of 278 unlinks). [C] (static) the other paths' direct callers: `StatListLinkOwner` 44 rel32 sites in 14 functions, `KeyConsume` 2. [I] which caller each logged link and unlink took |
+| The requirement refresh | `EquipReqRefresh` | [C] (972 refreshes) |
 | A set item is equipped or unequipped | `SETS_UpdateOnEquip` | [C] |
 | A passive's list is refreshed | `SKILLS_RefreshPassive` | [C] (8 832 refreshes) |
 
@@ -69,7 +69,7 @@ flowchart TD
 
 | State | Type | Source |
 |---|---|---|
-| a unit's extended list | `StatList`, flag `0x80000000`, at the unit | — |
+| a unit's extended list | `StatList`, flag `0x80000000`, at the unit | `UnitStatListCreate` |
 | own entries | `{key, value}` sorted by key at `+0x24` (`StatList+0x10` holds the flags) | every list |
 | full cache | `{key, value}` at `StatList+0x48` | extended lists only |
 | counting children, off children | chains at `+0x3C` and `+0x40` | extended lists only |
@@ -81,7 +81,7 @@ flowchart TD
 
 | Flag | Meaning | Tag |
 |---|---|---|
-| `0x2` | on a plain list: timed (an end frame at `+0x18`); on the unit list: it has a flag-`0x4` child (B1 sets it, `StatListsDropOnMode` tests and clears it) | [C] (`STATE_ApplyTimed`: on 110 new lists with a duration and every tree list with an end frame); [I] for 2 lists never dumped again |
+| `0x2` | on a plain list: timed (an end frame at `+0x18`); on the unit list: it has a flag-`0x4` child (B1 sets it, `StatListsDropOnMode` tests and clears it) | [C] (`STATE_ApplyTimed`, `StatListsDropOnMode`: on 110 new lists with a duration and every tree list with an end frame); [I] for 2 lists never dumped again |
 | `0x4` | dropped on a mode change | [C] |
 | `0x8` | the state's `aura` bit | [C] (`STATE_ApplyTimed`: on the 58 new lists of `aura` states, none of the 52 others; the apply's `or ebx, 8` reads States `+0x10` & 2) |
 | `0x20` | a curse | [I] |
@@ -402,7 +402,7 @@ Step notes:
   (the first of the unit's `+0x90` list with kind, stat and `+0x0C` equal); with a fourth argument of 0 it calls
 , which marks a matching node in use (word `+0x02` bit 0) with bit 1 and unlinks and frees the first one
   not in use. `AddStatEvent` returns 0 for a `func` above 0x31 or a null `g_StatEventFuncs` entry.
-  (`g_StatEventFuncs`, the three helpers emulated, 3 000 cases)
+  (`AddStatEvent`, `g_StatEventFuncs`, the three helpers emulated, 3 000 cases)
   [I] What the fourth argument means (the callback is entered with it, not with a crossing of 0, so "registers when
   the value goes to or from 0" is a reading); 107 acts only for a player whose class is the skill row's `+0xC`; the registration's node is keyed by kind 2 and the stat twice, so a found node blocks both events and
   a 0 frees every such node not in use; the item aura that 151 starts or stops; and
@@ -468,7 +468,8 @@ is called) and the level requirement's quality-default path, each of these tests
   item's list unlinked and linked).
 - H4. [I] Step (2) runs once, so an unlink that breaks another item's requirement (strength from another item) is
   caught at the next refresh, not in this one. The refresh runs after equip, place, break, repair and identify.
-  (`ITEMS_IsActiveCharm`; the placement that attaches a charm: [items/inventory § C](../../spec-items/inventory/#c-placing-on-a-page))
+  (`EquipReqRefresh`, `ItemUsableBy`,
+  `ITEMS_IsActiveCharm`; the placement that attaches a charm: [items/inventory § C](../../spec-items/inventory/#c-placing-on-a-page))
 - H4. [C] **The refresh also runs with no player action, from the act clock.** `ActsClockPass` walks
   the five act slots and, for a slot whose `ActClockTick` returns non-zero, calls
   `PlayerEquipRefresh(…, 1)` for each client's player, which calls `EquipReqRefresh` with 0. The commonest gap between two
@@ -564,7 +565,7 @@ Step notes:
   of 3 905 calls, the stock none. `add func` 0 (blank) puts the aprop in the main list at
   creation, where it always counts: `ItemApplyProps` builds such an `aprop` block with state 0 and flags 0x40, as a
   `prop` block. (`g_SetBonusStates`,
-  `SETITEMS_GetMemberIndex`, `SetItems.txt:add` func)
+  `SETITEMS_GetMemberIndex`, `ItemApplyProps`, `SetItems.txt:add` func)
 - J3. [C] **Stat 71 sums.** The marker stat 71 (`value`) is an ordinary entry, so the wearer's full stat 71 is the
   sum of the active sets' ids (set id 0 adds nothing) plus any other stat-71 entry under it: the sum of the set lists'
   71 in all 4 996 trees, 2 850 with two or more sets. The lookup reads stat 71 of each

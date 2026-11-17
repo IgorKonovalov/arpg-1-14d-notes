@@ -33,10 +33,10 @@ flowchart LR
 
 | When | Function | Tag |
 |---|---|---|
-| Game creation | `GAME_InitSeeds` | [C] |
+| Game creation | `GAME_InitSeeds`, `GameCreate` | [C] |
 | A level is first needed | `DRLG_LevelCreate` | [C] |
 | A room activates | `DRLG_RoomActivate` | [C] |
-| New rooms of an act, start of the next frame | — | [C] |
+| New rooms of an act, start of the next frame | `NewRoomsUpdate` | [C] |
 | A monster dies | `MONSTER_DropItems` → `TC_ResolveDrops` | [C] |
 | A player operates a chest | `OBJ_OperateDispatch` | [C] |
 

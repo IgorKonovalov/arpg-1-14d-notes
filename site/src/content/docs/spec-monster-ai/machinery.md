@@ -656,7 +656,7 @@ Skills(x):  if b1 and v1C ≤ 0 and Range(100) < aip(4): UseSkill(Sk2mode, Skill
   decisions, 168 calls past the first.
 - T28c. [C] **The block run as written** against every row 28 decision of the rev 4 and rev 6 logs: 100 decisions, 99 compared, 0 mismatches, 1 stopped at a return site not armed. Each boundary call's function and return address, the unit seed at it, `v14`, `v18`, `v1C`, `T56`'s three arguments and the exit seed agree, with the logged inputs and results as oracles. Logged paths only: steps 1, 3, 5 with its step accepted, 6 and 7, `Pair` both ways, and `T56` at two of its three sites. **Reached by no log, so `[I]` only:** step 2's melee arm, all of step 4, `Skills`' two uses. Controls: `T56`'s byte as 3 fails 23, the draw of step 6's `Range(100) > 30` made before its two tests fails 1, the second 50 inside 9 dropped fails 2; step 2's draw made only with `b0` fails none, as that arm is not reached.
 
-#### T29. Row 29 `BatDemon` (alt)
+#### T29. Row 29 `BatDemon` (`AiBatDemon`, alt `AiBatDemonAlt`)
 
 ```mermaid
 stateDiagram-v2

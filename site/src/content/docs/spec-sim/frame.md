@@ -35,7 +35,7 @@ flowchart TD
 | Pass 4 of the tick | [C] (every unit event after the frame's walk and before its timers, 0 inversions over 58 678 ranked lines); its code's map [C] (§ D) |
 | Any code queues an event | [C] for their map (§ E) |
 
-`GameTickAlt` is not an entry point: its one call lies in a stub that no call, jump or pointer reaches, so in this build every frame is run by `ServerGamesFrame`. [C] (a second tool's scan: `GameTick` 2 calls, `GameTickAlt` 1, no reference into the stub)
+`GameTickAlt` is not an entry point: its one call lies in a stub that no call, jump or pointer reaches, so in this build every frame is run by `ServerGamesFrame`. [C] (a second tool's scan: `GameTick` 2 calls, `GameTickAlt` 1, no reference into the stub; `GameTickAlt`)
 
 ## Inputs
 
@@ -45,7 +45,7 @@ flowchart TD
 |---|---|
 | `PetType.txt:partysend` | which pets player kind 11 reports (§ F4); it reads no other table |
 
-No excel table is read by `GameTick`'s own code, the queue or the walks; each event's function reads its own. [C] (none of the 44 table accessors called and no data-tables address named)
+No excel table is read by `GameTick`'s own code, the queue or the walks; each event's function reads its own. [C] (none of the 44 table accessors called and no data-tables address named; `GameTick`)
 
 ### Runtime state
 
@@ -548,7 +548,7 @@ H2. NewRoomsUpdate(game):                                         [C] (all of H2
 - H2b. [C] **So in one frame's walk,** an act's rooms created since its last walk come first, newest first, then its older
   rooms, and each older room's wanderer tick steps its own seed once per frame in which any room of the act was created.
   `RoomUpdateOne`'s three callers populate one room at once, outside this order.
-  (23 walks equal the model, 371 of 371 older rooms one step)
+  (`RoomUpdateOne`; 23 walks equal the model, 371 of 371 older rooms one step)
 - H2c. [C] **A room created during the walk** is linked before the walk's position, so it is not visited, and its flag is
   cleared at the walk's end: it waits, unpopulated, for the next walk of its act, which needs another room of that act to be
   created. The windows hold 4 such rooms, each first walked at its act's next walk, after another room of that act was created
@@ -795,8 +795,8 @@ K2. For each window, reader rev 2 keeps each chained seed's value:   [I] (all of
 
 - K7. [I] **Between the ticks the main loop runs client code on client copies of the seeds, outside the frame.** The 5 404 client steps at listed rows
   (`UnitInit`, `ClientMonCreate`, `ClientMonIsChampion`, `ClientCritters`, `UNIT_AnimInit`) are applied to no chained seed and counted apart; 217 have a low word
-  equal to a chained seed's at that moment, and those 78 are what "not applied" separates. **They are no evidence of the server's frame order,** and the rows' `fn:`
-  names are the neighbouring symbol's for a location past a function's end, not a read function: of the 8 extents' 48 locations 38 lie past it, 9 of those hit in the first batch. Function gets no claim: its
+  equal to a chained seed's at that moment, and those 78 are what "not applied" separates. **They are no evidence of the server's frame order,** and the function
+  names the rows carry are the neighbouring symbol's for a location past a function's end, not a read function: of the 8 extents' 48 locations 38 lie past it, 9 of those hit in the first batch. Function gets no claim: its
   135 260 lines in the three pack windows lie between the ticks on no chained seed.
 
 ### L. Inactive units and the room unlink

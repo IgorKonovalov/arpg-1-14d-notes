@@ -178,9 +178,9 @@ Step notes:
 - A3. [C] Type 5 with a group-1 point on the level steps the seed once, as types 0 and 11 do: Meshif's return to level
   40, six westward trips, each found a point, stepped Lut Gholein's level seed once and picked the point
   `LevelPointPick` predicts, the level seed chained from one trip to the next, no other seed moved.
-  (x-meshifw)
+  (`LevelPointFind`, `LevelPointPick`: x-meshifw)
 - A3. [C] Type 5 on Harrogath (109), whose one point is of type 0, takes that point with no draw (`LevelPointPick`'s
-  n = 0 exit), the level seed unchanged: five trips through the Harrogath portal. (
+  n = 0 exit), the level seed unchanged: five trips through the Harrogath portal. (`LevelPointPick`
 : x-tyrael3)
 
 ### B. The free-cell search
@@ -375,8 +375,8 @@ Step notes:
   east in run 2.
 - E1. [C] In the state logged (expansion, word 26 bit 0, after Tyrael's message 0x4E20), E1's 367 branch was not reached:
   the five Act IV → V trips each logged `NpcTravelMove(109, 5)` from the Harrogath portal's operate (object 566, § F),
-  never the branch's `NpcTravelMove(109, 0)`. (x-tyrael3
-)
+  never the branch's `NpcTravelMove(109, 0)`. (x-tyrael3; `A4Q2_HarrogathPortalOperate`
+, `NpcTravelMove`)
 - E1. [I] The client's menus, as screenshotted in the run's development logs, explain it: NPC 367's has only *talk* and
   *cancel* in that state, and Meshif's Act III menu (NPC 264) *talk*, *sail west* and *cancel*. A screenshot is an
   observation of the client, whose menu builder was not read, so the menus' lines, that no stock state offers NPC 367's
@@ -392,11 +392,11 @@ Step notes:
 set it too.
 - E4. [C] The clear branch has one case per travel word: word 7, word 15 and word 28 (the first trip
   through the Harrogath portal, run 3): `+0x4C` 1 → 0, return 0; trips that wrote no travel word set no `+0x4C` and
-  sent no packet 0x48. (x-tyrael3)
+  sent no packet 0x48. (`Pkt48ActChangeClear`: x-tyrael3)
 - E4. [I] The returns 3 (`a2` ≠ 1) and 2 (`+0x4C` already 0) were not reached. What the client sends 0x48 after is under
   *Open questions*.
 - E2. [C] NPC 264's westward return (`NpcTravelMove(40, 5)`) steps Lut Gholein's level seed once per trip and NPC 175's
-  return to level 1 draws nothing (A3). (x-meshifw)
+  return to level 1 draws nothing (A3). (`NpcTravelMove`: x-meshifw)
 - E2. [C] Into another act `NpcTravelMove` calls `PlayerChangeLevel(level, type)`: 40 logged moves to levels 40, 75, 1
   and 109 at types 0 and 5.
 - E2. [I] NPC 520's return uses type 5 too, with A3's draw rule (a draw only when the town has a group-1 point); not
@@ -411,7 +411,7 @@ set it too.
 | Duriel's lair portal 100 (43) | class 100 → level 73; class 377 → its object byte; type 0 | none | [I] |
 | Arcane portal 298 (34) | 74 → 54 at type 0; 54 → 74 at type 11; then the Act II mode sync | none | [I] |
 | Durance portal 342 (46) | 102 → 103 at type 0 | word 22 bit 13 or 0 | [I] |
-| Harrogath portal 566 (73), expansion only, made by Tyrael's message 0x4E20 | the player in Act IV; if word 28 bit 0 was clear: word 28 bit 0 then 13, the record sent, `+0x4C` = 1; then every time `NpcTravelMove(109, 5)` (no draw, A3) and the waypoint record | word 26 bit 0 or 13 (else message 0x13) | [C] for the passing side (x-tyrael3, five trips, word 28 written on the first) |
+| Harrogath portal 566 (73), expansion only, made by Tyrael's message 0x4E20 | the player in Act IV; if word 28 bit 0 was clear: word 28 bit 0 then 13, the record sent, `+0x4C` = 1; then every time `NpcTravelMove(109, 5)` (no draw, A3) and the waypoint record | word 26 bit 0 or 13 (else message 0x13) | [C] for the passing side (x-tyrael3, five trips, word 28 written on the first; `A4Q2_HarrogathPortalOperate`) |
 | Baal's portals 563/569 (70) | on 131 → 132 at type 11 once Baal opened it; elsewhere → 131 | quest 36's private flag | [I] |
 | the last portal 565 (72) | → 109, `+0x4C` = 1, word 40 bit 10 | word 40 bit 13 | [I] |
 
@@ -561,7 +561,8 @@ Step notes:
 - G4. [I] A player's class-59 pair is freed when (a) the owner goes through the town end; (b) the owner opens a new
   portal (`PlayerPortalClose` at the start of G1); (c) the owner unit is freed; (d) the hostility declaration
 runs; (e) the Ancients' altar on level 120 closes every portal standing there. Class-60 portals are never closed by these paths.
-  (callers)
+  (`PlayerPortalClose`, callers;
+  `UnitFree`)
 - G4. [C] The owner's use of the town end is followed, at the next open, by a new pair being created, consistent with (a)
   and (b); the field end of a still-open pair was not re-checked.
 - G5. [I] **Permanent portals (class 60).** `OBJINIT_Portal` (`InitFn` 12) sets the destination from the level the
@@ -628,7 +629,7 @@ I2. PlayerPlaceInAct(player, given = 0):                              [C]
 - I1. [C] Three resurrections in Hell (the character killed in the Cold Plains, Escape each time) each moved the player
   to level 1 by `PlayerChangeLevel(1, type 0)` with one step of the town's level seed, chained from one death to the
   next, the free search as predicted, and no game, quest or player seed draw across the handler.
-  (h-death3)
+  (`Pkt41Resurrect`: h-death3)
 - I2. [C] 11 joins placed the player at A1's cell; the hireling branch was not separated.
 
 ### J. Operate gates and real-time gates

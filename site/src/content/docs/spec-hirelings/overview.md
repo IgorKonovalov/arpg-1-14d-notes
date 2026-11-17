@@ -52,15 +52,15 @@ flowchart TD
 | When | Function | Tag |
 |---|---|---|
 | Game creation: the store seed `S` the hire tables draw from | `NPCSTORE_CtlCreate` | [C] |
-| A seller starts interacting with a player: the hire table is built if it has none | → `HIRE_SendList` → `HIRE_BuildStock` | [C] |
+| A seller starts interacting with a player: the hire table is built if it has none | `NpcInteractStart` → `HIRE_SendList` → `HIRE_BuildStock` | [C] |
 | NPC menu action 3 (open the hire list) | `NPC_MenuAction` → `HIRE_SendList` | [C] |
 | Trade opened at a seller whose `trader` byte is set (Asheara): the interaction start has already built the table, so `NPC_OpenStore`'s hire test reads `hireBuilt` = 1 and builds nothing (§ C) | `NPC_OpenStore` | [C] |
 | Hire request | `HIRE_Hire` | [C] |
 | After a hire, the list is empty: rebuild | `HIRE_RebuildIfEmpty` | [C] |
-| Quest gift, Act I (Kashya's talk with Act I quest word 2 bit 1 set and bit 0 clear), expansion | → `HIRE_GiveFreeMerc` | [C] |
+| Quest gift, Act I (Kashya's talk with Act I quest word 2 bit 1 set and bit 0 clear), expansion | `A1Q2_NpcMessage` → `HIRE_GiveFreeMerc` | [C] |
 | Quest gift, Act III (Asheara, word 19 bit 7) | → `HIRE_GiveFreeMerc` | [I] |
 | A save with a mercenary header is loaded | `D2S_ReadMercHeader` → `MERC_Create` | [C] |
-| A save older than version 92 (versions 87 and 71 run) | → → `MERC_Create` | [C] |
+| A save older than version 92 (versions 87 and 71 run) | `ReadSaveLegacy` → `ReadMercOldSave` → `MERC_Create` | [C] |
 
 ## Inputs
 
@@ -102,7 +102,7 @@ flowchart TD
 | pet type of a mercenary | 7 | `PETS_Add` | [C] |
 | level floor of a list entry | 2 | `HIRELING_RollEntry` | [C] |
 | skill level cap | 32 | `MERC_SetLevel` | [C] |
-| level cap of a loaded mercenary | 99 (`ExpMaxLevel(0)`) | — | [C] |
+| level cap of a loaded mercenary | 99 (`ExpMaxLevel(0)`) | `ExpMaxLevel` | [C] |
 
 - [C] The name ranges are those the run's tables hold: every logged table's `nameIdx` runs over the seller's range.
   They are string indices of the loaded string tables, so another language's tables could move them; the spec's

@@ -13,12 +13,12 @@ A preset instance (a placed `LvlPrest` record, step 4) carries the units its DS1
 | When | Function | Tag |
 |---|---|---|
 | DS1 parsed (unit list built, act rewrites) | `DS1_Parse` | [C] |
-| Preset rooms created, `Scan` or `Pops` non-zero: DS1 load and the rolls on the level seed | `DRLG_PresetMapScan` | [C] |
-| Preset room activated or prepared: DS1 load and the rolls on the room seed, the added units | `DRLG_PresetRoomLoadDs1` | [C] |
+| Preset rooms created, `Scan` or `Pops` non-zero: DS1 load and the rolls on the level seed | `DRLG_PresetMapScan`, from `PresetRoomsCreate` | [C] |
+| Preset room activated or prepared: DS1 load and the rolls on the room seed, the added units | `DRLG_PresetRoomLoadDs1`, from `RoomActivateB` and `RoomPrepareFiles` | [C] |
 | Keep/drop rolls | `DRLG_PresetUnitDropRolls` | [C] |
 | Instance list → room list (type-2 grid prepare) | `DRLG_PresetUnitsToRoom` | [C] |
-| Server handover (boundary) | — | [C] |
-| Level 27's file index, while the act's links are built | — | [C] |
+| Server handover (boundary) | `RoomPresetUnits` | [C] |
+| Level 27's file index, while the act's links are built | `LevelLinkBuild` | [C] |
 
 ## Inputs
 
@@ -58,13 +58,13 @@ A preset instance (a placed `LvlPrest` record, step 4) carries the units its DS1
 
 | Name | Value | Anchor | Tag |
 |---|---|---|---|
-| subtiles per tile | 5 | — | [C] |
+| subtiles per tile | 5 | `TileToSubtile` | [C] |
 | drawing ids | MonStats 204, 205, 371, 372; MonPlace 33, 34, 35; objects 196, 261, 581 | `DRLG_PresetUnitDropRolls` | [C] |
 | act rewrites | act index 2: MonStats 297 → object 382, 366 → object 404; act index 4: 514 → object 461, 537..539 → object `1013 − id` | `DS1_Parse` | [C] |
 | client river object `Def`s | 1, 3, 26, 27, 28, 300 | `DRLG_PresetRoomLoadDs1` | [C] |
 | row-skip floor mains | bits 20–25 = 4 with bits 8–15 ∈ {0, 4, 8, 16, 29, 39} (switch table) | `DRLG_PresetClientUnitsB` | [C] |
-| centre monster | MonStats 266 (`navi`), `Def` 4–7, level 2, file index 3 | — | [C] |
-| town levels | 1, 40, 75, 103, 109 (the byte table, decoded over every id; its callers `DRLG_RoomNoPopNearTown` and `OBJ_PopulateGate` agree) | `DRLG_RoomNoPopNearTown` | [C] |
+| centre monster | MonStats 266 (`navi`), `Def` 4–7, level 2, file index 3 | `PresetCentreMonster` | [C] |
+| town levels | 1, 40, 75, 103, 109 (the byte table, decoded over every id; its callers `DRLG_RoomNoPopNearTown` and `OBJ_PopulateGate` agree) | `LevelIsTown`, `DRLG_RoomNoPopNearTown` | [C] |
 
 ## Algorithm
 
@@ -186,7 +186,7 @@ Step notes:
 2. **The room-seed roll uses the creation seed.** `R.seed` at that point is still the value `DRLG_RoomCreate`
    left, `Step(Init(level seed low))`, whose low word is also `R +0x04`: the roll comes before the re-seed
    `Init(R.seed, R +0x04)` of [room-tiles.md](../room-tiles/) step 1, so the roll's draws change no later draw of
-   that room. [C] (`DRLG_RoomCreate`: the room seed into all 571 room-seed rolls)
+   that room. [C] (`DRLG_RoomCreate`, `DrlgRoomReseed`: the room seed into all 571 room-seed rolls)
 3. **One roll fixes every room of the instance.** The room that loads first rolls for the whole instance, so
    which room that is (an activation order input) decides only which seed is used, and that seed's draws are
    thrown away by its re-seed. [C]
@@ -430,13 +430,13 @@ What each column does beyond the file choice and the tile build. **None of these
 
 | Column (record offset) | Effect | Reader | Tag |
 |---|---|---|---|
-| `Populate` (`+0x08`) | 0 sets room flag, for which `RoomPopLevelId` returns 0: no **random** population. Preset units still spawn | — | [C] |
-| `Logicals` (`+0x0C`) | selects the room's logic-region builder: 0 → `LogicBoxSingle` (logic flags bit 0), 1 → `LogicRegionsFromDs1` (flags bit 1). What the builders produce is `drlg/collision`'s | — | [C] |
-| `Outdoors` (`+0x10`) | ORs `0x80000` into each room's flags (set at creation in exactly the 119 183 logged rooms with `Outdoors` 1, [C]); `RoomIsOutdoors` returns that bit for a preset room (1 for an out room), so it marks the room outdoors for that test, whose two callers are the client's room change and a server skill walk (note 8) | — | [I] |
-| `Animate` (`+0x14`) | builds the animated-tile frame lists and sets room bit `0x8000000` (presentation): the bit is set in exactly the rooms whose `Animate` is 1 (104 with, 3540 without) | — | [C] |
+| `Populate` (`+0x08`) | 0 sets room flag, for which `RoomPopLevelId` returns 0: no **random** population. Preset units still spawn | `PresetRoomCreate`, `PresetRoomsCreate` | [C] |
+| `Logicals` (`+0x0C`) | selects the room's logic-region builder: 0 → `LogicBoxSingle` (logic flags bit 0), 1 → `LogicRegionsFromDs1` (flags bit 1). What the builders produce is `drlg/collision`'s | `PresetRoomTilesBuild` | [C] |
+| `Outdoors` (`+0x10`) | ORs `0x80000` into each room's flags (set at creation in exactly the 119 183 logged rooms with `Outdoors` 1, [C]); `RoomIsOutdoors` returns that bit for a preset room (1 for an out room), so it marks the room outdoors for that test, whose two callers are the client's room change and a server skill walk (note 8) | `PresetRoomsCreate`, `RoomIsOutdoors`, `DungeonRoomIsOutdoors` | [I] |
+| `Animate` (`+0x14`) | builds the animated-tile frame lists and sets room bit `0x8000000` (presentation): the bit is set in exactly the rooms whose `Animate` is 1 (104 with, 3540 without) | `PresetRoomTilesBuild`, `AnimTilesBuildAll` | [C] |
 | no column (`+0x024`) | the animation frame period, 0 meaning 80 (read only); 0 in all 1091 records | — | [C] value / [I] meaning |
-| `KillEdge` (`+0x18`), `FillBlanks` (`+0x1C`) | tile build, [room-tiles.md](../room-tiles/): 3736 and 4911 rooms built with them set match, and ignoring either breaks the logs | — | [C] |
-| `AutoMap` (`+0x30`) | gates the act callbacks `+0x454`/`+0x488`, which are null on the server and drive the client automap (presentation): client towns 40, 103, 109 call `+0x488` once, other `AutoMap` 1 levels `+0x454` per room, `AutoMap` 0 neither, the server neither | — | [C] |
+| `KillEdge` (`+0x18`), `FillBlanks` (`+0x1C`) | tile build, [room-tiles.md](../room-tiles/): 3736 and 4911 rooms built with them set match, and ignoring either breaks the logs | `PresetRoomTilesBuild` | [C] |
+| `AutoMap` (`+0x30`) | gates the act callbacks `+0x454`/`+0x488`, which are null on the server and drive the client automap (presentation): client towns 40, 103, 109 call `+0x488` once, other `AutoMap` 1 levels `+0x454` per room, `AutoMap` 0 neither, the server neither | `PresetLevelBuild` | [C] |
 | `Scan` (`+0x34`) | with `Pops`, selects the level-seed roll (step 2a) and the map scan | `DRLG_PresetMapScan` | [C] |
 | `Pops` (`+0x38`) | with `Scan`, as above; also the capacity of the roof-pop tables (presentation) | `DRLG_PresetMapScan` | [C] |
 | `PopPad` (`+0x3C`) | read only by the client's roof-pop update (presentation) | `DRLG_PresetPopsUpdate` | [C] |

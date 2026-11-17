@@ -33,12 +33,12 @@ flowchart LR
 
 | When | Function | Tag |
 |---|---|---|
-| `-txt` only: a formula cell of skills, skilldesc, missiles, or weapons/armor/misc is compiled | → `CALC_Compile` | [C] |
+| `-txt` only: a formula cell of skills, skilldesc, missiles, or weapons/armor/misc is compiled | `SkillsCalcCell`, `SkillDescCalcCell`, `MissCalcCell`, `ItemCalcCell` → `CALC_Compile` | [C] |
 | A skill formula (`skillscode`) is needed | `SKILLS_EvalCalc` (76 call sites seen) | [C] |
 | A skill description number (`skilldesccode`) is shown | — | [C] |
 | A skill's formula-valued variable, elemental synergy or to-hit formula is read | `CALC_Eval` called directly from `SKILLS_CalcVar`, `SKILLS_GetElemMin` / `SKILLS_GetElemMax` / `SKILLS_GetElemLen`, `SKILLS_GetToHit` | [C] |
 | A missile formula (`misscode`) is needed | — | [C] |
-| A stamina, antidote or thawing potion is drunk (`itemscode`) | — | [C] |
+| A stamina, antidote or thawing potion is drunk (`itemscode`) | `ITEMS_EvalCalc`, from `ItemUseTimedState` (its `len`, `calc1`, `calc2`), the `use` function of entry 9 of `g_ItemUseFns`, which entry 6's `use` also calls (§ E for how an item use reaches it) | [C] |
 
 ## Inputs
 
@@ -178,11 +178,11 @@ which function call, if any, encloses the name.
   else the `skillcalc` code of the name's first four characters (space-padded) becomes that row (constant); inside
   `miss(` the same against missiles and `misscalc`; inside `stat(` an itemstatcost `Stat` name becomes its row, else
   `base` → 1, `mod` → 2, anything else → 0 (constants); elsewhere the `skillcalc` row, **as a variable**. Name
-  lookups are case-insensitive and take the first matching row.
+  lookups are case-insensitive and take the first matching row. (`SkillsCalcIdent`)
 - [C] Missile identifiers: inside `skill(` a skill name (constant), else the `skillcalc` code; inside `miss(` a missile
-  name, else the `misscalc` code; elsewhere the `misscalc` row as a variable.
+  name, else the `misscalc` code; elsewhere the `misscalc` row as a variable. (`MissCalcIdent`)
 - [C] Item identifiers: inside `stat(` as for skills; elsewhere variable 0. An unknown identifier anywhere compiles
-  to the constant 0.
+  to the constant 0. (`ItemCalcIdent`)
 
 **C3. Operator precedence.**
 
@@ -589,7 +589,8 @@ lvl 5 <          0       lvl 4 − par4 ×            ?:   96 41 skill        pa
 
 - **Both ternary branches run.** `?:` is an operator over three values already on the stack; every read and call in
   the unused branch still happens (§ D 4a). With `rand` in a branch, the draw happens either way: `0 ? rand(1,1000) : 7`
-  and `1 ? 5 : rand(1,1000)` each return the chosen branch and step the unit seed once under emulation ([C] for `rand`).
+  and `1 ? 5 : rand(1,1000)` each return the chosen branch and step the unit seed once under emulation ([C] for `rand`,
+  `SkillsCalcRand`).
 - **Truncating division.** `÷` is C division (toward zero), and a zero divisor gives 0 rather than a fault (the zero
   test [C]: 522 zero divisors, `INT32_MIN ÷ 0` included). `INT32_MIN ÷ −1` still
   faults (§ D step note 4g).

@@ -36,7 +36,7 @@ flowchart LR
 
 | When | Function | Tag |
 |---|---|---|
-| A drop's item is created with quality 7 or 5 (from the quality roll or a TC unique/set entry) | — | [C] |
+| A drop's item is created with quality 7 or 5 (from the quality roll or a TC unique/set entry) | `DropCreateItem` → `ItemCreate` → `ItemInitStats` → `ItemCreateByQuality` | [C] |
 | The unique case of the switch | `ITEMS_BuildUnique` | [C] |
 | The set case of the switch (item version ≠ 0) | `ITEMS_BuildSet` → `ITEMS_BuildSetPick` | [C] |
 
@@ -52,7 +52,7 @@ flowchart LR
 - [I] The cube changes the made-uniques set through one path only: a `usetype` output with `reg` whose input 1 is a
   unique. `RecipeOutputCreate` rebuilds that unique by row; when the row's made bit was clear before
   the rebuild, it clears the bit that the unique builder set, so the set is left as it was. A bit already set stays
-  set (the made test of § C may then fail and fall back, § E). No stock `CubeMain` row has `reg`. (`Game+0x1B24`; specified as step E7 of
+  set (the made test of § C may then fail and fall back, § E). No stock `CubeMain` row has `reg`. (`RecipeOutputCreate`, `Game+0x1B24`; specified as step E7 of
   [items/cube § E](../cube/#e-building-one-output--recipeoutputcreate))
 
 ## Inputs
@@ -89,6 +89,7 @@ Not read: `carry1`, `lvl req` (either table), `Sets.level` (not compiled) and It
 
 | State | Type | Source |
 |---|---|---|
+| `item.seed` | `Seed` at `ItemData+0x04`; on entry `{start, 666}` | set by `ItemSeedInit` from one game-seed draw |
 | `item.start` | u32 at `ItemData+0x10` | the same draw's `low`; rewritten by every fallback step |
 | `item.quality` | u32 at `ItemData+0x00` | written by the switch, the overrides and the fallbacks |
 | `item.fileIndex` | i32 at `ItemData+0x28`; −1 none | the chosen `UniqueItems` or `SetItems` row |
@@ -97,7 +98,7 @@ Not read: `carry1`, `lvl req` (either table), `Sets.level` (not compiled) and It
 | `rec` | the 0x84-byte creation record, `ItemCreateRec` | `+0x2C` restore flag (0 on drops), `+0x30` quality, `+0x40` row + 1 (0 none; the row itself on the restore path, C2), `+0x80` flags (bit 0: `hellbovine` source) |
 | `game.gameType` | u8 at `Game+0x6A` | 3 in single player, 2 in TCP/IP (logged) |
 | `game.ladder` | at `Game+0x74` | 0 in the runs |
-| `game.uniqueMade` | 128 × u32 at `Game+0x1B24`, bit `row` | cleared |
+| `game.uniqueMade` | 128 × u32 at `Game+0x1B24`, bit `row` | cleared by `GameCreate` |
 | stats 72 (`durability`), 73 (`maxdurability`) | i32, the unit's stats as `ItemInitStats` set them (unit seed) | read and rewritten by the durability step |
 
 ### Constants

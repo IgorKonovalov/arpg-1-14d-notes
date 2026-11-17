@@ -12,11 +12,11 @@ At startup the game opens its MPQ archives, then loads every excel table from it
 
 | When | Function | Tag |
 |---|---|---|
-| Startup: file I/O mode from `-direct` | — | [C] |
+| Startup: file I/O mode from `-direct` | `InitGame` → `InitFileIO` | [C] |
 | Startup: core archives | `MPQ_OpenCoreArchives` | [C] |
 | Startup: game archives | `MPQ_OpenGameArchives` | [C] |
 | On demand: video archive | `MPQ_OpenVideoArchives` | [C] |
-| Command-line options applied (`-txt`) | — | [C] |
+| Command-line options applied (`-txt`) | `ApplyOptions` → `ApplyTxtOption` | [C] |
 | Startup: every table, fixed order | `DATATBLS_LoadAll` | [C] |
 | One table | `DATATBLS_LoadTable` | [C] |
 | Item code → item | `ITEMS_GetByCode` → `EXCEL_FindCode` | [C] |

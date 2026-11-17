@@ -24,14 +24,14 @@ those of [rng](../../spec-rng/overview/); the act seed is that of [rng/seeds](..
 
 | When | Function | Tag |
 |---|---|---|
-| Act created: per-act link setup, before any level is built | `DRLG_ActCreate` → | [C] |
+| Act created: per-act link setup, before any level is built | `DRLG_ActCreate` → `ActLinkInit` | [C] |
 | One act link table laid out | — | [C] |
-| A level's position when the builder does not place it | — | [C] |
+| A level's position when the builder does not place it | `LevelSetPosition` | [C] |
 | Room flags from a preset instance (seams, warp slots, waypoint) | `DRLG_PresetMapScan` | [C] |
-| Warp points, at the end of every `LevelInit` | — | [C] |
-| Room-state restore, at the end of every `LevelInit`, before the points (no warp data, no draw) | — | [C] |
-| Warp pairing, when a room with a warp bit activates | — | [C] |
-| Warp tile and warp node at room activation | see [room-tiles.md](../room-tiles/) step 10 | [C] |
+| Warp points, at the end of every `LevelInit` | `LevelWarpPointsBuild`, from `LevelInit` | [C] |
+| Room-state restore, at the end of every `LevelInit`, before the points (no warp data, no draw) | `LevelRoomStateRestore` | [C] |
+| Warp pairing, when a room with a warp bit activates | `RoomNeighboursEnsure` → `WarpPairLink` | [C] |
+| Warp tile and warp node at room activation | `WarpTileAdd`, see [room-tiles.md](../room-tiles/) step 10 | [C] |
 
 - [C] `LevelRoomStateRestore` restores room `+0x60` bit 0 from the per-room array at level `+0x22C` that `LevelUnload`
   (keep mode) saves, ORing it in room by room in list order: 25 rebuilds with a saved array, 90 rooms whose bit it set,
@@ -179,18 +179,18 @@ means: first call `d ← Step(B.seed) & (n − 1)`, then `d ← (d + 1) mod n` u
 
 | Pick | Choice | Position by choice | Tag |
 |---|---|---|---|
-| — | none, no draw | `(Levels OffsetX, Levels OffsetY)` | [C] |
-| — | cycle 4 | 0 `(P.x − 16, P.y + P.h)`; 1 `(P.x − w, P.y − 16)`; 2 `(P.x + P.w − w + 16, P.y − h)`; 3 `(P.x + P.w, P.y + P.h − h + 16)` | [C] |
-| — | cycle 8 | 0 `(P.x − 8 − w÷2, P.y + P.h)`; 1 `(P.x + w÷2 + 8, P.y + P.h)`; 2 `(P.x − w, P.y − h÷2 − 8)`; 3 `(P.x − w, P.y + h÷2 + 8)`; 4 `(P.x − 8 − w÷2, P.y − h)`; 5 `(P.x + w÷2 + 8, P.y − h)`; 6 `(P.x + P.w, P.y − h÷2 − 8)`; 7 `(P.x + P.w, P.y + h÷2 + 8)` | [C] |
-| — | `d ← lo & 3`, then `f ← lo & 1` (two draws); next `(d, f) ← ((d + f) mod 4, (f + 1) mod 2)` until back at `(dir0, flip0)` | `f` 1: 0 `(P.x, P.y + P.h)`; 1 `(P.x − w, P.y + 8)`; 2 `(P.x + P.w − w, P.y − h)`; 3 `(P.x + P.w, P.y + P.h − h − 8)`. `f` 0: 0 `(P.x + P.w − w, P.y + P.h)`; 1 `(P.x − w, P.y + P.h − h − 8)`; 2 `(P.x, P.y − h)`; 3 `(P.x + P.w, P.y + 8)` | [C]; (0, 1) and (2, 0) placed, never kept (B2 note) |
-| — | size 96×56 for odd `d`, 56×96 for even | `f` 1: 0 `(P.x − 16, P.y + P.h)`; 1 `(P.x − w, P.y − 16)`; 2 `(P.x + P.w − w + 16, P.y − h)`; 3 `(P.x + P.w, P.y + P.h − h + 16)`. `f` 0: 0 `(P.x + P.w − w + 16, P.y + P.h)`; 1 `(P.x − w, P.y + P.h − h + 16)`; 2 `(P.x − 16, P.y − h)`; 3 `(P.x + P.w, P.y − 16)` | [C] |
-| — | `d` 0, no draw | `(P.x, P.y + P.h)` | [C] |
-| — | first `d ← (lo & 1) + 1`, then the other of 1, 2 | 1 `(P.x − w, P.y)`; 2 `(P.x, P.y − h)` | [C] |
-| — | cycle 8 | 0, 1 `(P.x, P.y + P.h)`; 2, 3 `(P.x − w, P.y)`; 4, 5 `(P.x, P.y − h)`; 6, 7 `(P.x + P.w, P.y)` | [C] |
-| — | `d` 3; a draw on every call | `lo & 1` = 1: `(P.x + P.w, P.y + P.h − h + 8)`, flag; `lo & 1` = 0: `(P.x + P.w, P.y − 8)`, flag | [C] |
-| — | `b ← lo & 1` on every call | size 64×160 (`b` 0) or 160×64; `(P.x − w, P.y + P.h − h − 16)` | [C] |
-| — | first `b ← lo & 1`, then the other value | size as above; `(P.x + T[k].dx, P.y + T[k].dy)`, `k = b + 2·dir[a]`, `T` = `g_LinkArreatOffsets` (Constants); the anchor is Rigid Highlands, so `dir[a]` is Rigid's `b` | [C] |
-| — | `b ← lo & 1` on every call | size as above; `(Levels OffsetX, Levels OffsetY)` | [C] |
+| `LinkAnchor` | none, no draw | `(Levels OffsetX, Levels OffsetY)` | [C] |
+| `LinkPick` | cycle 4 | 0 `(P.x − 16, P.y + P.h)`; 1 `(P.x − w, P.y − 16)`; 2 `(P.x + P.w − w + 16, P.y − h)`; 3 `(P.x + P.w, P.y + P.h − h + 16)` | [C] |
+| `LinkPick` | cycle 8 | 0 `(P.x − 8 − w÷2, P.y + P.h)`; 1 `(P.x + w÷2 + 8, P.y + P.h)`; 2 `(P.x − w, P.y − h÷2 − 8)`; 3 `(P.x − w, P.y + h÷2 + 8)`; 4 `(P.x − 8 − w÷2, P.y − h)`; 5 `(P.x + w÷2 + 8, P.y − h)`; 6 `(P.x + P.w, P.y − h÷2 − 8)`; 7 `(P.x + P.w, P.y + h÷2 + 8)` | [C] |
+| `LinkPick` | `d ← lo & 3`, then `f ← lo & 1` (two draws); next `(d, f) ← ((d + f) mod 4, (f + 1) mod 2)` until back at `(dir0, flip0)` | `f` 1: 0 `(P.x, P.y + P.h)`; 1 `(P.x − w, P.y + 8)`; 2 `(P.x + P.w − w, P.y − h)`; 3 `(P.x + P.w, P.y + P.h − h − 8)`. `f` 0: 0 `(P.x + P.w − w, P.y + P.h)`; 1 `(P.x − w, P.y + P.h − h − 8)`; 2 `(P.x, P.y − h)`; 3 `(P.x + P.w, P.y + 8)` | [C]; (0, 1) and (2, 0) placed, never kept (B2 note) |
+| `LinkPick` (Blood Moor) | size 96×56 for odd `d`, 56×96 for even | `f` 1: 0 `(P.x − 16, P.y + P.h)`; 1 `(P.x − w, P.y − 16)`; 2 `(P.x + P.w − w + 16, P.y − h)`; 3 `(P.x + P.w, P.y + P.h − h + 16)`. `f` 0: 0 `(P.x + P.w − w + 16, P.y + P.h)`; 1 `(P.x − w, P.y + P.h − h + 16)`; 2 `(P.x − 16, P.y − h)`; 3 `(P.x + P.w, P.y − 16)` | [C] |
+| `LinkPickFixed` (Tamoe Highland) | `d` 0, no draw | `(P.x, P.y + P.h)` | [C] |
+| `LinkPick` (Rocky Waste) | first `d ← (lo & 1) + 1`, then the other of 1, 2 | 1 `(P.x − w, P.y)`; 2 `(P.x, P.y − h)` | [C] |
+| `LinkPick` (Valley of Snakes) | cycle 8 | 0, 1 `(P.x, P.y + P.h)`; 2, 3 `(P.x − w, P.y)`; 4, 5 `(P.x, P.y − h)`; 6, 7 `(P.x + P.w, P.y)` | [C] |
+| `LinkPick` (Outer Steppes) | `d` 3; a draw on every call | `lo & 1` = 1: `(P.x + P.w, P.y + P.h − h + 8)`, flag; `lo & 1` = 0: `(P.x + P.w, P.y − 8)`, flag | [C] |
+| `LinkPick` (Rigid Highlands) | `b ← lo & 1` on every call | size 64×160 (`b` 0) or 160×64; `(P.x − w, P.y + P.h − h − 16)` | [C] |
+| `LinkPick` (Arreat Plateau) | first `b ← lo & 1`, then the other value | size as above; `(P.x + T[k].dx, P.y + T[k].dy)`, `k = b + 2·dir[a]`, `T` = `g_LinkArreatOffsets` (Constants); the anchor is Rigid Highlands, so `dir[a]` is Rigid's `b` | [C] |
+| `LinkPick` (Tundra Wastelands) | `b ← lo & 1` on every call | size as above; `(Levels OffsetX, Levels OffsetY)` | [C] |
 
 - B2. [C] Blood Moor, Rigid Highlands and Arreat Plateau overwrite the `Levels` size of their entry; see
   Levels § Outdoor sizes from the link picks.

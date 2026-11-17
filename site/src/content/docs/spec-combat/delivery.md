@@ -39,10 +39,10 @@ flowchart TD
 | The packet is applied (melee and missile) | `COMBAT_ApplyDamage` | [C] |
 | Leech | `COMBAT_Leech` | [C] for players, the mercenary and monsters |
 | Crushing blow, open wounds, freeze (stat events 16, 15, 14) | `STATEVENT_CrushingBlow`, `STATEVENT_OpenWounds`, `STATEVENT_Freeze` | [C] for the first two; [C] for freeze on a melee hit; [C] for each one's branches, emulated |
-| A monster's life tick (poison, open wounds) | — | [C] |
-| A player's life tick | — | [C] (54 719 ticks, 1 082 under poison) |
+| A monster's life tick (poison, open wounds) | `MonRegenEvent` | [C] |
+| A player's life tick | `RegenEvent` → `LifeRegenTick` | [C] (54 719 ticks, 1 082 under poison) |
 | A finishing move (do 42, 46, 50, 52) hands its queued hit to the finisher | `COMBAT_PrgFinisher` (A2) | [C] for the six call sites (`static.txt`); [C] for the calls of do 42, 46 and 50 as boundaries, do 46's on the path where its hit helper returns for a bad skill id |
-| The kill | `COMBAT_GetHit` → | [C] |
+| The kill | `COMBAT_GetHit` → `UnitKilled` | [C] |
 
 ## Inputs
 
@@ -129,7 +129,8 @@ A2. DeliverQueued(att, def):                                          [C] (COMBA
   target)` instead; do 50 only with a hit, returning 0 before it otherwise, after copying the 0x70-byte packet to its
   frame. The run reached do 46's two calls only where returns for a bad skill id; on a valid id the same
   instructions follow its hit test, after that boundary. [C] (up to `PrgFinisher` or `DeliverQueued`
-`hit_ass`)
+`hit_ass`, `SkillDo42DragonTalon`,
+  `SkillDo46DragonClaw`, `SkillDo50DragonTail`)
 - A2. Do 52 passes `QueuedHitFind`'s result with no null test, as do 42. The finisher returns at once, with no write,
   for a null hit (149 emulated cases) or one whose result lacks bit `0x1` (298), so a null argument runs nothing; with
   the bit its first call is `UNIT_GetTargetUnit`. [C] (two
@@ -146,7 +147,8 @@ A2. DeliverQueued(att, def):                                          [C] (COMBA
 - A3. **The finisher's own step is a peek**: it saves the seed's two words (`Copy64Out`), calls
   `RNG_Step` on the attacker's own seed (`ECX` = attacker + 0x20), keeps the result and writes the saved
   words back (`Copy64In`), so the seed leaves as it entered. The kept value is read once,
-  into the client message `0xA3`. [C] (`RNG_Step`, two tools)
+  into the client message `0xA3`. [C] (`Copy64Out`, `Copy64In`,
+  `RNG_Step`, `UnitMsgA3`, two tools)
 - A3. **The entries step the attacker's seed at entry.** 37, 39, 41 and 143 step the attacker's seed once inline,
   before the record test, so the step happens even when the entry then creates nothing; up to its boundary (the first
   creation; 38's `DeliverQueued` or `SkillRollPhys`) no entry of 36–41 and 143 draws on the attacker's or the target's
@@ -420,7 +422,7 @@ E3. Freeze(att, def, pkt, event):                                    [C] (STATEV
   cases at the life write), 4 with no player-count term for a defender of type 2 or more, and doubles for event 6.
   [C]
   10) and leaves `cb − MulDiv(cb, 100, 100)`, which is 0 while `cb` ≤ 0x100000; above it `MulDiv` divides first,
-  `(cb ÷ 100) × 100`, so the blow keeps `cb mod 100`, below one life point (59 cases). [C] (row 15)
+  `(cb ÷ 100) × 100`, so the blow keeps `cb mod 100`, below one life point (59 cases). [C] (`MulDiv`, row 15)
 - E1. `k = 8` for MonStats `boss` (act bosses) and superuniques reproduced with 0 mismatches on an act boss (34
   events, Andariel, Normal, `/players` 8) and on superuniques (55), with the same draw, player-count scaling and
   physical-resistance step as `k = 4`. [C]
@@ -495,7 +497,8 @@ that draw:
   Handler 30 steps its unit's seed once inline whatever the packet and goes on when `low mod 100` is below the chance.
   Each then returns 0 with no cast when the skill has no Skills record (handler 30: the skill outside `[0, Skills
   count)` as well), else casts as below. [C] (ends at `ItemCastAtUnit` or
-  `ItemCastAtXY`; `event_item`)
+  `ItemCastAtXY`; `StatEv20SkillOnEvent`, `StatEv21SkillOnGetHit`,
+  `StatEv30SkillOnDeathOrLevel`, `event_item`)
 - E5. **Who casts, at what, with which effect flag.** Handler 20 without `ItemTgtDo` (Skills `+0x07` bit 5) casts as
   its own unit: `ItemCastAtUnit(ECX unit, EDX skill; level, other, 1)`, or with no other unit `ItemCastAtXY(ECX unit,
   EDX skill; level, the unit's path point, 1)`. With `ItemTgtDo` the other unit is both the caster and the target,
@@ -504,7 +507,7 @@ that draw:
   caster, `EDX` the skill, the level the first stack word) refuses no target, a caster with no game (`+0x80`) and a
   caster in state 54, else calls `ITEMSKILL_Cast(game, caster; skill, level, target, 0, 0, &type, &guid, &ox, &oy,
   effect)`; `ItemCastAtXY` makes the game and state tests and passes the aim 0 and the point. [C] (ends at the cast's
-  boundaries below;
+  boundaries below; `ItemCastAtUnit`, `ItemCastAtXY`,
   `Skills.txt:ItemTgtDo`, `event_item`, `cast_item`;
   the argument order as corrected)
 - E5. **`ITEMSKILL_Cast`** refuses id 0 and a row whose `ItemEffect` is 0 with no write; aims the caster's path at
@@ -514,7 +517,8 @@ that draw:
   caster. For `ItemTarget` blank, 1, 3 or 4 no seed is stepped before these boundaries (helper 3 up to its corpse pick
 ; helper 4 whole). When helper 2 refuses for want of a room, the cast restores the saved target unit, or
   the saved point, and bit 6 of the caster's `+0xC4`, and returns 0. [C] (ends at `SKILLS_SrvStart` or `SKILLS_SrvDo`
-; `ITEMSKILL_Cast`, `Skills.txt:ItemTarget`, `Skills.txt:ItemCheckStart`,
+; `ITEMSKILL_Cast`, `ItemTargetCorpse`,
+  `ItemTargetStoredUnit`, `Skills.txt:ItemTarget`, `Skills.txt:ItemCheckStart`,
 `cast_item`)
 - E5. **`ItemTarget` 2 draws on the cast's caster.** `ITEMSKILL_Cast` gives the helper **its own
   caster** (`EDX = ESI`, the call). The helper takes the caster's room; with none it
@@ -522,7 +526,7 @@ that draw:
   (the second step from the first's full state) and tests `COLL_PatternTest(room, x + low₁ mod 40 − 20, y + low₂ mod 40 −
   20, …)` at the caster's position, the remainders unsigned, for a caster of type 0, 1 or 3 (the run's casters, whose
   position is their dynamic path's). [C] (ends at `COLL_PatternTest`,
-  the first try; `cast_item`)
+  the first try; `ItemTargetRandomPoint`, `cast_item`)
 - E5. After the first test: a result of 0 sets the path's target point to the tried point and the helper returns 1;
   any other result makes another try, at most 10, so 2 to 20 steps; all 10 failing return 0 and the cast is refused
   (no `SKILLS_SrvDo`). An item Teleport, the one stock `ItemTarget` 2 row, therefore moves its caster to a free point
@@ -543,7 +547,8 @@ that draw:
   outside `[0, Missiles count)`; else it sets bit 6 of the caster's `+0xC4`, evaluates `calc1`, and calls
   `SkillMissileCreate(ECX game, EDX srvmissilea; caster, id, lvl, dx, dy, 0, 0, 0)` with `(dx, dy)` the target's
   position minus the caster's, `(0, 0)` without a target. It steps no seed before that call. [C] (ends at
-  `SkillMissileCreate` `use_item`)
+  `SkillMissileCreate`; `SkillDo151ItemChainLightning`,
+`use_item`)
 - E5. After that call: no missile returns 0; else the missile's `MissileData+0x28` word gets the `calc1` value and do
   151 returns 1. With the reading of `SkillMissileCreate` (start at the caster's position plus `(dx, dy)`), the item
   Chain Lightning starts at the target unit. [I]

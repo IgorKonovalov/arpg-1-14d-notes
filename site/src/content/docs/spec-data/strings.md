@@ -33,7 +33,7 @@ flowchart LR
 | Program start, before any game (three callers) | [C] |
 | One table file, from `LoadAll` | [C] |
 | Any text shown for a stored index (UI, monster and item names) | [C] |
-| A key looked up at run time (table loaders, e.g. `GEMS_Load`) | [C] |
+| A key looked up at run time (table loaders, e.g. `GEMS_Load`, `LoadMagicAffixes`, `LoadUniqueItems`) | [C] |
 | A key looked up for its text only | [C] |
 | A `.txt` string-key cell compiled into a `.bin` (`-txt` only) | [C] |
 | Release (reference count) | [C] for a release to 0; [I] for one that keeps the count above 0 |
@@ -68,7 +68,7 @@ flowchart LR
 | `expansionLoad` | bool | `HasExpansionMpq()`: `d2exp.mpq` exists, § A |
 | per table: file buffer | bytes or NULL | `g_pStringTbl`, `g_pPatchStringTbl`, `g_pExpStringTbl` |
 | per table: text per node | UTF-16 string pointer per node | `g_StringTblText`, `g_PatchStringTblText`, `g_ExpStringTblText` |
-| not-translated cache | list of (key, placeholder text) | filled |
+| not-translated cache | list of (key, placeholder text) | filled by `NotXlated` |
 | load reference count | i32 | — |
 
 ### Constants

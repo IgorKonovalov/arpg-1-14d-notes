@@ -49,13 +49,13 @@ flowchart TD
 
 | When | Function | Tag |
 |---|---|---|
-| Game creation: the store records and the store seed | → `NPCSTORE_CtlCreate` | [C] |
+| Game creation: the store records and the store seed | `GameCreate` → `NPCSTORE_CtlCreate` | [C] |
 | Item tables loaded: the 17 candidate lists, once per process | `VENDOR_BuildAllLists` → `VENDOR_BuildList` | [C] |
 | NPC menu packet: action 1 trade, 2 gamble, 3 hire | `NPC_MenuAction` → `NPC_TradeOpen` → `NPC_OpenStore` | [C] |
-| A player leaves a town level (level or act change) | → `NPCSTORE_ActStale` | [C] |
-| A player leaves the game from a town of Acts I–IV | → `NPCSTORE_ActStale` | [C] |
-| The gamble window closes (cancel packet) | — | [C] |
-| A player unit is freed while its NPC interaction is open | → → vend 2 | [C] |
+| A player leaves a town level (level or act change) | `TownLevelLeave` → `NPCSTORE_ActStale` | [C] |
+| A player leaves the game from a town of Acts I–IV | `TownPlayerRemove` → `NPCSTORE_ActStale` | [C] |
+| The gamble window closes (cancel packet) | `NpcInteractRemove` → `GambleInvFree` | [C] |
+| A player unit is freed while its NPC interaction is open | `UnitFree` → `PlayerInteractEnd` → `NpcStorePlayerLeave`, vend 2 | [C] |
 
 - [C] `NPC_MenuAction(action, npcId, arg)` handles a 13-byte client packet. Action 1 (trade) is accepted for exactly
   the NPC classes 147, 148, 154, 177, 178, 199, 202, 252–255, 257, 405 and 511–513, and action 2 (gamble) for exactly
@@ -70,7 +70,8 @@ flowchart TD
   one chain only: Baal's death → a save of every client, in game types 1 and 2 only → its callee
 → a client dropped after three failed sends → `ClientRemove` →
   `TownPlayerRemove` → `NPCSTORE_ActStale`. So, by direct calls, quest code resets a store only through that client drop, never in single player.
-  (`VENDOR_BuildStock`, `NPCSTORE_Reset`, vend 4)
+  (`VENDOR_BuildStock`, `NPCSTORE_Reset`, `A5Q6_BaalDeath`,
+vend 4)
 - [I] The walk follows direct calls only: the 825 indirect call sites under those callbacks are not followed.
   (`VENDOR_BuildStock`, vend 4)
 - [C] **Which free reaches `NpcStorePlayerLeave`.** `PlayerInteractEnd` has one call site, in
@@ -80,13 +81,16 @@ flowchart TD
   the second vendors run's single-player *Save and Exit*, the trade window's cancel had already cleared the
   interaction (`NpcInteractRemove`, then `PlayerClearInteract`, and no new interaction
   after), and no `NpcStorePlayerLeave` call followed. With one player, every window close and menu Escape of the run
-  sent the cancel first. (vend 2)
+  sent the cancel first. (`PlayerInteractEnd`, `UnitFree`,
+  `NpcStorePlayerLeave`, vend 2)
 - [I] The call site is `UnitFree`'s case for unit type 0 (the jump table), and the test between the two
   outcomes is the player's interaction flag `+0x6C` with interaction type 1: the two logged
   outcomes fit it. So the path is reached only when a client leaves with an interaction open.
   `PlayerSetInteract` (called by `NpcInteractStart` with type 1 and the
   NPC's id) writes the interaction only while `+0x6C` is 0; `PlayerClearInteract` clears it.
-  (vend 2)
+  (`UnitFree`, `PlayerSetInteract`,
+  `PlayerClearInteract`,
+vend 2)
 
 ## Inputs
 
@@ -299,7 +303,8 @@ Step notes:
   `hirelingsBuilt` at 1, the hireling build logged before her first menu action (6 of 6 with the later run's). So
   `NPC_OpenStore`'s call was never taken in the runs. `HIRE_BuildStock` was a boundary oracle of the first
   run; its draws on `S` are specified in [hirelings](../../spec-hirelings/overview/#entry-points), which
-  a reimplementation runs in its place. (`HIRE_SendList`, `HIRE_BuildStock`, `NPC_OpenStore`, vend 14)
+  a reimplementation runs in its place. (`HIRE_SendList`, `HIRE_BuildStock`,
+  `NpcInteractStart`, `NPC_OpenStore`, vend 14)
 - C1. [I] **The trade-first order is never taken by the stock client**, beyond the runs: `+0x21` (`hirelingsBuilt`)
   is cleared only, and `HIRE_BuildStock` follows at once; `NPCSTORE_Reset` writes `+0x20`
   (`built`) alone, so a store reset, including the two-player stale branch, leaves the hire table built.
@@ -317,7 +322,7 @@ Step notes:
   `townEmpty` 1 and reset Akara's and Charsi's stores at once. The waypoints within an act took the same call site
   with `townEmpty` 1 (Harrogath → the Frigid Highlands once, Lut Gholein → the Sewers Level 2 six times: Larzuk's and
   Fara's stores reset), and every act change came from `PlayerChangeLevel` (the call, return
-; the 14 from a town all with `townEmpty` 0). (`NPCSTORE_ActStale`, vend 15)
+; the 14 from a town all with `townEmpty` 0). (`TownLevelLeave`, `NPCSTORE_ActStale`, vend 15)
 - C2. [I] **Why an act change counts the leaving player.** `TownLevelLeave` counts the players whose current room's
   level is the old level. For a target in another act, `PlayerChangeLevel` calls it before
   `PlayerChangeAct`, while the player's unit is still in its town room, so the count includes it and
@@ -349,7 +354,7 @@ Step notes:
   `NPCSTORE_ActStale` call) and opened the store twice more. None of the three later opens built, each showed the
   same 57 item ids, and the model predicted the record's state (built, not stale) each time. The level-up was one
   event of two levels (30 → 32): the tool-built save held clvl 30 one experience point under clvl 32's threshold,
-  a state not reached by play, and `NpcStoreLevelUpNote` was entered once from the level-up's call. (`NPC_TradeOpen`,
+  a state not reached by play, and `NpcStoreLevelUpNote` was entered once from the level-up's call. (`NpcStoreLevelUpNote`, `NPC_TradeOpen`,
 vend 18)
 - [I] A quest event rebuilds nothing either (none in the runs). Why a level-up changes nothing: the level-up
 calls `NpcStoreLevelUpNote`, which queues a note on each built store without reading the level
@@ -525,26 +530,26 @@ Step notes:
 - E3. [C] The tab is the item type's `StorePage` byte, byte `+0x22` of the `itemtypes.bin` record, compiled to the
   StorePage row index of its code (0 `armo`, 1 `weap`, 2 `mag`, 3 `misc`; 0xFF for the 28 blank cells), as
   `ItemStorePage` reads it. No item type names `mag` (blank 28, `armo` 12, `misc` 45, `weap` 18), so tab 2
-  holds only the overflow of tab 1. (`ItemTypes.txt:StorePage`,
+  holds only the overflow of tab 1. (`ItemStorePage`, `ItemTypes.txt:StorePage`,
   `StorePage.txt:Code`, vend 22, 24)
 - E3. [C] **The tab and the placement.** For all 1 086 stock items of the second vendors run,
   `ItemStorePage` returned the StorePage byte of the item's type (the type at items `+0x11E`). Placed: tab 0 277,
   tab 1 314, tab 2 171, tab 3 139; parked 185. Each placed item lies on the tab it was placed on, inside the 10 × 10
   grid, overlapping no other (901 cells). Tab 2 received only items whose tab-1 try had failed (171), and a tab-1 item
   that also failed on tab 2, or an item of another tab that failed once, was parked: these are the builds' failures.
-  (vend 22)
+  (`ItemStorePage`, `InvPlaceItem`, vend 22)
 - E3. [I] **The cell search is not modelled.** A first fit in column-major order (x outer, y inner) over the tab, in
   creation order, gives 841 of the 901 logged cells, and row-major order 384: the search is close to column-major but
-  is not that alone. (vend 22)
+  is not that alone. (`InvPlaceItem`, vend 22)
 - E3. [I] `0xFF` or an out-of-range type gives −1 (no stock case). Nothing reads `storepage.bin` at run time.
-  (`StorePage.txt:Code`, vend 24)
+  (`ItemStorePage`, `StorePage.txt:Code`, vend 24)
 - E3. [C] A stock item that finds no room is still created (its seeds and draws are consumed) and then counted as a
   failure: 348 such items in the run, each reproduced.
 - [I] Before placement fills durability, throwable stacks and charges to their maximum.
 - [C] **That fill makes no draw.** The walk under `ItemRepairAll` (487 functions), with its
   broken-item branch `ItemRepairBroken` left out (a new stock item is never broken), reaches no LCG site
   and no RNG call; and the store seed and the game seed continue unchanged across every stock item of the 94 builds of
-  the first vendors run. (vend 25)
+  the first vendors run. (`ItemRepairAll`, vend 25)
 
 ### F. The creation record (`ITEMS_CreateForStore`) and the item seeds
 
@@ -663,7 +668,7 @@ Step notes:
 
 - G1. [C] Every gamble open of the runs built a window: the 325 of the first vendors run and the 40 of
   the second vendors run, each after the previous window's close had freed the inventory (§ H).
-  (vend 29)
+  (`GambleEnsure`, vend 29)
 - G1. [I] A gamble open builds only for an NPC whose record has `isGambler` (the six classes of § A), and only when
   the player has no gamble inventory at that NPC: `GambleEnsure` skips the build when its id scan
   finds the player's id. The inventory is keyed by the player's unit id, so each player in a
@@ -671,7 +676,7 @@ Step notes:
   case: `NpcInteractRemove` frees the inventory only when its removal empties the NPC's interaction list
   (`cmp [edx], 0; jne` skips `GambleInvFree`); with one player every close and menu Escape
   sends the cancel, and the client sends the gamble action only from the NPC menu. A second player talking to the NPC
-  keeps the list non-empty. (`NPC_OpenStore`, vend 29)
+  keeps the list non-empty. (`GambleEnsure`, `NPC_OpenStore`, vend 29)
 - G2. [C] **The gamble level `lvl`** lies in `clvl − 5 .. clvl + 4`; it filters the base (uniform among the list rows
   with base `level ≤ lvl`), is the item's creation `ilvl`, and is the upgrade level. At clvl 30 and 75 every value of
   that range occurred, and every affix pick of the 4550 gambled items reproduced from that `ilvl` by the general alvl
@@ -714,19 +719,22 @@ Step notes:
 - [C] In the second vendors run all 77 logged `GambleInvFree` calls came from `NpcInteractRemove` (return
 : the cancel). The interaction end that frees through `NpcStorePlayerLeave` (§ Entry points) was met only
   at the joiner's leaves at Kashya and Akara in the two-client run, neither a gambler.
-  (vend 32)
+  (`GambleInvFree`, `NpcInteractRemove`,
+vend 32)
 - [I] The inventory is also freed when a player unit is freed with its interaction open
   (`PlayerInteractEnd` → `NpcStorePlayerLeave`) and by `NPCSTORE_ClearRec` on a full reset
   of the NPC's record. Opening the gamble window twice within one interaction shows the same items. **Both need a
   second interactor on the NPC** and have no single-player case: the free by `NpcStorePlayerLeave` needs a client
   leaving with a gamble window open, and a second open within one interaction is G1's no-build branch, which needs
-  the NPC's interaction list non-empty at a close. (`NPCSTORE_ClearRec`, vend 32)
+  the NPC's interaction list non-empty at a close. (`PlayerInteractEnd`,
+  `NpcStorePlayerLeave`, `NPCSTORE_ClearRec`, vend 32)
 - [C] **A purchase copies the shown item and creates no replacement.** In the second vendors run two gamble
   purchases (Gheed's `sml` at clvl 1, Anya's `cap` at clvl 99) went `NPC_BuyItem` → `ItemCopy` of the
   shown item (a new unit with the same class, quality and file index), then `StoreItemSold`'s gamble
   branch, with no `ITEMS_CreateForStore`, `GAMBLE_BuildInv` or `VENDOR_BuildStock` call
   inside the purchase; the player's gamble inventory afterwards was the one before less the bought item.
-  (`NPC_BuyItem`, vend 33)
+  (`NPC_BuyItem`, `ItemCopy`, `StoreItemSold`,
+vend 33)
 - [C] **A bought stock item is removed from the store unless `VENDOR_IsPermanent` holds; a sold item is copied in
   unless refused.** Purchases in the second vendors run: Akara's `tsc` (permanent: no removal call, the stock
   unchanged), Akara's `wnd`, Charsi's `lax` and Malah's `bwn` (not permanent: the removal call, the stock
@@ -735,7 +743,7 @@ Step notes:
   by the permanent test, where `hp5` is in no vendor's permanent list, so the clause outside Normal refused it,
   against the Normal `hp5` copied; a `cap` sold in Gheed's gamble window refused by the gamble view, with
   no copy. With the second economy run's refusals by the flags bit 22 (ethereal) and `0x100` and by `carry1`
-. (`VENDOR_IsPermanent`, `NPC_SellItem`,
+. (`VENDOR_IsPermanent`, `StoreItemSold`, `NPC_SellItem`,
 vend 34)
 - [I] The rest of the two tests, not reached: `VENDOR_IsPermanent`'s clause outside Normal for `hp4`, `mp4` and
   `mp5`, and the sale refusals of a `Cracked` low-quality item, base type 7, item flag
@@ -841,7 +849,7 @@ on each of slots 0 and 1, 4 on each of the eight slots with one upgrade draw, an
 - **Two seeds interleave.** Every choice of § D, § E and § G is on `S`; every item's unit and item seed comes from the
   game seed, which other units also step between builds. `HIRE_BuildStock` shares `S` and must run in its place: at
   a seller's first interaction start, before any menu action, so Asheara's hirelings come before her first stock
-  build (C0). [C] (`HIRE_BuildStock`, vend 14)
+  build (C0). [C] (`HIRE_BuildStock`, `NpcInteractStart`, vend 14)
 - **The upgrade draw comes before the creation** of each stock item, after its quality draw (normal copies) or after
   the magic count (magic copies); permanent items make it too in Nightmare and Hell. [C]
 - **Stock level is not clamped to 99** in Nightmare and Hell (`clvl` 99 gives 104), while the gamble `lvl` is clamped

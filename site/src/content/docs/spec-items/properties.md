@@ -31,10 +31,10 @@ flowchart LR
 
 | When | Function | Tag |
 |---|---|---|
-| Every created item, before the quality switch | — | [C] |
-| A builder applies a row: affix (mode 0), `qualityitems` (mode 1), unique (mode 3), set (mode 4) | — | [C] |
-| After the builder, expansion items | — | [C] |
-| After the builder, qualities 1..3 | — | [C] |
+| Every created item, before the quality switch | `ItemCreate` → `ItemInitStats` | [C] |
+| A builder applies a row: affix (mode 0), `qualityitems` (mode 1), unique (mode 3), set (mode 4) | `ItemApplyProps` | [C] |
+| After the builder, expansion items | `ItemRollEthereal` | [C] |
+| After the builder, qualities 1..3 | `ItemRollSockets` | [C] |
 
 - [C] On the drop path these callers reach `ItemApplyProps`, with `a2`, `a5` and `a6` 0 in every call: mode 0 from
   `ITEMS_PickMagicAffix` and `ITEMS_BuildRareAffixes` (the affix row) and from `ItemCreateByQuality` for the

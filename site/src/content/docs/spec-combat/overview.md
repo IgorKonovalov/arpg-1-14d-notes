@@ -37,10 +37,10 @@ Names of functions, structs and fields are ours; the server module is the binary
 | When | Function | Tag |
 |---|---|---|
 | A player's normal attack (Skills row 0, `srvdofunc` 1), at the hit frame | `SKILL_AttackDo` | [C] (2 030 events) |
-| A monster's or a mercenary's plain attack, at the hit frame | → `MON_MeleeHit`, `COMBAT_DeliverQueued` | [C] (4 533 monster, 1 259 mercenary) |
-| A monster skill's melee hit | → `MON_MeleeHit` | [C] |
-| A monster enters an attack mode (its to-hit, damage and `El` stats) | — | [C] for the draws (5 060) |
-| A missile that takes a weapon share is created (its critical chain, § B4) | — | [C] (one owner step per weapon-share creation, 984: 856 player, 128 monster, [skills/missiles C2](../../spec-skills/missiles/#c-the-damage-the-missile-carries)) |
+| A monster's or a mercenary's plain attack, at the hit frame | `MonAttackFrame` → `MON_MeleeHit`, `COMBAT_DeliverQueued` | [C] (4 533 monster, 1 259 mercenary) |
+| A monster skill's melee hit | `MonSkillAttackDo` → `MON_MeleeHit` | [C] |
+| A monster enters an attack mode (its to-hit, damage and `El` stats) | `MonSetMode` → `MonAttackStats` | [C] for the draws (5 060) |
+| A missile that takes a weapon share is created (its critical chain, § B4) | `MissileCreate` → `MissileInitDamage` → `MissileDamageBlock` → `MissileCritRoll` | [C] (one owner step per weapon-share creation, 984: 856 player, 128 monster, [skills/missiles C2](../../spec-skills/missiles/#c-the-damage-the-missile-carries)) |
 | A missile's damage reaches a unit (the defender's side) | `MISSILE_ApplyDamage` | [C] (1 957 on the player or the mercenary, 519 Nova missiles) |
 | A player skill's melee hit (packet and `SrcDam` from the skill) | — | [C] 32 call sites in 30 functions, start functions among them, no pointer |
 
@@ -185,7 +185,7 @@ A2. MonsterAttack(att):                                               [C] (MON_M
 - A3. **A missile's weapon terms are taken at its creation**, not at the hit: the weapon share, the enhanced damage
   and the critical strike's result are fixed when `MissileCreate` builds the damage block and are stored as the missile's own
   stats. [I] The
-  critical chain draws then, on the owner's seed (§ B4). [C] (one owner step per weapon-share creation, 984)
+  critical chain draws then, on the owner's seed (§ B4). [C] (`MissileCritRoll`: one owner step per weapon-share creation, 984)
 
 ### B. Draw order per event
 
@@ -227,7 +227,7 @@ sequenceDiagram
 
 [C] On the monster's seed: `MonAttackStats`' `El` draws at the mode change, then at the hit frame the to-hit and, only on a hit, the build with the `Crit` draw last; on the player's seed: the defence rolls on a hit and the cold draw at delivery. A monster attacker's leech has no draw. [C] (`COMBAT_Leech`: 8 876 monster attacks with the attacker's seed unchanged at the leech, 276 of them draining)
 
-B2 is the melee path. A monster's missile that takes a weapon share (an archer's arrow) builds its packet on the missile's seed at the hit (B3) and steps the monster's seed one to three times when it is created (B4). [C] (one step in 128 monster creations, classes 160, 161, 170; the second and third steps emulated)
+B2 is the melee path. A monster's missile that takes a weapon share (an archer's arrow) builds its packet on the missile's seed at the hit (B3) and steps the monster's seed one to three times when it is created (B4). [C] (`MissileCritRoll`, `MissileDamageBlock`: one step in 128 monster creations, classes 160, 161, 170; the second and third steps emulated)
 
 **B3. A missile on the player.** The missile's own seed draws its packet and its knockback (phase (3)); the player's seed draws the defence (block only when the packet has physical damage, then avoid) and, at delivery, the cold draw. [C] for the player's seed (1 957 events); [C] for the missile's: the packet and the knockback asserted on it in 8 638 missile events
 
@@ -300,7 +300,8 @@ CritChain(u, w) → bool:                                              [C] (all 
   [I] that the site is the `SrcMissDmg` branch and the argument the source missile, the caller's reading.
 - B4. The pierce count makes a **local** seed, `Init(baseStat(owner, 328))`, and steps it up to four times while
   `low mod 100 < stat 166 + stat 156`, for a player or monster owner and a `Pierce` row; no game or unit seed is
-  drawn ([rng/seeds](../../spec-rng/seeds/), *Reimplementation notes*). [C] (`Missiles.txt:Pierce`: 1 066 `Pierce` creations, 856 with draws,
+  drawn ([rng/seeds](../../spec-rng/seeds/), *Reimplementation notes*). [C] (`MissilePierceCount`,
+  `Missiles.txt:Pierce`: 1 066 `Pierce` creations, 856 with draws,
   [skills/missiles C4](../../spec-skills/missiles/#c-the-damage-the-missile-carries))
 
 **B5. The progressive finisher (the attacker's seed).** A player's normal attack under a charged progressive state (an Assassin's charge-up skills) runs `COMBAT_PrgFinisher` between the queue and the delivery (A1); the run met none (the boundary section). Its own `RNG_Step` is a **peek**, but the `srvprgfunc` entries it calls **draw on the attacker's seed**; the full algorithm is [delivery § A3](../delivery/#a-queue-and-delivery). The assassin finishing moves (do 42, 46, 50, 52) also call the finisher, with their own queued hit, outside this attack event (delivery § A2).
@@ -357,7 +358,7 @@ events: one step in each of 856 player creations, the second and third steps emu
 [I] Whether these draws account for any of the 213 resynchronisations is not established: no kept log holds a bow
 attack recorded for both the combat and the skills checks.
 
-[C] **A monster's seed chains only within one melee attack**: `MonAttackStats` at the mode change to the attack it opens (2 237 monster, 558 mercenary pairs). Between two attacks its AI draws on the same seed, out of scope, so each attack resynchronises. [I] A monster can also call `MonAttackStats` inside an attack, between the defence rolls and the build, on its running seed (`sandraider2` in mode 14, [damage § E](../damage/#e-a-monsters-attack-stats-monattackstats)); which attacks do is not read. [C] A monster's weapon-share missile (an archer's arrow) also steps the monster's seed, one to three times at its creation (B4). (one step in 128 monster creations; the second and third)
+[C] **A monster's seed chains only within one melee attack**: `MonAttackStats` at the mode change to the attack it opens (2 237 monster, 558 mercenary pairs). Between two attacks its AI draws on the same seed, out of scope, so each attack resynchronises. [I] A monster can also call `MonAttackStats` inside an attack, between the defence rolls and the build, on its running seed (`sandraider2` in mode 14, [damage § E](../damage/#e-a-monsters-attack-stats-monattackstats)); which attacks do is not read. [C] A monster's weapon-share missile (an archer's arrow) also steps the monster's seed, one to three times at its creation (B4). (`MissileCritRoll`: one step in 128 monster creations; the second and third)
 
 ### D. Branches
 
@@ -365,12 +366,12 @@ attack recorded for both the combat and the skills checks.
 |---|---|---|---|
 | classic against expansion | block | expansion only: `(dex − 15)·b / (2·lvl)`; classic `stat 20 + BlockFactor` | [C] |
 | classic against expansion | resistance | classic −20 Nightmare / −50 Hell; expansion `ResistPenalty` 0 / −40 / −100 | [C] |
-| classic against expansion | `MonAttackStats` | classic ×10/12 damage and ×10/15 to-hit in Nightmare and Hell, except an `Align` 1 class; expansion player-count bonus | [C] (600 classic calls reproduced, 562 separating); [I] the `Align` 1 exception (2 calls, all-zero stats, not separating) |
+| classic against expansion | `MonAttackStats` | classic ×10/12 damage and ×10/15 to-hit in Nightmare and Hell, except an `Align` 1 class; expansion player-count bonus | [C] (`MonAttackStats`: 600 classic calls reproduced, 562 separating); [I] the `Align` 1 exception (2 calls, all-zero stats, not separating) |
 | difficulty | resistance penalty, leech divisors, cold and freeze divisors, MonStats `Drain` and `coldeffect` | per the tables | [C] for the penalty and leech; [I] for the freeze divisor |
 | difficulty | to-hit, block, crushing blow, open wounds | none | [C] (`COMBAT_ToHitRoll`, `STATEVENT_CrushingBlow`, `STATEVENT_OpenWounds`: to-hit rolls N 12 019, NM 5 547, H 9 875, block 2 204 / 1 678 / 7 869, the stat-event calls 3 102 / 1 662 / 675, every chance and life by models with no difficulty term) |
 | player count | crushing blow divisor | `k + MulDiv(k, PlayerHpPct(n), 100)` with the monster's creation count | [C] |
 | player count | `MonAttackStats` damage | expansion, Nightmare and Hell: + `b/128` with `b = 8(n − 1)` for `2 ≤ n < 9` (the table), on the `El` length too | [C] |
-| hireling | P, crushing blow, leech, drains | § A2 | [C] (§ A2) |
+| hireling | P, crushing blow, leech, drains | § A2 | [C] (`HirelingType`; § A2) |
 | player against player | P = 17 on every scaled field; stat events and leech with `D` = 100 | reached on physical and lightning only | [C] P = 17 at all 226 reductions of player against player, physical and lightning; [I] the other fields, the stat events and leech with `D` = 100 |
 
 - D. "Players" means the monster's stat 100, the count frozen at its creation, not the current `/players`. [C]
@@ -452,7 +453,7 @@ crushing blow at `/players 8`. [C]
 - §§ 11 (the conversion writers), 12 (the finisher's seed peek).
 - §§ 2 (creation), 3 (the damage block, `MissileCritRoll`, the
   pierce count), 5 (the hit, the to-hit roll), 6 (`MISSILE_BuildDamage`'s draw order), 9 (draws per event), and the
-  architect's ruling on the creation draws (review).
+  review ruling on the creation draws.
 - Types:. Plan: 0037.
 - Upstream: [rng](../../spec-rng/overview/), [rng/seeds](../../spec-rng/seeds/), [monsters/stats](../../spec-monsters/stats/),
   [player/creation](../../spec-player/creation/), [items/properties](../../spec-items/properties/), [data/calc](../../spec-data/calc/).

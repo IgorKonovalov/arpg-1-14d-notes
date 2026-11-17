@@ -23,10 +23,10 @@ link builder that places the other acts' outdoor levels, and the warp points bui
 
 | When | Function | Tag |
 |---|---|---|
-| Outdoor level record created; no draw (in 2500 logged creations the level seed after the create dispatch is `Init(base + id)`) | — | [C] |
+| Outdoor level record created; no draw (in 2500 logged creations the level seed after the create dispatch is `Init(base + id)`) | `OutdoorLevelCreate` | [C] |
 | Outdoor level built, from `LevelInit` after the re-seed | — | [C] |
-| Act III created: the jungle layout and the Kurast stack on the act seed | — | [C] |
-| Cells become rooms (boundary of this spec) | [drlg/overview](../overview/) step 8 | [C] |
+| Act III created: the jungle layout and the Kurast stack on the act seed | `ActLinkAct3` → `JungleLayout` | [C] |
+| Cells become rooms (boundary of this spec) | `OutdoorRoomsCreate`, [drlg/overview](../overview/) step 8 | [C] |
 
 - [I] The outdoor record `OutdoorLevelCreate` allocates is 0x268 bytes; the size rests on the code read only.
 
@@ -168,7 +168,7 @@ A1. OutdoorLevelBuild(L):                                            [C]
 | 3 | 104–106, 108 |
 | 4 | 110–112, 117 |
 
-(level 39; level 134 `[I]`)
+(`OutdoorLevelBuild`; level 39; level 134 `[I]`)
 - [C] No generator branches on difficulty, expansion or player count: one model with no such input reproduces all three
   difficulties and, on Acts I–IV, classic and expansion games. Act III's jungle sizes come from `Levels`
   `SizeX/Y[difficulty]`, which are equal in all three difficulties.
@@ -597,7 +597,8 @@ G3. BorderSubGroup(rec, g) → bool:                                    [C]
 
 - [C] No mask and no `Prob`, `Trials`, `Max` or `Dt1Mask` is read for these records. The call sites, in order: Act I levels
   2–7 `Type` 0, then 1 and 2, then 3 (base 4, § H1); Act II `Type` 2, 1, 3 (base 364); Act IV 104–106 `Type` 1, 2, 3 (base
-  799); Act V `Type` 12 with its own context (§ L5); level 39 `Type` 0–3 (base 4). (level 39)
+  799); Act V `Type` 12 with its own context (§ L5); level 39 `Type` 0–3 (base 4). (`OutdoorAct1`,
+  `OutA2BorderSubs`, `OutdoorAct4`, `BarricadeLvlSub`; level 39)
 
 ### H. Act I
 
@@ -944,7 +945,7 @@ H6e. A1PathJitter(L, i, path):                                        [C]
 
 #### H7. Areas
 
-H7. [C] **Areas** (`A1Areas`, after the waypoint and shrines). `Near(d)` = `PlaceNear(d, −1)`; `Rand(d)` = `PlaceRandom(d, −1, 0, 0xF)`. Failures are silent. (level 39)
+H7. [C] **Areas** (`A1Areas`, after the waypoint and shrines). `Near(d)` = `PlaceNear(d, −1)`; `Rand(d)` = `PlaceRandom(d, −1, 0, 0xF)`. Failures are silent. (`A1Areas`, `A1PlaceOneOrTwo`; level 39)
 
 ```
 H7a. OneOrTwo(d, s):                                                 [C]
@@ -989,7 +990,7 @@ H7a. OneOrTwo(d, s):                                                 [C]
    `2N`; each `OneOrTwo` one `Step`, plus one more when `s` is 1 and the first gave `(r & 3)` ≠ 0 (H7a); each placed
    new `Def` one first-use draw.
 
-All of 1–9 [C] (every step checked one by one).
+All of 1–9 [C] (`OutdoorAct1`: every step checked one by one).
 
 ### I. Act II
 
@@ -1080,7 +1081,7 @@ I6. TownTransition (OutA2TownTransition, level 41):                   [C]
 6. Levels 42–44: the waypoint `2N`. Then the shrines `Step & 3` and `2N` (not on 45; on 134 after the fills).
 7. The fill lists: per `PlaceList` one `Range(n)` and `2N` per placement (on 41 its single list comes after the shrines).
 
-All of 1–7 [C] (level 134 `[I]`).
+All of 1–7 [C] (`OutdoorAct2`; level 134 `[I]`).
 
 ### J. Act III
 
@@ -1216,7 +1217,8 @@ JungleRectRel(parent, w, h, d) → rect:                                [C]
   `gx < 0` and `gy < 0`, so two jungles overlap only when both gaps are negative, and jungles that share an edge (a gap
   of 0) do not. It is the overlap of [maze.md](../maze/#b-primitives) B2,
   not `RectTouch`'s `t = 0` mode of [warps.md](../warps/#c-level-rectangles-and-the-links-after-the-layout) C3.
-  (*The validators*)
+  (`RectGapTest`, `RectGap`, `JungleLayout`,
+*The validators*)
 - [C] **`g_JungleSideDefs`** (`i32[16][4]`): row = the cell's path exit mask, column = the clearing side bit W `0x10`, E
   `0x20`, S `0x40`, N `0x80`. Rows 0 and 15 are all 0.
 

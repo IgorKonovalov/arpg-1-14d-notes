@@ -63,7 +63,7 @@ Names are ours. Primitives (`Step`, `Range`, `RangeB`, `RangePow2`, `Init`) are 
 | State | Type | Source |
 |---|---|---|
 | unit seeds | `Unit+0x20` of the caster, the target, each missile, each summon | [rng/seeds](../../spec-rng/seeds/) |
-| game seed | `game+0xD0`: every missile and summon creation steps it | — |
+| game seed | `game+0xD0`: every missile and summon creation steps it | `SUnitCreate` |
 | the action-done bit | `Unit+0xC4` bit 6 | [dispatch § E](../dispatch/#e-the-do-frame-and-skills_srvdo) |
 
 ### The boundary
@@ -142,7 +142,7 @@ The worked examples are in the files: a Raise Skeleton cast and Firestorm's sub-
 - **Do not merge the two critical chains.** The missile's starts with stat 337, drawn even at 0
   ([missiles](../missiles/#reimplementation-notes) note 3). [C] That chain is not the melee build's: `MissileCritRoll`'s two references are calls in
   `MissileDamageBlock`, whose one caller is `MissileInitDamage`, and `COMBAT_BuildDamage`'s direct-call closure
-  (520 functions) reaches neither. [C] (static,
+  (520 functions) reaches neither. [C] (static, `MissileCritRoll`,
   `COMBAT_BuildDamage`)
 - **Keep the request counter**: stat 328 seeds every pierce count. [C] stat 328 rises by the request count between
   observations (1 660 separating pairs) and seeds the pierce count (856 creations)

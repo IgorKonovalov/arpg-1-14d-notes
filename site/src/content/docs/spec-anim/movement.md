@@ -29,11 +29,11 @@ flowchart LR
 | When | Function | Tag |
 |---|---|---|
 | A moving or knockback mode's rate is set | `UNIT_AnimSetRate` (the path speed) | [C] (127 584 path speeds) |
-| A player starts running (or is knocked back) | — | [C] |
-| A moving unit's every-frame event | — | [C] (99 241 steps) |
-| A running player's frame, outside town | — | [C] (37 434 frames) |
-| A knockback path is planned | — | [C] E1's point in 575 of 576 unblocked monster plans, the line test's cut by `PathLineFree`; [I] the 1 plan off E1 |
-| A monster's MonStats speeds at load | — | [C] |
+| A player starts running (or is knocked back) | `RunVelocityStat` | [C] |
+| A moving unit's every-frame event | `UnitMoveStep` → `PathStep` | [C] (99 241 steps) |
+| A running player's frame, outside town | `RunStaminaDrain` | [C] (37 434 frames) |
+| A knockback path is planned | `PathPlanKnockback` | [C] E1's point in 575 of 576 unblocked monster plans, the line test's cut by `PathLineFree`; [I] the 1 plan off E1 |
+| A monster's MonStats speeds at load | `MonStatsSpeeds` | [C] |
 
 ## Inputs
 

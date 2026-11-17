@@ -34,8 +34,8 @@ flowchart LR
 | An item's chance-to-cast fires | `ITEMSKILL_Cast` | [C] 86 item casts reach `SrvDo` from it, inside handlers 20 and 21 |
 | A player's normal attack under a charged progressive state | `COMBAT_PrgFinisher` | [C] its 18 charged calls (Fists of Fire) and 311 uncharged ones all sit inside a `SrvDo` of Attack or Left Hand Swing |
 | A stat event fires on a unit | `UNIT_DispatchEvent` | [C] every logged handler call (2 167, of 25 handler and event pairs) runs inside it (/) |
-| A skill summons a monster | — | [C] its calls sit inside every summon do event: 207 Raven, 12 Raise Skeleton |
-| A monster's AI uses a skill | — | [C] each of its 1 088 calls holds one `SrvStart` of the unit with the call's skill and mode in its frame: modes 4 (68), 5 (12), 7 (62), 8 (444), 9 (16), 14 (486) |
+| A skill summons a monster | `SpawnOwnedMonster` | [C] its calls sit inside every summon do event: 207 Raven, 12 Raise Skeleton |
+| A monster's AI uses a skill | `MonAiUseSkill` | [C] each of its 1 088 calls holds one `SrvStart` of the unit with the call's skill and mode in its frame: modes 4 (68), 5 (12), 7 (62), 8 (444), 9 (16), 14 (486) |
 
 ## Inputs
 
@@ -291,7 +291,7 @@ C1. SKILLS_CanUse(unit, entry) → i32:                                [I] (SKIL
 - C. **A monster does not call `SKILLS_CanUse` on its way to the mode start** (§ M): none of its 16 callers, by three
   tools, lies in the monster mode path's functions (`MonAiUseSkill`, `MonModeStartSkill`, `MonSetMode`,
   `MonAttackFrame`, `StartUsedSkill`, `DoUsedSkill`); they are client, request, item-attach, reselect, swap and player
-  mode-start sites. [C] (`SKILLS_CanUse`, static) The
+  mode-start sites. [C] (`SKILLS_CanUse`, `MonAiUseSkill`, static) The
   direct-call closure from those functions still reaches it, through `MonAttackFrame` → `COMBAT_DeliverQueued` → the
   defender's durability loss → `HandsRefresh` → `PlrModeStartSkillUnit`: a check of the defender, not of the attacking
   monster, as far as the scan can tell (it does not tell the unit). [I]
@@ -397,7 +397,7 @@ D3. SKILLS_SrvStart(game, unit, id, lvl, noCost) → i32:             [I] (SKILL
   type 0, 1 or 3. The code does not say what bit 1 means. [C]
 - D2. The ally test in `StartUsedSkill` never refuses: it is called only when `TargetAlly` (`+0x07` bit 2) is clear,
   with the same skill, and returns false unless that bit is set. Its other callers (`SKILLS_TargetCheck`, a missile hit
-  function) are where it matters. [C] (static)
+  function) are where it matters. [C] (`SkillAllyTest`, static)
 - D3. `SKILLS_SrvManaCheck` reads the **used** skill (skill list `+0x10`), not the id passed: a non-player passes, an
   item skill needs charges, a null record refuses, else the cost of § F1 with `lvl = max(GetSkillLevel(…, 1) − 1, 0)`
   against stat 8, with the `srvdofunc` 116 exception and **no** state-114 branch (unlike C4). [C]
@@ -487,7 +487,8 @@ E4. SKILLS_SrvDo(game, unit, id, lvl, pay, item, effect) → i32:      [I] (SKIL
   indirect calls not followed), and their frame function `MonAttackFrame` runs the do with no bit-6 test. Mode 14's start `MonModeStartSeq` clears bit 6 and tail-jumps
   to `StartUsedSkill`; its frame `MonSeqFrame` runs the do on `Unit+0x4E` = 4 untested, else with the bit clear on a
   code 1 or 2, as the player frame does. In the logs bit 6 is set at all 1 460 monster starts in modes 4–9 and clear
-  at all 566 in mode 14. [C] (static)
+  at all 566 in mode 14. [C] (`MonAttackFrame`,
+  `MonModeStartSeq`, `MonSeqFrame`, static)
 - E4. **The missile comes after the do function**, with `useAmmo` 0, so `decquant` is the only ammunition use on
   this path. [I]
   A row with a `srvmissile` and no `srvdofunc` (entry 0 is null) gets only that missile: 48 stock rows,
@@ -723,7 +724,7 @@ I2. SKILLS_RollElemDamage(unit, p, id, lvl):                         [I] (SKILLS
   (`+0x1A4`) and `MinDam` (`+0x1A8`) itself, stores `MinDam << (HitShift & 31)` as the
   packet's physical (`+0x08`) and hit class 1 (`+0x60`), then calls `COMBAT_ResolveAndQueue(target,
   packet, 0x80)`. It makes three direct calls, calls neither `GetPhysMin` nor `GetPhysMax`, and
-  reads no row field but those two, so not `MaxDam`. [C] (648 calls, the packet compared) What flag 2 means to
+  reads no row field but those two, so not `MaxDam`. [C] (`SkillSt02Kick`: 648 calls, the packet compared) What flag 2 means to
   `COMBAT_ResolveAndQueue` ("no weapon build") is I1's reading.
 - I4. **The stock Kick row's damage columns are all zero but `HitShift`**: `skills.bin` row 1 has `HitShift` 8,
   `SrcDam` 0, `MinDam` 0, `MaxDam` 0, `MinLevDam1..5` and `MaxLevDam1..5` 0 and `DmgSymPerCalc` blank (−1), so start
@@ -742,12 +743,14 @@ I2. SKILLS_RollElemDamage(unit, p, id, lvl):                         [I] (SKILLS
   [combat/delivery § A](../../spec-combat/delivery/#a-queue-and-delivery) A2) are the candidates, and the log holds none of
   them. [I]
 - I4. **Stat 137 counts twice with boots**, on the kicks `SkillKickPhysDamage` builds (not Kick's start 2, which reads
-  neither): the kick's minimum and maximum take stat 137, then the boots' values plus stat 137. [I] (row 4)
+  neither): the kick's minimum and maximum take stat 137, then the boots' values plus stat 137. [I] (`KickItemDamage`,
+  `SkillKickPhysDamage`, row 4)
 - I4. **The weapons' damage stats stay out of the kick build.** Kick's start 2 sets flag 2, so `ResolveAndQueue` skips
   the build. Dragon Talon's hit (start 24, do 42) reaches damage only through `SkillKickPhysDamage`, on a hit bit, as do
   Dragon Tail's start 27 and Dragon Flight's do 52: it unlinks the damage stats of a `weap` item in either hand, stats
   48–55 among them, builds, relinks the primary weapon, and its flag 2 stops a second build. Elemental stats from other
-  items still reach that build. [I] (`ItemTypes.txt:Code`,
+  items still reach that build. [I] (`SkillSt02Kick`, `DragonTalonHit`,
+  `SkillKickPhysDamage`, `StatListLinkOwner`, `ItemTypes.txt:Code`,
   `ItemStatCost.txt:damagerelated`, row 3)
 - I4. The mastery bonus enters a skill hit through the combat build and the missile damage block:
   `SKILLS_GetMasteryBonus` has 13 callers, by three tools: `COMBAT_BuildDamage`, `COMBAT_ToHitRoll`,
@@ -898,7 +901,7 @@ ids, each as a constant:
 | 25 | Cyclone Armor | `absorbdamage` | absorbs fire, cold, lightning from `aurastat1` (K4) | none | [C] K4 up to `UnitMarkUpdated` and `STATE_Set`; [I] the stat-84 write after `UnitMarkUpdated` and the off branch past `STATE_Set` |
 | 26 | Blood Golem | `damagedinmelee`, `damagedbymissile` | the owner loses life with the golem, floor 256: for a type-1 unit, packet `+0x4C` > 0, a `MonsterOwner` not dead (`UnitIsDead`) with life ≥ 256 and a MonStats row whose `+0x170` skill is not negative, `loss = MulDiv(+0x4C, Skills[that skill] +0x158, 100)`, the owner's life ← `max(life − loss, 256)` by `UnitSetStat(owner, 6, x, 0)`, then `+0x4C ← max(0, +0x4C − loss)` and a return of 1 | none | [C] the gates, the loss and the call, no step (407 calls), the setter's write and the packet's reduction (2 633 returns) |
 | 27 | Clay Golem | `damagedinmelee` | slow by its stat 150: `v` = stat 150 (layer 0) ≠ 0, capped at 50 against a player or a monster whose MonsterData `+0x16` has a bit of `0x0C`, at 90 against another monster (a negative `v` is not capped), nothing against other unit types; `STATE_ApplyTimed(unit, other, 0, 1, 750, 0x43, −v, 0x18, 0)`, then stats 68, 69 = −v | none | [C] the gate, the caps by type and the state call with its block, no step (1 294 calls); [I] stats 68 and 69 and the state itself, past the allocating call |
-| 28 | stat 86 | `kill` | life `+= stat · 256`, capped | none | [C] (78 calls; K2) |
+| 28 | stat 86 | `kill` | life `+= stat · 256`, capped | none | [C] (78 calls; K2, `StatEv28HealAfterKill`) |
 | 29 | stat 108 | `kill` | state 172 on the victim | none | [C] draws (78 calls); [I] effect |
 | 30 | stats 197, 199 | `killed`, `levelup` | skill on death or level-up: one inline step whatever the packet, `low mod 100 < stat` casts, effect 0 | 1 inline | [C] up to the cast |
 | 31 | stat 155 | `kill` | reanimate: for an other unit of type 1 whose MonsterData `+0x16` has no bit of `0x0C`, a stat above 0 and `RangeB(seed, 100) < stat`, the handler unit's player (the unit, or the first type-0 unit up its `MonsterOwner` chain; none returns 0) gets `UNIT_AddEvent(other; 0x0D, the event word's layer, the player's guid, SkillReviveDo, 0, the guid)` | 1 | [C] the gates, the step, the test, the owner walk and the call (299 calls); [I] what the event does, the reanimation |
@@ -927,7 +930,7 @@ ids, each as a constant:
   not 704–709 (`0x2C0`–`0x2C5`) get `STATE_ApplyTimed` of state 52 (`0x34`) for 120 000 frames (`0x1D4C0`) with stat 31
   (`0x1F`) = 0, read with two tools. In the logs each of the 2 372 successful rolls is followed at once by its
   attacker's hook call and none of the 2 221 failed ones, no seed moves from the roll to the hook or inside it, and
-  the defender's defence roll is the next draw line in 257. So it sits between the to-hit draw and the defence roll. [C] (static)
+  the defender's defence roll is the next draw line in 257. So it sits between the to-hit draw and the defence roll. [C] (`PreventHealHook`, static)
 - K3. **State 52 by stat 117, no draw.** The hook applies state 52 for 120 000 frames with stat 31 = 0 to the defender
   in 86 of 918 hook calls, exactly those with the player attacker's stat 117 non-zero (*Fleshripper*, *Nature's
   Peace*), and steps neither unit's seed. [C] Every call had a player attacker and
@@ -1001,7 +1004,7 @@ L3. SpawnOwnedMonster(block) → unit:                                  [I] (all
 - L2. **No `noRatio` test.** The MonLvl defence and to-hit go on by `UnitAddStat(summon, 31, row[d + 3x], 0)`, then
   `UnitAddStat(summon, 19, row[d + 3(x + 2)], 0)`, with the raw cells (L2's `d` and `x`); the summon's class and
   MonStats are not read, so a summon gets them whole, whatever its class's `noRatio` bit. `UnitAddStat` adds nothing
-  for a value of 0 and does not test the unit. [C] (4 011 cases, no unaccounted read, row 16)
+  for a value of 0 and does not test the unit. [C] (`SummonSetLevel`: 4 011 cases, no unaccounted read, row 16)
 - L2. `SummonInitStats(m, id, lvl, n)`: `passivestat1..5` with `passivecalc` on the summon, `aurastat1..6` into a list
   (each stat's `itemevent` registered on the summon), `aurastate` set, maximum life `+= maxhp · calc1 / 100`
   (64-bit when large), `sumskill1..5` with `sumsk*calc`, `sumumod`, `sumoverlay`, and the equipment init. [I]
@@ -1067,7 +1070,8 @@ L5. RaiseSkeletonDo(unit, id, lvl):            (srvdofunc 31)        [I] (all of
   [combat/damage § E](../../spec-combat/damage/#e-a-monsters-attack-stats-monattackstats)'s. [I]
  The six callers, by three
   tools, and `MonSkillAttackDo`'s call order (`MonAttackStats`, `MON_MeleeHit`, `COMBAT_DeliverQueued`) are read
-  with a second tool; the mode-4 argument and the leap are not. [C] (static)
+  with a second tool; the mode-4 argument and the leap are not. [C] (`MonAttackStats`,
+  `MonSkillAttackDo`, static)
 - M2. **`MonAttackStats`, measured.** In 26 425 calls (12 732 in ' logs, 13 693 in
 ') stats 21, 22 and 19 are `MulDiv(MonLvl DM, MinD / MaxD, 100)` and `MulDiv(MonLvl TH, TH,
   100)` of the mode's columns, `A2` for mode 5, `S1` for modes 7 and 8, `A1` for every other (the raw cells for a
@@ -1126,7 +1130,7 @@ N2. SkillWeaponWear(unit, chance, amount):     (from start 7, Impale, after its 
 ```
 
 - N2. `SkillWeaponWear` has one caller, in start function 7 (Impale), by three tools. [C]
-  (static) Impale's hit: to-hit `SKILLS_GetToHit`, the
+  (`SkillSt07ImpaleHit`, static) Impale's hit: to-hit `SKILLS_GetToHit`, the
   physical roll with `calc1` and `SrcDam`, the elemental roll, `SrcDam` 128 to `ResolveAndQueue`; then the wear with
   `calc2` and `calc3`. [I]
 
@@ -1187,7 +1191,7 @@ N2. SkillWeaponWear(unit, chance, amount):     (from start 7, Impale, after its 
 | periodic queue | `SKILLS_QueuePeriodic` | none read | — | [C] the aura tick calls it after its `SrvDo` on both branches, and the caster's seed is unchanged from a tick's exit to the next tick's entry in 89 pairs |
 | finisher | `COMBAT_PrgFinisher` | its peek restores the seed; entries per J4 | attacker; area units; local | [C] the attacker's and the local seeds in the 18 charged calls (J3, J4); [I] the area units' seeds and entries 36, 37, 40, 41 |
 | handler | `UNIT_DispatchEvent` | per § K | the handler's unit | [C] for the handlers § K marks (1 303 calls); [C] up to their boundaries, one step for handlers 8, 9 and 31, none for 10, 18, 26 and 27, one for 7; [I] otherwise, and the callees' draws past those calls |
-| state 52 | `PreventHealHook` | none | — | [C] (918 calls) |
+| state 52 | `PreventHealHook` | none | — | [C] (`PreventHealHook`: 918 calls) |
 | item cast | `ITEMSKILL_Cast` | none of its own; `ItemTarget` 2: 2 per try | caster | [C] none of its own in 86 of 86 casts; [I] `ItemTarget` 2's tries, which no session reached |
 | summon | `SpawnOwnedMonster` | one step of the game seed, then the new unit's `MonStatsInit` draws (L3) | game; the new unit | [C] for 219 summons; [I] otherwise |
 | Raise Skeleton | `SummonClassRoll` | 1 | caster | [C] at class 363, level 20 |
@@ -1253,7 +1257,7 @@ N2. SkillWeaponWear(unit, chance, amount):     (from start 7, Impale, after its 
 - **One delay state blocks all delayed skills**, not only the one cast. [I]
 - **A monster's bit 6 is set by its AI.** In modes 4, 5, 7, 8, 9 and 16–20 its start leaves the bit set, so its do
   runs only through the attack-frame handler, with no event-code test; mode 14's start clears it, so its do runs on a
-  code 1 or 2 like a player's, and on the `Unit+0x4E = 4` case untested. [C] (static)
+  code 1 or 2 like a player's, and on the `Unit+0x4E = 4` case untested. [C] (`MonSeqFrame`, static)
 - **`ItemEffect` replaces the do function only with the effect flag**, which only handler 20 without `ItemTgtDo`
   sets. [C] (static)
 - **The ally test of `StartUsedSkill` is dead.** Do not add a refusal there. [C] (static)
