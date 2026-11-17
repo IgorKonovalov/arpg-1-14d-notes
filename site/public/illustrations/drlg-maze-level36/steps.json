@@ -1,0 +1,549 @@
+{
+ "schematic_only": "schematic-only/1",
+ "steps": [
+  {
+   "text": "First room, 12 by 12 tiles (lvlmaze SizeX by SizeY), at the origin. The level seed gives the room its own seed.",
+   "calc": [
+    "RNG draws in this step: 2 (level seed and room seeds together); 2 so far.",
+    "Setup (illustrative, like the seed): one draw on a helper seed made from the input gives room 1 its seed, which is advanced once. The level seed is the input itself."
+   ]
+  },
+  {
+   "text": "Room 2 placed north of room 1.",
+   "calc": [
+    "RNG draws in this step: 3 (level seed and room seeds together); 5 so far.",
+    "Start shape (spec E): one level draw, lo & 1, picks the arms: 0 north and south, 1 west and east of room 1; room 1 becomes a locked fixed room.",
+    "Def of room 1 from its open sides (north): base 257 + side mask 8 (west 1, east 2, south 4, north 8) = Def 265.",
+    "Def of room 2 from its open sides (south): base 257 + side mask 4 (west 1, east 2, south 4, north 8) = Def 261."
+   ]
+  },
+  {
+   "text": "Room 3 placed south of room 1.",
+   "calc": [
+    "RNG draws in this step: 2 (level seed and room seeds together); 7 so far.",
+    "Def of room 1 from its open sides (north, south): base 257 + side mask 12 (west 1, east 2, south 4, north 8) = Def 269.",
+    "Def of room 3 from its open sides (north): base 257 + side mask 8 (west 1, east 2, south 4, north 8) = Def 265."
+   ]
+  },
+  {
+   "text": "Room 4 placed east of room 3.",
+   "calc": [
+    "RNG draws in this step: 8 (level seed and room seeds together); 15 so far.",
+    "Growth phase starts: grow until the level has 16 rooms (LvlMaze Rooms, normal difficulty); it has 17.",
+    "Pick a parent: level draw lo = 0x17c23e7e; lo % 3 = 0; position 0 of the 3-room list (newest first) is room 3.",
+    "Pick a side: room 3's own seed draw lo = 0x2f8cad61; lo & 3 = 1 = north.",
+    "A new room (level draw for its seed, 2 draws) would sit north of room 3 but overlaps a room already there: it is dropped, the draws stay spent; pick again.",
+    "Pick a parent: level draw lo = 0x72be9fb6; lo % 3 = 0; position 0 of the 3-room list (newest first) is room 3.",
+    "Pick a side: room 3's own seed draw lo = 0x5ad94002; lo & 3 = 2 = east.",
+    "Def of room 3 from its open sides (east, north): base 257 + side mask 10 (west 1, east 2, south 4, north 8) = Def 267.",
+    "Def of room 4 from its open sides (west): base 257 + side mask 1 (west 1, east 2, south 4, north 8) = Def 258."
+   ]
+  },
+  {
+   "text": "Room 5 placed west of room 3.",
+   "calc": [
+    "RNG draws in this step: 12 (level seed and room seeds together); 27 so far.",
+    "Pick a parent: level draw lo = 0x489e3ebd; lo & 3 = 1; position 1 of the 4-room list (newest first) is room 3.",
+    "Pick a side: room 3's own seed draw lo = 0x86908306; lo & 3 = 2 = east.",
+    "A new room (level draw for its seed, 2 draws) would sit east of room 3 but overlaps a room already there: it is dropped, the draws stay spent; pick again.",
+    "Pick a parent: level draw lo = 0x79072dc9; lo & 3 = 1; position 1 of the 4-room list (newest first) is room 3.",
+    "Pick a side: room 3's own seed draw lo = 0xcf709f86; lo & 3 = 2 = east.",
+    "A new room (level draw for its seed, 2 draws) would sit east of room 3 but overlaps a room already there: it is dropped, the draws stay spent; pick again.",
+    "Pick a parent: level draw lo = 0xd4cde8f1; lo & 3 = 1; position 1 of the 4-room list (newest first) is room 3.",
+    "Pick a side: room 3's own seed draw lo = 0x112a583c; lo & 3 = 0 = west.",
+    "Def of room 3 from its open sides (east, north, west): base 257 + side mask 11 (west 1, east 2, south 4, north 8) = Def 268.",
+    "Def of room 5 from its open sides (east): base 257 + side mask 2 (west 1, east 2, south 4, north 8) = Def 259."
+   ]
+  },
+  {
+   "text": "Room 6 placed west of room 5. Fixed Def and file index (locked).",
+   "calc": [
+    "RNG draws in this step: 46 (level seed and room seeds together); 73 so far.",
+    "Pick a parent: level draw lo = 0x8cd86bba; lo % 5 = 4; position 4 of the 5-room list (newest first) is room 1.",
+    "Pick a side: room 1's own seed draw lo = 0x69c47ad3; lo & 3 = 3 = south.",
+    "Room 1 is locked (a fixed room): no room is made, both draws stay spent; pick again.",
+    "Pick a parent: level draw lo = 0xb6ebc3e1; lo % 5 = 2; position 2 of the 5-room list (newest first) is room 3.",
+    "Pick a side: room 3's own seed draw lo = 0x74252ea4; lo & 3 = 0 = west.",
+    "A new room (level draw for its seed, 2 draws) would sit west of room 3 but overlaps a room already there: it is dropped, the draws stay spent; pick again.",
+    "Pick a parent: level draw lo = 0x1ae62e93; lo % 5 = 4; position 4 of the 5-room list (newest first) is room 1.",
+    "Pick a side: room 1's own seed draw lo = 0x728856c1; lo & 3 = 1 = north.",
+    "Room 1 is locked (a fixed room): no room is made, both draws stay spent; pick again.",
+    "Pick a parent: level draw lo = 0x2e61588a; lo % 5 = 4; position 4 of the 5-room list (newest first) is room 1.",
+    "Pick a side: room 1's own seed draw lo = 0x031ab727; lo & 3 = 3 = south.",
+    "Room 1 is locked (a fixed room): no room is made, both draws stay spent; pick again.",
+    "Pick a parent: level draw lo = 0x1caaeeb9; lo % 5 = 1; position 1 of the 5-room list (newest first) is room 4.",
+    "Pick a side: room 4's own seed draw lo = 0xb024d5d0; lo & 3 = 0 = west.",
+    "A new room (level draw for its seed, 2 draws) would sit west of room 4 but overlaps a room already there: it is dropped, the draws stay spent; pick again.",
+    "Pick a parent: level draw lo = 0xa3ceda3a; lo % 5 = 0; position 0 of the 5-room list (newest first) is room 5.",
+    "Pick a side: room 5's own seed draw lo = 0x0bc1f062; lo & 3 = 2 = east.",
+    "A new room (level draw for its seed, 2 draws) would sit east of room 5 but overlaps a room already there: it is dropped, the draws stay spent; pick again.",
+    "Pick a parent: level draw lo = 0xf3d13563; lo % 5 = 4; position 4 of the 5-room list (newest first) is room 1.",
+    "Pick a side: room 1's own seed draw lo = 0x68842b27; lo & 3 = 3 = south.",
+    "Room 1 is locked (a fixed room): no room is made, both draws stay spent; pick again.",
+    "Pick a parent: level draw lo = 0xc4623cf3; lo % 5 = 2; position 2 of the 5-room list (newest first) is room 3.",
+    "Pick a side: room 3's own seed draw lo = 0x4cd9fd32; lo & 3 = 2 = east.",
+    "A new room (level draw for its seed, 2 draws) would sit east of room 3 but overlaps a room already there: it is dropped, the draws stay spent; pick again.",
+    "Pick a parent: level draw lo = 0x5d70dfb8; lo % 5 = 2; position 2 of the 5-room list (newest first) is room 3.",
+    "Pick a side: room 3's own seed draw lo = 0x7b49733a; lo & 3 = 2 = east.",
+    "A new room (level draw for its seed, 2 draws) would sit east of room 3 but overlaps a room already there: it is dropped, the draws stay spent; pick again.",
+    "Pick a parent: level draw lo = 0x35e2d3be; lo % 5 = 0; position 0 of the 5-room list (newest first) is room 5.",
+    "Pick a side: room 5's own seed draw lo = 0xb8faa9ae; lo & 3 = 2 = east.",
+    "A new room (level draw for its seed, 2 draws) would sit east of room 5 but overlaps a room already there: it is dropped, the draws stay spent; pick again.",
+    "Pick a parent: level draw lo = 0x574731d9; lo % 5 = 4; position 4 of the 5-room list (newest first) is room 1.",
+    "Pick a side: room 1's own seed draw lo = 0x4d709d44; lo & 3 = 0 = west.",
+    "Room 1 is locked (a fixed room): no room is made, both draws stay spent; pick again.",
+    "Pick a parent: level draw lo = 0xf85aa13a; lo % 5 = 2; position 2 of the 5-room list (newest first) is room 3.",
+    "Pick a side: room 3's own seed draw lo = 0x73402a88; lo & 3 = 0 = west.",
+    "A new room (level draw for its seed, 2 draws) would sit west of room 3 but overlaps a room already there: it is dropped, the draws stay spent; pick again.",
+    "Pick a parent: level draw lo = 0x83a01781; lo % 5 = 3; position 3 of the 5-room list (newest first) is room 2.",
+    "Pick a side: room 2's own seed draw lo = 0x43d48ccf; lo & 3 = 3 = south.",
+    "A new room (level draw for its seed, 2 draws) would sit south of room 2 but overlaps a room already there: it is dropped, the draws stay spent; pick again.",
+    "Pick a parent: level draw lo = 0xe5422049; lo % 5 = 0; position 0 of the 5-room list (newest first) is room 5.",
+    "Pick a side: room 5's own seed draw lo = 0xa5d1df14; lo & 3 = 0 = west.",
+    "Def of room 5 from its open sides (east, west): base 257 + side mask 3 (west 1, east 2, south 4, north 8) = Def 260.",
+    "Def of room 6 from its open sides (east): base 257 + side mask 2 (west 1, east 2, south 4, north 8) = Def 259."
+   ]
+  },
+  {
+   "text": "Room 7 placed east of room 4. Fixed Def and file index (locked).",
+   "calc": [
+    "RNG draws in this step: 4 (level seed and room seeds together); 77 so far.",
+    "Pick a parent: level draw lo = 0x9f5ea750; lo % 6 = 2; position 2 of the 6-room list (newest first) is room 4.",
+    "Pick a side: room 4's own seed draw lo = 0xcdd133ae; lo & 3 = 2 = east.",
+    "Def of room 4 from its open sides (east, west): base 257 + side mask 3 (west 1, east 2, south 4, north 8) = Def 260.",
+    "Def of room 7 from its open sides (west): base 257 + side mask 1 (west 1, east 2, south 4, north 8) = Def 258."
+   ]
+  },
+  {
+   "text": "Room 8 placed south of room 4.",
+   "calc": [
+    "RNG draws in this step: 4 (level seed and room seeds together); 81 so far.",
+    "Pick a parent: level draw lo = 0xf1a37b94; lo % 7 = 3; position 3 of the 7-room list (newest first) is room 4.",
+    "Pick a side: room 4's own seed draw lo = 0x5d1a8587; lo & 3 = 3 = south.",
+    "Def of room 4 from its open sides (east, south, west): base 257 + side mask 7 (west 1, east 2, south 4, north 8) = Def 264.",
+    "Def of room 8 from its open sides (north): base 257 + side mask 8 (west 1, east 2, south 4, north 8) = Def 265."
+   ]
+  },
+  {
+   "text": "Room 9 placed east of room 2.",
+   "calc": [
+    "RNG draws in this step: 6 (level seed and room seeds together); 87 so far.",
+    "Pick a parent: level draw lo = 0x1232de97; lo & 7 = 7; position 7 of the 8-room list (newest first) is room 1.",
+    "Pick a side: room 1's own seed draw lo = 0xe64f1086; lo & 3 = 2 = east.",
+    "Room 1 is locked (a fixed room): no room is made, both draws stay spent; pick again.",
+    "Pick a parent: level draw lo = 0x588d1126; lo & 7 = 6; position 6 of the 8-room list (newest first) is room 2.",
+    "Pick a side: room 2's own seed draw lo = 0x89d34642; lo & 3 = 2 = east.",
+    "Def of room 2 from its open sides (east, south): base 257 + side mask 6 (west 1, east 2, south 4, north 8) = Def 263.",
+    "Def of room 9 from its open sides (west): base 257 + side mask 1 (west 1, east 2, south 4, north 8) = Def 258."
+   ]
+  },
+  {
+   "text": "Room 10 placed west of room 8.",
+   "calc": [
+    "RNG draws in this step: 9 (level seed and room seeds together); 96 so far.",
+    "Pick a parent: level draw lo = 0x047110bf; lo % 9 = 6; position 6 of the 9-room list (newest first) is room 3.",
+    "Pick a side: room 3's own seed draw lo = 0x30e944e5; lo & 3 = 1 = north.",
+    "A new room (level draw for its seed, 2 draws) would sit north of room 3 but overlaps a room already there: it is dropped, the draws stay spent; pick again.",
+    "Pick a parent: level draw lo = 0xdfad3982; lo % 9 = 1; position 1 of the 9-room list (newest first) is room 8.",
+    "Pick a side: room 8's own seed draw lo = 0x4b85b818; lo & 3 = 0 = west.",
+    "Merge roll with neighbour room 3: its seed draw lo % 1000 = 971, >= Merge 500: no door.",
+    "Def of room 8 from its open sides (north, west): base 257 + side mask 9 (west 1, east 2, south 4, north 8) = Def 266.",
+    "Def of room 10 from its open sides (east): base 257 + side mask 2 (west 1, east 2, south 4, north 8) = Def 259."
+   ]
+  },
+  {
+   "text": "Room 11 placed south of room 10. Fixed Def and file index (locked).",
+   "calc": [
+    "RNG draws in this step: 12 (level seed and room seeds together); 108 so far.",
+    "Pick a parent: level draw lo = 0x4450eebd; lo % 10 = 5; position 5 of the 10-room list (newest first) is room 5.",
+    "Pick a side: room 5's own seed draw lo = 0xc69b2f20; lo & 3 = 0 = west.",
+    "A new room (level draw for its seed, 2 draws) would sit west of room 5 but overlaps a room already there: it is dropped, the draws stay spent; pick again.",
+    "Pick a parent: level draw lo = 0x1d41f37a; lo % 10 = 4; position 4 of the 10-room list (newest first) is room 6.",
+    "Pick a side: room 6's own seed draw lo = 0x8e585652; lo & 3 = 2 = east.",
+    "A new room (level draw for its seed, 2 draws) would sit east of room 6 but overlaps a room already there: it is dropped, the draws stay spent; pick again.",
+    "Pick a parent: level draw lo = 0x5a78ca62; lo % 10 = 0; position 0 of the 10-room list (newest first) is room 10.",
+    "Pick a side: room 10's own seed draw lo = 0x2b18a3ff; lo & 3 = 3 = south.",
+    "Def of room 10 from its open sides (east, south): base 257 + side mask 6 (west 1, east 2, south 4, north 8) = Def 263.",
+    "Def of room 11 from its open sides (north): base 257 + side mask 8 (west 1, east 2, south 4, north 8) = Def 265.",
+    "Def of room 8 from its open sides (north, south, west): base 257 + side mask 13 (west 1, east 2, south 4, north 8) = Def 270."
+   ]
+  },
+  {
+   "text": "Room 12 placed east of room 11.",
+   "calc": [
+    "RNG draws in this step: 5 (level seed and room seeds together); 113 so far.",
+    "Pick a parent: level draw lo = 0x36b56d80; lo % 11 = 0; position 0 of the 11-room list (newest first) is room 11.",
+    "Pick a side: room 11's own seed draw lo = 0x1f4dbd06; lo & 3 = 2 = east.",
+    "Merge roll with neighbour room 8: its seed draw lo % 1000 = 484, < Merge 500: a door is opened.",
+    "Def of room 11 from its open sides (east, north): base 257 + side mask 10 (west 1, east 2, south 4, north 8) = Def 267.",
+    "Def of room 12 from its open sides (north, west): base 257 + side mask 9 (west 1, east 2, south 4, north 8) = Def 266."
+   ]
+  },
+  {
+   "text": "Rooms 12 and 8 joined by a merge link (merge roll lo % 1000 < Merge).",
+   "calc": [
+    "RNG draws in this step: 0 (level seed and room seeds together); 113 so far.",
+    "Shown separately; the roll is in the previous step."
+   ]
+  },
+  {
+   "text": "Room 13 placed east of room 7.",
+   "calc": [
+    "RNG draws in this step: 10 (level seed and room seeds together); 123 so far.",
+    "Pick a parent: level draw lo = 0xcc38b8c0; lo % 12 = 0; position 0 of the 12-room list (newest first) is room 12.",
+    "Pick a side: room 12's own seed draw lo = 0xd6e83480; lo & 3 = 0 = west.",
+    "A new room (level draw for its seed, 2 draws) would sit west of room 12 but overlaps a room already there: it is dropped, the draws stay spent; pick again.",
+    "Pick a parent: level draw lo = 0xceb6f65b; lo % 12 = 11; position 11 of the 12-room list (newest first) is room 1.",
+    "Pick a side: room 1's own seed draw lo = 0x1813c920; lo & 3 = 0 = west.",
+    "Room 1 is locked (a fixed room): no room is made, both draws stay spent; pick again.",
+    "Pick a parent: level draw lo = 0x70868375; lo % 12 = 5; position 5 of the 12-room list (newest first) is room 7.",
+    "Pick a side: room 7's own seed draw lo = 0x6418beba; lo & 3 = 2 = east.",
+    "Def of room 7 from its open sides (east, west): base 257 + side mask 3 (west 1, east 2, south 4, north 8) = Def 260.",
+    "Def of room 13 from its open sides (west): base 257 + side mask 1 (west 1, east 2, south 4, north 8) = Def 258."
+   ]
+  },
+  {
+   "text": "Room 14 placed east of room 9.",
+   "calc": [
+    "RNG draws in this step: 14 (level seed and room seeds together); 137 so far.",
+    "Pick a parent: level draw lo = 0xb4d61799; lo % 13 = 12; position 12 of the 13-room list (newest first) is room 1.",
+    "Pick a side: room 1's own seed draw lo = 0xd72b25dc; lo & 3 = 0 = west.",
+    "Room 1 is locked (a fixed room): no room is made, both draws stay spent; pick again.",
+    "Pick a parent: level draw lo = 0x7c575a4a; lo % 13 = 8; position 8 of the 13-room list (newest first) is room 5.",
+    "Pick a side: room 5's own seed draw lo = 0x17d6c816; lo & 3 = 2 = east.",
+    "A new room (level draw for its seed, 2 draws) would sit east of room 5 but overlaps a room already there: it is dropped, the draws stay spent; pick again.",
+    "Pick a parent: level draw lo = 0xea2eb0d8; lo % 13 = 1; position 1 of the 13-room list (newest first) is room 12.",
+    "Pick a side: room 12's own seed draw lo = 0xe4e1d369; lo & 3 = 1 = north.",
+    "A new room (level draw for its seed, 2 draws) would sit north of room 12 but overlaps a room already there: it is dropped, the draws stay spent; pick again.",
+    "Pick a parent: level draw lo = 0x16edcb6d; lo % 13 = 4; position 4 of the 13-room list (newest first) is room 9.",
+    "Pick a side: room 9's own seed draw lo = 0x8cf26d12; lo & 3 = 2 = east.",
+    "Def of room 9 from its open sides (east, west): base 257 + side mask 3 (west 1, east 2, south 4, north 8) = Def 260.",
+    "Def of room 14 from its open sides (west): base 257 + side mask 1 (west 1, east 2, south 4, north 8) = Def 258.",
+    "Def of room 8 from its open sides (east, north, south, west): base 257 + side mask 15 (west 1, east 2, south 4, north 8) = Def 272."
+   ]
+  },
+  {
+   "text": "Room 15 placed south of room 7.",
+   "calc": [
+    "RNG draws in this step: 13 (level seed and room seeds together); 150 so far.",
+    "Pick a parent: level draw lo = 0xa1af589e; lo % 14 = 6; position 6 of the 14-room list (newest first) is room 8.",
+    "Pick a side: room 8's own seed draw lo = 0xe1d24e97; lo & 3 = 3 = south.",
+    "A new room (level draw for its seed, 2 draws) would sit south of room 8 but overlaps a room already there: it is dropped, the draws stay spent; pick again.",
+    "Pick a parent: level draw lo = 0xdbfb1161; lo % 14 = 11; position 11 of the 14-room list (newest first) is room 3.",
+    "Pick a side: room 3's own seed draw lo = 0xafca260a; lo & 3 = 2 = east.",
+    "A new room (level draw for its seed, 2 draws) would sit east of room 3 but overlaps a room already there: it is dropped, the draws stay spent; pick again.",
+    "Pick a parent: level draw lo = 0x5e5eab07; lo % 14 = 7; position 7 of the 14-room list (newest first) is room 7.",
+    "Pick a side: room 7's own seed draw lo = 0xc33eefe7; lo & 3 = 3 = south.",
+    "Merge roll with neighbour room 8: its seed draw lo % 1000 = 164, < Merge 500: a door is opened.",
+    "Def of room 7 from its open sides (east, south, west): base 257 + side mask 7 (west 1, east 2, south 4, north 8) = Def 264.",
+    "Def of room 15 from its open sides (north, west): base 257 + side mask 9 (west 1, east 2, south 4, north 8) = Def 266.",
+    "Def of room 15 from its open sides (north, south, west): base 257 + side mask 13 (west 1, east 2, south 4, north 8) = Def 270."
+   ]
+  },
+  {
+   "text": "Rooms 15 and 8 joined by a merge link (merge roll lo % 1000 < Merge).",
+   "calc": [
+    "RNG draws in this step: 0 (level seed and room seeds together); 150 so far.",
+    "Shown separately; the roll is in the previous step."
+   ]
+  },
+  {
+   "text": "Room 16 placed east of room 12. Fixed Def and file index (locked).",
+   "calc": [
+    "RNG draws in this step: 13 (level seed and room seeds together); 163 so far.",
+    "Pick a parent: level draw lo = 0xd738bc59; lo % 15 = 8; position 8 of the 15-room list (newest first) is room 7.",
+    "Pick a side: room 7's own seed draw lo = 0x02ca6f7a; lo & 3 = 2 = east.",
+    "A new room (level draw for its seed, 2 draws) would sit east of room 7 but overlaps a room already there: it is dropped, the draws stay spent; pick again.",
+    "Pick a parent: level draw lo = 0xc911a448; lo % 15 = 4; position 4 of the 15-room list (newest first) is room 11.",
+    "Pick a side: room 11's own seed draw lo = 0x86de3461; lo & 3 = 1 = north.",
+    "A new room (level draw for its seed, 2 draws) would sit north of room 11 but overlaps a room already there: it is dropped, the draws stay spent; pick again.",
+    "Pick a parent: level draw lo = 0xfacde626; lo % 15 = 3; position 3 of the 15-room list (newest first) is room 12.",
+    "Pick a side: room 12's own seed draw lo = 0x7f8b96aa; lo & 3 = 2 = east.",
+    "Merge roll with neighbour room 15: its seed draw lo % 1000 = 307, < Merge 500: a door is opened.",
+    "Def of room 12 from its open sides (east, north, west): base 257 + side mask 11 (west 1, east 2, south 4, north 8) = Def 268.",
+    "Def of room 16 from its open sides (north, west): base 257 + side mask 9 (west 1, east 2, south 4, north 8) = Def 266."
+   ]
+  },
+  {
+   "text": "Rooms 16 and 15 joined by a merge link (merge roll lo % 1000 < Merge).",
+   "calc": [
+    "RNG draws in this step: 0 (level seed and room seeds together); 163 so far.",
+    "Shown separately; the roll is in the previous step."
+   ]
+  },
+  {
+   "text": "Room 17 placed south of room 16. Fixed Def and file index (locked).",
+   "calc": [
+    "RNG draws in this step: 3 (level seed and room seeds together); 166 so far.",
+    "Def of room 16 from its open sides (north, south, west): base 257 + side mask 13 (west 1, east 2, south 4, north 8) = Def 270."
+   ]
+  },
+  {
+   "text": "Room 16: special-room table entry sets Def 270, forced file index none.",
+   "calc": [
+    "RNG draws in this step: 0 (level seed and room seeds together); 166 so far.",
+    "Special room: the level's special-room table (entry chosen by a rotating index from one level draw) names a Def; the first free room with that Def takes the special Def and file, or a new room is attached for it."
+   ]
+  },
+  {
+   "text": "Room 16: theme step sets Def 285, forced file index none.",
+   "calc": [
+    "RNG draws in this step: 31 (level seed and room seeds together); 197 so far.",
+    "Themes: one level draw picks a start in a 15-entry list, 15 pairs of level draws shuffle it, then free rooms whose Def matches an entry get the themed Def (+15)."
+   ]
+  },
+  {
+   "text": "Room 11: theme step sets Def 282, forced file index none.",
+   "calc": [
+    "RNG draws in this step: 0 (level seed and room seeds together); 197 so far."
+   ]
+  },
+  {
+   "text": "Room 7: theme step sets Def 279, forced file index none.",
+   "calc": [
+    "RNG draws in this step: 0 (level seed and room seeds together); 197 so far."
+   ]
+  },
+  {
+   "text": "Room 6: theme step sets Def 274, forced file index none.",
+   "calc": [
+    "RNG draws in this step: 0 (level seed and room seeds together); 197 so far."
+   ]
+  },
+  {
+   "text": "Room 17 (converted 1 of 17, newest first): Def 294 (Act 1 - Catacombs Next N), preset file CatNDown.ds1 (level-seed draw, File1).",
+   "calc": [
+    "RNG draws in this step: 3 (2 level draws, and 1 first steps of new rooms' own seeds, one per room DRLG_RoomCreate makes); 200 so far.",
+    "Conversion (the DRLG overview spec, step 9): after the generator, each maze room in the level's room list, newest first, becomes a preset instance (9a), gets its file index (9b), and creates its real rooms (step 5).",
+    "Def 294 is the room's LvlPrest row (Act 1 - Catacombs Next N); its File1..6 columns list the preset maps (DS1) it may use.",
+    "9a, step 4 PresetInstanceCreate: Files 2, one level draw Range(L.seed, 2): lo 0xff73f97e mod 2 = 0.",
+    "9b MazePresetFile: Def 294 is outside the rotation range (257, 273); the drawn index stays.",
+    "The instance loads File1 of LvlPrest Def 294: Act1/Catacomb/CatNDown.ds1.",
+    "5a map scan (Scan 1, Pops 0): the DS1 is loaded and its keep/drop rolls run on the level seed, 0 draws (preset.md steps 2a, 3).",
+    "5b PresetRoomsCreate: one room (the maze room is 12 x 12, at most 12 x 12); one level draw per room (DRLG_RoomCreate).",
+    "The full mode draws that DS1's floor and wall cells, looked up in the level type's tile files (DT1); the schematic mode draws the room as a box.",
+    "This preset holds a warp: wall cells of orientation 10/11 with slot 1, so Levels Vis1 = 37 (Catacombs Level 4); marked in cyan on the final frame (warps.md, warp slot cell)."
+   ]
+  },
+  {
+   "text": "Room 16 (converted 2 of 17, newest first): Def 285 (Act 1 - Catacombs Theme NSW), preset file CatNSWTheme1.ds1 (level-seed draw, File1).",
+   "calc": [
+    "RNG draws in this step: 3 (2 level draws, and 1 first steps of new rooms' own seeds, one per room DRLG_RoomCreate makes); 203 so far.",
+    "Conversion (the DRLG overview spec, step 9): after the generator, each maze room in the level's room list, newest first, becomes a preset instance (9a), gets its file index (9b), and creates its real rooms (step 5).",
+    "Def 285 is the room's LvlPrest row (Act 1 - Catacombs Theme NSW); its File1..6 columns list the preset maps (DS1) it may use.",
+    "9a, step 4 PresetInstanceCreate: Files 1, one level draw Range(L.seed, 1): lo 0x2d7fdc76 mod 1 = 0.",
+    "9b MazePresetFile: Def 285 is outside the rotation range (257, 273); the drawn index stays.",
+    "The instance loads File1 of LvlPrest Def 285: Act1/Catacomb/CatNSWTheme1.ds1.",
+    "5b PresetRoomsCreate: one room (the maze room is 12 x 12, at most 12 x 12); one level draw per room (DRLG_RoomCreate).",
+    "The full mode draws that DS1's floor and wall cells, looked up in the level type's tile files (DT1); the schematic mode draws the room as a box."
+   ]
+  },
+  {
+   "text": "Room 15 (converted 3 of 17, newest first): Def 270 (Act 1 - Catacombs NSW), preset file CatNSW4.ds1 (rotation, File4).",
+   "calc": [
+    "RNG draws in this step: 4 (3 level draws, and 1 first steps of new rooms' own seeds, one per room DRLG_RoomCreate makes); 207 so far.",
+    "Conversion (the DRLG overview spec, step 9): after the generator, each maze room in the level's room list, newest first, becomes a preset instance (9a), gets its file index (9b), and creates its real rooms (step 5).",
+    "Def 270 is the room's LvlPrest row (Act 1 - Catacombs NSW); its File1..6 columns list the preset maps (DS1) it may use.",
+    "9a, step 4 PresetInstanceCreate: Files 4, one level draw Range(L.seed, 4): lo 0xe9fb08ca mod 4 = 2.",
+    "9b MazePresetFile: Def 270 is in the rotation range (257, 273); first use of Def 270 in this build: one level draw RangeB(L.seed, 4): lo 0xff305532 mod 4 = 2; the counter advances (2 + 1) mod 4 = 3 and replaces the drawn index.",
+    "The instance loads File4 of LvlPrest Def 270: Act1/Catacomb/CatNSW4.ds1.",
+    "5b PresetRoomsCreate: one room (the maze room is 12 x 12, at most 12 x 12); one level draw per room (DRLG_RoomCreate).",
+    "The full mode draws that DS1's floor and wall cells, looked up in the level type's tile files (DT1); the schematic mode draws the room as a box."
+   ]
+  },
+  {
+   "text": "Room 14 (converted 4 of 17, newest first): Def 258 (Act 1 - Catacombs W), preset file CatW3.ds1 (rotation, File3).",
+   "calc": [
+    "RNG draws in this step: 4 (3 level draws, and 1 first steps of new rooms' own seeds, one per room DRLG_RoomCreate makes); 211 so far.",
+    "Conversion (the DRLG overview spec, step 9): after the generator, each maze room in the level's room list, newest first, becomes a preset instance (9a), gets its file index (9b), and creates its real rooms (step 5).",
+    "Def 258 is the room's LvlPrest row (Act 1 - Catacombs W); its File1..6 columns list the preset maps (DS1) it may use.",
+    "9a, step 4 PresetInstanceCreate: Files 4, one level draw Range(L.seed, 4): lo 0xf09aa82b mod 4 = 3.",
+    "9b MazePresetFile: Def 258 is in the rotation range (257, 273); first use of Def 258 in this build: one level draw RangeB(L.seed, 4): lo 0x3e9524b5 mod 4 = 1; the counter advances (1 + 1) mod 4 = 2 and replaces the drawn index.",
+    "The instance loads File3 of LvlPrest Def 258: Act1/Catacomb/CatW3.ds1.",
+    "5b PresetRoomsCreate: one room (the maze room is 12 x 12, at most 12 x 12); one level draw per room (DRLG_RoomCreate).",
+    "The full mode draws that DS1's floor and wall cells, looked up in the level type's tile files (DT1); the schematic mode draws the room as a box."
+   ]
+  },
+  {
+   "text": "Room 13 (converted 5 of 17, newest first): Def 258 (Act 1 - Catacombs W), preset file CatW4.ds1 (rotation, File4).",
+   "calc": [
+    "RNG draws in this step: 3 (2 level draws, and 1 first steps of new rooms' own seeds, one per room DRLG_RoomCreate makes); 214 so far.",
+    "Conversion (the DRLG overview spec, step 9): after the generator, each maze room in the level's room list, newest first, becomes a preset instance (9a), gets its file index (9b), and creates its real rooms (step 5).",
+    "Def 258 is the room's LvlPrest row (Act 1 - Catacombs W); its File1..6 columns list the preset maps (DS1) it may use.",
+    "9a, step 4 PresetInstanceCreate: Files 4, one level draw Range(L.seed, 4): lo 0x0be369ae mod 4 = 2.",
+    "9b MazePresetFile: Def 258 is in the rotation range (257, 273); Def 258 used before in this build, counter 2; the counter advances (2 + 1) mod 4 = 3 and replaces the drawn index.",
+    "The instance loads File4 of LvlPrest Def 258: Act1/Catacomb/CatW4.ds1.",
+    "5b PresetRoomsCreate: one room (the maze room is 12 x 12, at most 12 x 12); one level draw per room (DRLG_RoomCreate).",
+    "The full mode draws that DS1's floor and wall cells, looked up in the level type's tile files (DT1); the schematic mode draws the room as a box."
+   ]
+  },
+  {
+   "text": "Room 12 (converted 6 of 17, newest first): Def 268 (Act 1 - Catacombs NEW), preset file CatNEW2.ds1 (rotation, File2).",
+   "calc": [
+    "RNG draws in this step: 4 (3 level draws, and 1 first steps of new rooms' own seeds, one per room DRLG_RoomCreate makes); 218 so far.",
+    "Conversion (the DRLG overview spec, step 9): after the generator, each maze room in the level's room list, newest first, becomes a preset instance (9a), gets its file index (9b), and creates its real rooms (step 5).",
+    "Def 268 is the room's LvlPrest row (Act 1 - Catacombs NEW); its File1..6 columns list the preset maps (DS1) it may use.",
+    "9a, step 4 PresetInstanceCreate: Files 4, one level draw Range(L.seed, 4): lo 0x7137f345 mod 4 = 1.",
+    "9b MazePresetFile: Def 268 is in the rotation range (257, 273); first use of Def 268 in this build: one level draw RangeB(L.seed, 4): lo 0x652cb3b0 mod 4 = 0; the counter advances (0 + 1) mod 4 = 1 and replaces the drawn index.",
+    "The instance loads File2 of LvlPrest Def 268: Act1/Catacomb/CatNEW2.ds1.",
+    "5b PresetRoomsCreate: one room (the maze room is 12 x 12, at most 12 x 12); one level draw per room (DRLG_RoomCreate).",
+    "The full mode draws that DS1's floor and wall cells, looked up in the level type's tile files (DT1); the schematic mode draws the room as a box."
+   ]
+  },
+  {
+   "text": "Room 11 (converted 7 of 17, newest first): Def 282 (Act 1 - Catacombs Theme NE), preset file CatNETheme1.ds1 (level-seed draw, File1).",
+   "calc": [
+    "RNG draws in this step: 3 (2 level draws, and 1 first steps of new rooms' own seeds, one per room DRLG_RoomCreate makes); 221 so far.",
+    "Conversion (the DRLG overview spec, step 9): after the generator, each maze room in the level's room list, newest first, becomes a preset instance (9a), gets its file index (9b), and creates its real rooms (step 5).",
+    "Def 282 is the room's LvlPrest row (Act 1 - Catacombs Theme NE); its File1..6 columns list the preset maps (DS1) it may use.",
+    "9a, step 4 PresetInstanceCreate: Files 1, one level draw Range(L.seed, 1): lo 0xac6d11c4 mod 1 = 0.",
+    "9b MazePresetFile: Def 282 is outside the rotation range (257, 273); the drawn index stays.",
+    "The instance loads File1 of LvlPrest Def 282: Act1/Catacomb/CatNETheme1.ds1.",
+    "5b PresetRoomsCreate: one room (the maze room is 12 x 12, at most 12 x 12); one level draw per room (DRLG_RoomCreate).",
+    "The full mode draws that DS1's floor and wall cells, looked up in the level type's tile files (DT1); the schematic mode draws the room as a box."
+   ]
+  },
+  {
+   "text": "Room 10 (converted 8 of 17, newest first): Def 263 (Act 1 - Catacombs SE), preset file CatSE2.ds1 (rotation, File2).",
+   "calc": [
+    "RNG draws in this step: 4 (3 level draws, and 1 first steps of new rooms' own seeds, one per room DRLG_RoomCreate makes); 225 so far.",
+    "Conversion (the DRLG overview spec, step 9): after the generator, each maze room in the level's room list, newest first, becomes a preset instance (9a), gets its file index (9b), and creates its real rooms (step 5).",
+    "Def 263 is the room's LvlPrest row (Act 1 - Catacombs SE); its File1..6 columns list the preset maps (DS1) it may use.",
+    "9a, step 4 PresetInstanceCreate: Files 4, one level draw Range(L.seed, 4): lo 0xa0316b56 mod 4 = 2.",
+    "9b MazePresetFile: Def 263 is in the rotation range (257, 273); first use of Def 263 in this build: one level draw RangeB(L.seed, 4): lo 0x18883068 mod 4 = 0; the counter advances (0 + 1) mod 4 = 1 and replaces the drawn index.",
+    "The instance loads File2 of LvlPrest Def 263: Act1/Catacomb/CatSE2.ds1.",
+    "5b PresetRoomsCreate: one room (the maze room is 12 x 12, at most 12 x 12); one level draw per room (DRLG_RoomCreate).",
+    "The full mode draws that DS1's floor and wall cells, looked up in the level type's tile files (DT1); the schematic mode draws the room as a box."
+   ]
+  },
+  {
+   "text": "Room 9 (converted 9 of 17, newest first): Def 260 (Act 1 - Catacombs EW), preset file CatEW2.ds1 (rotation, File2).",
+   "calc": [
+    "RNG draws in this step: 4 (3 level draws, and 1 first steps of new rooms' own seeds, one per room DRLG_RoomCreate makes); 229 so far.",
+    "Conversion (the DRLG overview spec, step 9): after the generator, each maze room in the level's room list, newest first, becomes a preset instance (9a), gets its file index (9b), and creates its real rooms (step 5).",
+    "Def 260 is the room's LvlPrest row (Act 1 - Catacombs EW); its File1..6 columns list the preset maps (DS1) it may use.",
+    "9a, step 4 PresetInstanceCreate: Files 4, one level draw Range(L.seed, 4): lo 0x6754d732 mod 4 = 2.",
+    "9b MazePresetFile: Def 260 is in the rotation range (257, 273); first use of Def 260 in this build: one level draw RangeB(L.seed, 4): lo 0x7c66d0b4 mod 4 = 0; the counter advances (0 + 1) mod 4 = 1 and replaces the drawn index.",
+    "The instance loads File2 of LvlPrest Def 260: Act1/Catacomb/CatEW2.ds1.",
+    "5b PresetRoomsCreate: one room (the maze room is 12 x 12, at most 12 x 12); one level draw per room (DRLG_RoomCreate).",
+    "The full mode draws that DS1's floor and wall cells, looked up in the level type's tile files (DT1); the schematic mode draws the room as a box."
+   ]
+  },
+  {
+   "text": "Room 8 (converted 10 of 17, newest first): Def 272 (Act 1 - Catacombs NSEW), preset file CatNSEW2.ds1 (rotation, File2).",
+   "calc": [
+    "RNG draws in this step: 4 (3 level draws, and 1 first steps of new rooms' own seeds, one per room DRLG_RoomCreate makes); 233 so far.",
+    "Conversion (the DRLG overview spec, step 9): after the generator, each maze room in the level's room list, newest first, becomes a preset instance (9a), gets its file index (9b), and creates its real rooms (step 5).",
+    "Def 272 is the room's LvlPrest row (Act 1 - Catacombs NSEW); its File1..6 columns list the preset maps (DS1) it may use.",
+    "9a, step 4 PresetInstanceCreate: Files 4, one level draw Range(L.seed, 4): lo 0xe3deb9a5 mod 4 = 1.",
+    "9b MazePresetFile: Def 272 is in the rotation range (257, 273); first use of Def 272 in this build: one level draw RangeB(L.seed, 4): lo 0xd35b87a0 mod 4 = 0; the counter advances (0 + 1) mod 4 = 1 and replaces the drawn index.",
+    "The instance loads File2 of LvlPrest Def 272: Act1/Catacomb/CatNSEW2.ds1.",
+    "5b PresetRoomsCreate: one room (the maze room is 12 x 12, at most 12 x 12); one level draw per room (DRLG_RoomCreate).",
+    "The full mode draws that DS1's floor and wall cells, looked up in the level type's tile files (DT1); the schematic mode draws the room as a box."
+   ]
+  },
+  {
+   "text": "Room 7 (converted 11 of 17, newest first): Def 279 (Act 1 - Catacombs Theme SEW), preset file CatSEWTheme1.ds1 (level-seed draw, File1).",
+   "calc": [
+    "RNG draws in this step: 3 (2 level draws, and 1 first steps of new rooms' own seeds, one per room DRLG_RoomCreate makes); 236 so far.",
+    "Conversion (the DRLG overview spec, step 9): after the generator, each maze room in the level's room list, newest first, becomes a preset instance (9a), gets its file index (9b), and creates its real rooms (step 5).",
+    "Def 279 is the room's LvlPrest row (Act 1 - Catacombs Theme SEW); its File1..6 columns list the preset maps (DS1) it may use.",
+    "9a, step 4 PresetInstanceCreate: Files 1, one level draw Range(L.seed, 1): lo 0xf3a2fb8f mod 1 = 0.",
+    "9b MazePresetFile: Def 279 is outside the rotation range (257, 273); the drawn index stays.",
+    "The instance loads File1 of LvlPrest Def 279: Act1/Catacomb/CatSEWTheme1.ds1.",
+    "5b PresetRoomsCreate: one room (the maze room is 12 x 12, at most 12 x 12); one level draw per room (DRLG_RoomCreate).",
+    "The full mode draws that DS1's floor and wall cells, looked up in the level type's tile files (DT1); the schematic mode draws the room as a box."
+   ]
+  },
+  {
+   "text": "Room 6 (converted 12 of 17, newest first): Def 274 (Act 1 - Catacombs Theme E), preset file CatETheme1.ds1 (level-seed draw, File1).",
+   "calc": [
+    "RNG draws in this step: 3 (2 level draws, and 1 first steps of new rooms' own seeds, one per room DRLG_RoomCreate makes); 239 so far.",
+    "Conversion (the DRLG overview spec, step 9): after the generator, each maze room in the level's room list, newest first, becomes a preset instance (9a), gets its file index (9b), and creates its real rooms (step 5).",
+    "Def 274 is the room's LvlPrest row (Act 1 - Catacombs Theme E); its File1..6 columns list the preset maps (DS1) it may use.",
+    "9a, step 4 PresetInstanceCreate: Files 1, one level draw Range(L.seed, 1): lo 0x7c7abe17 mod 1 = 0.",
+    "9b MazePresetFile: Def 274 is outside the rotation range (257, 273); the drawn index stays.",
+    "The instance loads File1 of LvlPrest Def 274: Act1/Catacomb/CatETheme1.ds1.",
+    "5b PresetRoomsCreate: one room (the maze room is 12 x 12, at most 12 x 12); one level draw per room (DRLG_RoomCreate).",
+    "The full mode draws that DS1's floor and wall cells, looked up in the level type's tile files (DT1); the schematic mode draws the room as a box."
+   ]
+  },
+  {
+   "text": "Room 5 (converted 13 of 17, newest first): Def 260 (Act 1 - Catacombs EW), preset file CatEW3.ds1 (rotation, File3).",
+   "calc": [
+    "RNG draws in this step: 3 (2 level draws, and 1 first steps of new rooms' own seeds, one per room DRLG_RoomCreate makes); 242 so far.",
+    "Conversion (the DRLG overview spec, step 9): after the generator, each maze room in the level's room list, newest first, becomes a preset instance (9a), gets its file index (9b), and creates its real rooms (step 5).",
+    "Def 260 is the room's LvlPrest row (Act 1 - Catacombs EW); its File1..6 columns list the preset maps (DS1) it may use.",
+    "9a, step 4 PresetInstanceCreate: Files 4, one level draw Range(L.seed, 4): lo 0x0557f28e mod 4 = 2.",
+    "9b MazePresetFile: Def 260 is in the rotation range (257, 273); Def 260 used before in this build, counter 1; the counter advances (1 + 1) mod 4 = 2 and replaces the drawn index.",
+    "The instance loads File3 of LvlPrest Def 260: Act1/Catacomb/CatEW3.ds1.",
+    "5b PresetRoomsCreate: one room (the maze room is 12 x 12, at most 12 x 12); one level draw per room (DRLG_RoomCreate).",
+    "The full mode draws that DS1's floor and wall cells, looked up in the level type's tile files (DT1); the schematic mode draws the room as a box."
+   ]
+  },
+  {
+   "text": "Room 4 (converted 14 of 17, newest first): Def 264 (Act 1 - Catacombs SEW), preset file CatSEW3.ds1 (rotation, File3).",
+   "calc": [
+    "RNG draws in this step: 4 (3 level draws, and 1 first steps of new rooms' own seeds, one per room DRLG_RoomCreate makes); 246 so far.",
+    "Conversion (the DRLG overview spec, step 9): after the generator, each maze room in the level's room list, newest first, becomes a preset instance (9a), gets its file index (9b), and creates its real rooms (step 5).",
+    "Def 264 is the room's LvlPrest row (Act 1 - Catacombs SEW); its File1..6 columns list the preset maps (DS1) it may use.",
+    "9a, step 4 PresetInstanceCreate: Files 4, one level draw Range(L.seed, 4): lo 0xd4d7ae47 mod 4 = 3.",
+    "9b MazePresetFile: Def 264 is in the rotation range (257, 273); first use of Def 264 in this build: one level draw RangeB(L.seed, 4): lo 0x5fa13591 mod 4 = 1; the counter advances (1 + 1) mod 4 = 2 and replaces the drawn index.",
+    "The instance loads File3 of LvlPrest Def 264: Act1/Catacomb/CatSEW3.ds1.",
+    "5b PresetRoomsCreate: one room (the maze room is 12 x 12, at most 12 x 12); one level draw per room (DRLG_RoomCreate).",
+    "The full mode draws that DS1's floor and wall cells, looked up in the level type's tile files (DT1); the schematic mode draws the room as a box."
+   ]
+  },
+  {
+   "text": "Room 3 (converted 15 of 17, newest first): Def 268 (Act 1 - Catacombs NEW), preset file CatNEW3.ds1 (rotation, File3).",
+   "calc": [
+    "RNG draws in this step: 3 (2 level draws, and 1 first steps of new rooms' own seeds, one per room DRLG_RoomCreate makes); 249 so far.",
+    "Conversion (the DRLG overview spec, step 9): after the generator, each maze room in the level's room list, newest first, becomes a preset instance (9a), gets its file index (9b), and creates its real rooms (step 5).",
+    "Def 268 is the room's LvlPrest row (Act 1 - Catacombs NEW); its File1..6 columns list the preset maps (DS1) it may use.",
+    "9a, step 4 PresetInstanceCreate: Files 4, one level draw Range(L.seed, 4): lo 0x41ef038e mod 4 = 2.",
+    "9b MazePresetFile: Def 268 is in the rotation range (257, 273); Def 268 used before in this build, counter 1; the counter advances (1 + 1) mod 4 = 2 and replaces the drawn index.",
+    "The instance loads File3 of LvlPrest Def 268: Act1/Catacomb/CatNEW3.ds1.",
+    "5b PresetRoomsCreate: one room (the maze room is 12 x 12, at most 12 x 12); one level draw per room (DRLG_RoomCreate).",
+    "The full mode draws that DS1's floor and wall cells, looked up in the level type's tile files (DT1); the schematic mode draws the room as a box."
+   ]
+  },
+  {
+   "text": "Room 2 (converted 16 of 17, newest first): Def 263 (Act 1 - Catacombs SE), preset file CatSE3.ds1 (rotation, File3).",
+   "calc": [
+    "RNG draws in this step: 3 (2 level draws, and 1 first steps of new rooms' own seeds, one per room DRLG_RoomCreate makes); 252 so far.",
+    "Conversion (the DRLG overview spec, step 9): after the generator, each maze room in the level's room list, newest first, becomes a preset instance (9a), gets its file index (9b), and creates its real rooms (step 5).",
+    "Def 263 is the room's LvlPrest row (Act 1 - Catacombs SE); its File1..6 columns list the preset maps (DS1) it may use.",
+    "9a, step 4 PresetInstanceCreate: Files 4, one level draw Range(L.seed, 4): lo 0xa6ded00c mod 4 = 0.",
+    "9b MazePresetFile: Def 263 is in the rotation range (257, 273); Def 263 used before in this build, counter 1; the counter advances (1 + 1) mod 4 = 2 and replaces the drawn index.",
+    "The instance loads File3 of LvlPrest Def 263: Act1/Catacomb/CatSE3.ds1.",
+    "5b PresetRoomsCreate: one room (the maze room is 12 x 12, at most 12 x 12); one level draw per room (DRLG_RoomCreate).",
+    "The full mode draws that DS1's floor and wall cells, looked up in the level type's tile files (DT1); the schematic mode draws the room as a box."
+   ]
+  },
+  {
+   "text": "Room 1 (converted 17 of 17, newest first): Def 289 (Act 1 - Catacombs Prev NS), preset file CatNSUp4.ds1 (level-seed draw, File4).",
+   "calc": [
+    "RNG draws in this step: 3 (2 level draws, and 1 first steps of new rooms' own seeds, one per room DRLG_RoomCreate makes); 255 so far.",
+    "Conversion (the DRLG overview spec, step 9): after the generator, each maze room in the level's room list, newest first, becomes a preset instance (9a), gets its file index (9b), and creates its real rooms (step 5).",
+    "Def 289 is the room's LvlPrest row (Act 1 - Catacombs Prev NS); its File1..6 columns list the preset maps (DS1) it may use.",
+    "9a, step 4 PresetInstanceCreate: Files 4, one level draw Range(L.seed, 4): lo 0xf5324a77 mod 4 = 3.",
+    "9b MazePresetFile: Def 289 is outside the rotation range (257, 273); the drawn index stays.",
+    "The instance loads File4 of LvlPrest Def 289: Act1/Catacomb/CatNSUp4.ds1.",
+    "5a map scan (Scan 1, Pops 0): the DS1 is loaded and its keep/drop rolls run on the level seed, 0 draws (preset.md steps 2a, 3).",
+    "5b PresetRoomsCreate: one room (the maze room is 12 x 12, at most 12 x 12); one level draw per room (DRLG_RoomCreate).",
+    "The full mode draws that DS1's floor and wall cells, looked up in the level type's tile files (DT1); the schematic mode draws the room as a box.",
+    "This preset holds a warp: wall cells of orientation 10/11 with slot 0, so Levels Vis0 = 35 (Catacombs Level 2); marked in cyan on the final frame (warps.md, warp slot cell)."
+   ]
+  },
+  {
+   "text": "Final composite: 17 rooms after 255 RNG draws (197 in the generator, 58 in the conversion). Drawn relative to the layout's corner; the game then moves the whole level to its place in the act (not drawn, shape unchanged).",
+   "calc": [
+    "Warp (cyan mark): room 1, DS1 wall cells of orientation 10/11 with slot 0, so Levels Vis0 = 35 (Catacombs Level 2) (warps.md, warp slot cell). Entry is by level order: the lower id is taken as the way in. The act's link lists can override Vis at run time (warps.md \u00a7 C); not modelled here.",
+    "Warp (cyan mark): room 17, DS1 wall cells of orientation 10/11 with slot 1, so Levels Vis1 = 37 (Catacombs Level 4) (warps.md, warp slot cell). Exit is by level order: the lower id is taken as the way in. The act's link lists can override Vis at run time (warps.md \u00a7 C); not modelled here.",
+    "Placement shift (maze.md G1): growth never looks at where the level sits in the act; rooms grow freely around the first room, so coordinates can go negative.",
+    "At the end the game takes the bounding box of all rooms (x0, y0) and adds (level.x - x0, level.y - y0) to every room, so the box's top-left corner lands on the level's origin in the act map.",
+    "It is one translation for all rooms: shape, doors and Defs do not change. This picture is already drawn relative to the box corner, so the shifted level would look the same."
+   ]
+  }
+ ]
+}
