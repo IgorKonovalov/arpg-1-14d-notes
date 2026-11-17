@@ -466,7 +466,7 @@ G2. **Fixed mods.** `Mod1`–`Mod3` are MonUMod row indices, written as they are
 
 G3. **Extra mods.** The `difficulty` extra picks are the unique pick of § B on the unit seed, with only the fixed mods in `have`. An extra never repeats a fixed mod, but it can repeat a post-create mod. No `Range(1)` precedes them. The run had 7 superuniques with 1 extra in nightmare or 2 in hell. [C] (`memset`)
 
-G4. **Minions.** The count is `min + RangeB(u.seed, max − min + 1)` from § E, after the difficulty bonus. A record with `MinGrp` = `MaxGrp` = 0 still makes one `RangeB(1)` draw and gets no minion. The minions are of `minion1`, or of the superunique's own class when it has none. [C] (Rakanishu 8, 9 and 10 in normal, nightmare and hell; Griswold ×4 and Threash Socket with `MinGrp` 0: Megaflow Rectifier 8 of its own class) A record with only one of the two bounds non-zero gets no bonus. [I]
+G4. **Minions.** The count is `min + RangeB(u.seed, max − min + 1)` from § E, after the difficulty bonus. A record with `MinGrp` = `MaxGrp` = 0 still makes one `RangeB(1)` draw and gets no minion. The minions are of `minion1`, or of the superunique's own class when it has none. [C] (Rakanishu 8, 9 and 10 in normal, nightmare and hell; Griswold ×4 and Threash Socket with `MinGrp` 0; Megaflow Rectifier 8 of its own class) A record with only one of the two bounds non-zero gets no bonus. [I]
 
 G5. A record with `Stacks` 0 whose placed bit is set is refused: three such calls on the kept logs returned with no unit, and every first call of those records created its unit. `SuperUniqueSpawn` makes no quest test of its own that a done quest fails: all 18 superuniques of the earlier logs were placed for characters with every quest done in every difficulty. [C] That `Stacks` is the only "may appear again" switch, and that no test fails on an open quest either (the quest hooks of the tails register the unit; they do not gate it), rest on the reading: every logged character had all quests done. [I]
 
@@ -639,7 +639,7 @@ I4. `UniqueTitle` is loaded and freed, and nothing reads it: access watchpoints 
 
 - [I] **The driver, if one of the three existed,** is the generic machinery alone: `MonAiEvent` with row kind 1 (rows 145, 146 and 147). With no target
   the think does not run and `MonAiTargetOrIdle` idles or ring-walks; with a target the boss sight pause fires once, then the think only returns and that event queues no next
-  one, so the next AI event needs a mode change from outside. Those rows' entries in the monster AI catalogue carry this statement
+  one, so the next AI event needs a mode change from outside. Those rows' entries in [the monster AI catalogue](../../spec-monster-ai/catalogue/) carry this statement
   and its limits by link.
 
 - [C] **Nihlathak's mod 22 is `MonPostCreateBoss`'s.** Nihlathak (`BaseId` 526, superunique record 60) leaves

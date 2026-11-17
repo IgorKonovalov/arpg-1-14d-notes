@@ -227,7 +227,7 @@ PathPlanGreedy(ctx) → n:                                           [C] (greedy
 
 - B. [C] **A walk whose last step turned ends one step short:** when the step that reaches the target or the limit changed direction, only the corner is written. (control `noflag`)
 - B. [C] **The first point is written twice when the walk turns at once**, since `cur` equals it and is not the start.
-- B. [C] **A reversal ends the walk**, with the point reached written. (control `rev`, 2 cases, 6, 1)
+- B. [C] **A reversal ends the walk**, with the point reached written. (control `rev`, 2 cases; 6; 1)
 - B. [C] Limit 0 writes nothing past the line's end. **At most `ctx.limit + 1` points: 78 at limit 77**, every slot used, no write past it. (family `gbound`)
 - B. [C] Types 2 and 13 are one plan.
 
@@ -292,7 +292,7 @@ PathPlanKnockback(ctx) → 0 or 1:                                   [C] (knock 
     else: pt ← ctx.target
  3. points[0] ← pt
  4. (free, q) ← PathLineFree(path, ctx.start, pt);  if not free: pt ← q      ; from ctx.start, not the position
- 5. PathSetTargetPoint(path, pt);  path.+0x58 ← 0: on either outcome
+ 5. PathSetTargetPoint(path, pt);  path.+0x58 ← 0                  ; on either outcome
  6. if pt = ctx.start: return 0
  7. points[0] ← pt;  +0x28 ← 1;  return 1
 ```
@@ -629,7 +629,7 @@ PathSearchRun(r, ctx) → n:                                         [C] (contro
  7. n ← node ? Reduce(node, ctx) : 0
  8. return (n ≥ 78) ? 0 : n
 
-Reduce(node, ctx) → n:                                             , controls min2, max77
+Reduce(node, ctx) → n:                                             ; controls min2, max77
   buf ← [];  prev ← (−2, −2)
   while node and |buf| < 78:
     if node.parent: step ← node.pt − node.parent.pt;  if step ≠ prev: append node.pt;  prev ← step
@@ -680,7 +680,7 @@ Advance(node) → node or none:                                      [C]
   loop:
     if node is the root: return none
     node ← node.parent
-    next entry of node.turn;  Turn(node): a backtrack's turn, unconditional
+    next entry of node.turn;  Turn(node)                           ; a backtrack's turn, unconditional
     node.tries += 1
     if node.tries ≠ 5: return node
 

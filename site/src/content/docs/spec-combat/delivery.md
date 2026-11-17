@@ -212,7 +212,7 @@ B3.   if (pkt.result & 0x1) and not (pkt.result & 0x20):               ; [I] for
           if pkt.flags & 0x20:       DispatchEvent(2 damagedbymissile, unit: def, other: att, pkt)
 B4.   pkt.phys ← min(pkt.phys, stat(def, 6))
       Leech(att, def, pkt)                                             ; § C
-      if att is a monster and pkt.result & 0x1: MonOnHitSkill(att, def)          , boundary oracle
+      if att is a monster and pkt.result & 0x1: MonOnHitSkill(att, def)          ; boundary oracle
       if pkt.absorbHeal > 0 and def is alive and not HasState(def, 92): AddLifeCapped(def, pkt.absorbHeal)
       if pkt.total > 0:                                                ; [C] for the test, see note
         hp: i32 ← stat(def, 6) − pkt.total
@@ -504,7 +504,7 @@ that draw:
   caster, `EDX` the skill, the level the first stack word) refuses no target, a caster with no game (`+0x80`) and a
   caster in state 54, else calls `ITEMSKILL_Cast(game, caster; skill, level, target, 0, 0, &type, &guid, &ox, &oy,
   effect)`; `ItemCastAtXY` makes the game and state tests and passes the aim 0 and the point. [C] (ends at the cast's
-  boundaries below,
+  boundaries below;
   `Skills.txt:ItemTgtDo`, `event_item`, `cast_item`;
   the argument order as corrected)
 - E5. **`ITEMSKILL_Cast`** refuses id 0 and a row whose `ItemEffect` is 0 with no write; aims the caster's path at
@@ -566,7 +566,7 @@ Durability loss (`COMBAT_DurabilityLoss`: the attacker's weapon one draw, the de
 
 ## Worked example
 
-**Crushing blow and leech in Hell** — the delivery of combat/overview § Example 1
+**Crushing blow and leech in Hell** — the delivery of [combat/overview § Example 1](../overview/#example-1-a-melee-hit-in-hell-with-crushing-blow-and-leech)
 (`solo-h3`, frame 357; the `CombatSolo` Sorceress, open wounds 10, crushing blow 20, life steal 5, mana steal 7,
 against a `fallen2` at life 74776 with physical resistance 15). Reduced packet: physical 78365, magic 22020, cold
 6268, poison 153, total 106806. [C]
@@ -640,9 +640,6 @@ against a `fallen2` at life 74776 with physical resistance 15). Reduced packet: 
   its two callers), 6 (handlers 20, 21, 30 and the item effect flag), 7 (`SKILLS_PayCost`), with its review in the
    log (fixes 1, 2 and 6, ruling 1)
   (12 000 cases, 0 mismatches).
-- §§ 1 (the `srvprgfunc` entries, the finisher's tail and stock
-  use, the dated 2026-10-21 note), 2 (item casts, the dated 2026-10-21 notes), 3 (the stat-event handlers, their registrations and draws), 13 (draws per event), as fixed by
-  the architect's P1.3 review (log).
 - Tables: DifficultyLevels, MonStats,
   ItemStatCost, States.
 - Upstream: rng, [monsters/stats § C](../../spec-monsters/stats/#c-the-player-count-monplayerbonus).

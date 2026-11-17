@@ -8,7 +8,7 @@ A single-player character lives in one [`.d2s`](../../reference/glossary/) file.
 memory when you leave a game and reads it back when the character joins one. This page explains what the file
 holds and in what order, the checksum, the header fields, how the character's stats are packed, and how one item
 is stored bit by bit, including its property list. It also says which [seeds](../../reference/glossary/) survive a save and
-which do not. Everything here restates the reviewed spec save/d2s; how the item
+which do not. Everything here restates the reviewed spec [save/d2s](../../spec-save/d2s/#purpose); how the item
 stats are rolled before they are saved is on the [items](../../items/items/) page.
 
 Much of this format was first known only from reading the code. Most of it has since been checked: against a
@@ -391,7 +391,7 @@ and the name, so the game picks the Id (Id 1 for both test saves, in Act I and A
 
 ## A worked example
 
-This is copied from the save/d2s worked example: a 1113-byte save written by
+This is copied from the [save/d2s worked example](../../spec-save/d2s/#worked-example): a 1113-byte save written by
 the game for a level-71 Barbarian named `seedtest`, in a game started with `-seed 12345`, Normal, expansion.
 
 **Header**, first 48 bytes:
@@ -457,7 +457,7 @@ game, with no mismatch.
 
 ## What is not known yet
 
-From save/d2s § Open questions:
+From [save/d2s § Open questions](../../spec-save/d2s/):
 
 - what item flag bit 13 means, and how soon after a drop the game clears it;
 - not exercised in a run: ground positions, a hotkey bound to an item, realm data on a simple item, gold items, the
@@ -471,8 +471,8 @@ item fields, and the old formats) are still waiting for a run, or have no case o
 
 ## Where to read more
 
-- The spec: save/d2s, with its
-  reimplementation notes.
+- The spec: [save/d2s](../../spec-save/d2s/#algorithm), with its
+  [reimplementation notes](../../spec-save/d2s/#reimplementation-notes).
 - How a new character's first save comes to be: [characters](../characters/) and
   [player/creation § Outputs](../../spec-player/creation/#outputs).
 - How a saved mercenary is rebuilt: [hirelings § H](../../spec-hirelings/overview/#h-the-mercenary-from-a-save-d2s_readmercheader-merc_create).

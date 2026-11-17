@@ -7,7 +7,7 @@ sidebar:
 This page explains what happens when one unit hits another: whether the swing connects, how much damage it carries,
 how the defender's resistances and reductions cut it down, and what the hit does on arrival (crushing blow, open
 wounds, life and mana leech, chill, the life change). It restates the reviewed combat specs: the overview in
-combat, the hit test in [to-hit](../../spec-combat/to-hit/#purpose), the
+[combat](../../spec-combat/overview/#purpose), the hit test in [to-hit](../../spec-combat/to-hit/#purpose), the
 damage build in [damage](../../spec-combat/damage/#purpose), the defender's side in
 [reductions](../../spec-combat/reductions/#purpose) and the arrival in [delivery](../../spec-combat/delivery/#purpose).
 The specs carry the exact arithmetic and [draw](../../reference/glossary/) order; this page tells the story. Where something is
@@ -439,7 +439,7 @@ chains only within one attack, from its attack-mode draws to the hit, because it
 
 ## Difficulty and game type
 
-From overview § D:
+From [overview § D](../../spec-combat/overview/#d-branches):
 
 | What | Changes with | Status |
 |---|---|---|
@@ -458,7 +458,7 @@ confirmed.
 
 ## Worked example
 
-Copied from overview § Example 1:
+Copied from [overview § Example 1](../../spec-combat/overview/#example-1-a-melee-hit-in-hell-with-crushing-blow-and-leech):
 a recorded expansion Hell game at one player. A test Sorceress (level 85, dexterity 420, a Dimensional Blade, deadly
 strike 15, open wounds 10, crushing blow 20, life steal 5, mana steal 7) hits a `fallen2` (level 68, defence 946,
 block 16, physical resistance 15, fire 110, cold 40) that has 74 776 of its life left, in 1/256 points. Every draw
@@ -510,7 +510,7 @@ From the specs' open questions:
 
 ## Where to read more
 
-- The specs: combat overview,
+- The specs: [combat overview](../../spec-combat/overview/#reimplementation-notes),
   [to-hit](../../spec-combat/to-hit/#reimplementation-notes), [damage](../../spec-combat/damage/#reimplementation-notes),
   [reductions](../../spec-combat/reductions/#reimplementation-notes),
   [delivery](../../spec-combat/delivery/#reimplementation-notes). Each *Reimplementation notes* section lists the traps

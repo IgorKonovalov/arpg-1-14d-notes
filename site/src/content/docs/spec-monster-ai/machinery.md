@@ -24,15 +24,15 @@ sentence past the first boundary is **H1** there, quoted once and referred to be
 
 ### Tables
 
-| Used for |
-| --- |
-| the search range |
-| `aip1..8`, per difficulty |
-| the skills and modes the thinks use |
-| row 28's and row 67's speed terms |
-| the hireling's melee approach |
-| `MERCAI_PickSkill` |
-| `MERCAI_PickSkill`'s skips |
+| Anchor | Used for |
+|---|---|
+| `MonStats.txt:aidist` | the search range |
+| `MonStats.txt:aip1` | `aip1..8`, per difficulty |
+| `MonStats.txt:Skill1`, `MonStats.txt:Sk1mode` | the skills and modes the thinks use |
+| `MonStats.txt:Velocity`, `MonStats.txt:Run` | row 28's and row 67's speed terms |
+| `MonStats2.txt:MeleeRng` | the hireling's melee approach |
+| `Hireling.txt:Skill1`, `Hireling.txt:Mode1`, `Hireling.txt:Chance1`, `Hireling.txt:ChancePerLvl1`, `Hireling.txt:DefaultChance` | `MERCAI_PickSkill` |
+| `Skills.txt:aitype`, `Skills.txt:aurastate`, `Skills.txt:aura` | `MERCAI_PickSkill`'s skips |
 
 ### Runtime state
 
@@ -407,8 +407,7 @@ flowchart TD
 
 ### T. The tier AIs
 
-Each entry is the think function as pseudocode, with its draw order and its evidence. Every entry's block is the code reading of its
-catalogue finding, `[I]`, and its first boundary is `[C]` per README § G. "The map" in a `[C]` line below is the map from the think's inputs to its first callee or return, each emulated case's boundary, and nothing after it. Where a row is under
+Each entry is the think function as pseudocode, with its draw order and its evidence. Every entry's block is a code reading, `[I]`, and its first boundary is `[C]` per README § G. "The map" in a `[C]` line below is the map from the think's inputs to its first callee or return, each emulated case's boundary, and nothing after it. Where a row is under
 sentence H1, "H1 holds" means the sentence for the decisions and logs in that table, and no more.
 All 18 rows have no `init`; all have row kind 1 except 61 and 67 (kind 0), so the think runs only with a target but for those two.
 Only rows 29 and 61 have an `alt`. [C]
@@ -981,7 +980,7 @@ An entry ends in one of § B's commands, a helper of § C, or a return with noth
 
 ## Worked example
 
-`chance(1)` with `aip1` = 50 on a step whose new low word is 1 234 567: `1 234 567 mod 100 = 67`, and `67 < 50` is false, so the branch is not taken and the seed has stepped once. [C] (22 emulated cases on that low word and 4 row-125 cases going to `Idle(aip4)` one step on, `RNG_Step`)
+`chance(1)` with `aip1` = 50 on a step whose new low word is 1 234 567: `1 234 567 mod 100 = 67`, and `67 < 50` is false, so the branch is not taken and the seed has stepped once. [C] (22 emulated cases on that low word and 4 row-125 cases going to `Idle(aip4)` one step on; `RNG_Step`)
 
 ## Reimplementation notes
 

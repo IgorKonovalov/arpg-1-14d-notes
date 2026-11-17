@@ -18,8 +18,8 @@ the free mercenary, resurrection (specified in items/economy) and death; item re
 
 Names of functions, structs and fields are ours. Column names are those of Hireling and HireDesc.
 
-Notation. `S` is the **store seed** of items/vendors § A,
-`NpcControl+0x08`; the finding's "NPC seed" is the same object, and this spec defines no second seed. `Step`, `Init`
+Notation. `S` is the **store seed** of [items/vendors § A](../../spec-items/vendors/#a-store-records-and-the-store-seed-game-creation),
+`NpcControl+0x08`; the "NPC seed" of the hireling records is the same object, and this spec defines no second seed. `Step`, `Init`
 and `Range` are the primitives of rng: `Init(x)` makes `{x, 666}`; `Range(s, n)` is 0
 with no draw when `n < 1` (signed), else one step and `low mod n` (unsigned). `vflag` is the game's expansion flag
 (`Game+0x70`): rows with `Version` 100 are used when it is set, rows with `Version` 0 otherwise. `difficulty` is
@@ -377,7 +377,7 @@ Step notes:
   hired in play at Kashya, *Save and Exit* wrote seed 2 573 073 805, name 0 (the name id minus `+0x114`), Hireling Id 1
   and experience 52 424 400, each equal to its source (mercenary info `+0x00`, the name, info `+0x08`, stat 13), and
   the reload recreated the mercenary from those bytes. Tool-built headers and a mercenary killed in play (mode 12,
-  dead bit set) separate the fields and the dead flag. The layout is save/d2s § D.
+  dead bit set) separate the fields and the dead flag. The layout is [save/d2s § D](../../spec-save/d2s/#d-header-fields).
 
 
 ### G. The stats per level (`MERC_SetLevel`)
@@ -746,7 +746,7 @@ on the in-game screen.
 
 - Tables: Hireling, HireDesc, Skills,
   MonStats.
-- Specs: upstream rng, items/vendors § A,
+- Specs: upstream rng, [items/vendors § A](../../spec-items/vendors/#a-store-records-and-the-store-seed-game-creation),
   [monsters/pool § E](../../spec-monsters/pool/#e-the-monster-level-monstatsinit), [monsters/stats](../../spec-monsters/stats/),
   data/strings; downstream [items/quality § C](../../spec-items/quality/#c-shared-terms-and-magic-find)
-  (the owner's magic find), save/d2s § D (the header).
+  (the owner's magic find), [save/d2s § D](../../spec-save/d2s/#d-header-fields) (the header).

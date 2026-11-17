@@ -56,7 +56,7 @@ flowchart LR
 | path `+0x72`/`+0x76` | the step | § B1 |
 | path `+0x7C` | i32 speed `v` | A1 |
 | path `+0x90` | u8 knockback distance byte, decremented per subtile change | § E |
-| stats 67, 96 (and 10, 154 for the drain) | as the aggregate holds them | stats/aggregate |
+| stats 67, 96 (and 10, 154 for the drain) | as the aggregate holds them | [stats/aggregate](../../spec-stats/aggregate/) |
 
 ### Inputs and oracles
 
@@ -254,7 +254,7 @@ E1. PathPlanKnockback (path type 8):                               [C] (all of E
       n: i32 ← (path.+0x90 >> 1) + 1                               ; +0x90 = 5 → n 3; [I] 10 (base class 78) → n 6
       (dx, dy) ← the unit's subtile − the attacker's;  M ← max(|dx|, |dy|)
       point ← the unit's subtile + (n·dx ÷ M, n·dy ÷ M)            ; signed; unchanged when M = 0
-      point ← PathLineFree(ctx.start, point): path/search A4, its last free point when blocked
+      point ← PathLineFree(ctx.start, point)                       ; path/search A4, its last free point when blocked
       no point when it equals the start;  else the path's one point
 ```
 

@@ -27,7 +27,7 @@ flowchart LR
 | A player's skill request at a location (packets 0x05, 0x08, 0x0C, 0x0F) | `PLRMSG_SkillAtXY` | [C] the packet ids by `g_SrvPacketTable` read with two tools (0x05, 0x0C call it; 0x08, 0x0F re-read the packet and call them); 2 823 location requests enter at its two `SKILLS_CanUse` sites and reach the start |
 | A player's skill request at a unit (packets 0x06, 0x07, 0x09, 0x0A, 0x0D–0x11 but 0x0F) | `PLRMSG_SkillAtUnit` | [C] the packet ids by `g_SrvPacketTable` read with two tools (0x06, 0x0D call it with walk 1, 0x07, 0x0E with walk 0; 0x09, 0x0A, 0x10, 0x11 re-read and call them); 1 521 unit requests enter at its two sites and reach the start in their frame, 12 later after B3's run |
 | The request checks | `SKILLS_CanUse` | [C] for codes 0, 1, 6 and 8 and their order (1 340 calls); [I] otherwise |
-| A skill mode starts (player modes 7, 8, 10–16, 18; monster modes 4, 5, 7, 8, 9 and 14) | `SKILLS_StartUsedSkill` → `SKILLS_SrvStart` | [C] for the caster's seed in the start events of the rows of § O; [C] the chain `StartUsedSkill` → `SrvStart` for players (5 843 starts, in modes 7, 10–12, 14–16, 18) and monsters (1 984, in modes 4, 5, 7, 8, 9 and 14); [I] the other rows' seeds (the catalogue's) and player modes 8 and 13, which no start met |
+| A skill mode starts (player modes 7, 8, 10–16, 18; monster modes 4, 5, 7, 8, 9 and 14) | `SKILLS_StartUsedSkill` → `SKILLS_SrvStart` | [C] for the caster's seed in the start events of the rows of § O; [C] the chain `StartUsedSkill` → `SrvStart` for players (5 843 starts, in modes 7, 10–12, 14–16, 18) and monsters (1 984, in modes 4, 5, 7, 8, 9 and 14); [I] the other rows' seeds (the [catalogue](../catalogue/)'s) and player modes 8 and 13, which no start met |
 | The mode's action frame | `SKILLS_DoUsedSkill` → `SKILLS_SrvDo` | [C] for the caster's seed in the do events of the rows of § O; [C] the chain `DoUsedSkill` → `SrvDo` (14 168 calls, all with pay 1, item 0, effect 0) and `SrvDo`'s other callers by return address: the aura tick and select, `ITEMSKILL_Cast`; [I] the other rows' seeds (the catalogue's) |
 | A cost is paid | `SKILLS_PayCost` | [C] (1 798 calls) |
 | A periodic or aura skill runs again (unit events 8 and 9) | `EVENT_SelectedAuraTick`, `EVENT_ItemAuraTick` | [C] event 8: `EVENT_SelectedAuraTick` runs `SrvDo` (119 ticks of Might and Holy Fire, each on the 50-frame grid); [I] event 9, `EVENT_ItemAuraTick`, which no session ran |
@@ -81,7 +81,7 @@ Skills § Function index, PetType.
 | Input | Kind | Tag |
 |---|---|---|
 | the monster's choice of skill, mode and target | an input here: [monsters/ai/machinery § T](../../spec-monster-ai/machinery/#t-the-tier-ais) for the tier, the catalogue for the rest | [I] |
-| the numbered start and do functions outside § O | value oracles of the checker; specified in the catalogue | [I] |
+| the numbered start and do functions outside § O | value oracles of the checker; specified in the [catalogue](../catalogue/) | [I] |
 | `SKILLS_ForUnitsInRange`'s and `SkillForUnitsNearTarget`'s unit order, `SkillUnitFilter` | logged as the list of units the callback ran on | [I] |
 | the pet chosen for removal | a logged value | [I] |
 | a calc's value | [data/calc](../../spec-data/calc/) | [I] |
@@ -91,7 +91,7 @@ Skills § Function index, PetType.
 | Name | Value | Tag |
 | --- | --- | --- |
 | start table | `g_SkillStartFuncs`, bound `0x5B` | [C] `cmp ax, 0x5B; jge` before the indexed read; 92 slots up to the do table, 64 non-null, the highest 65 (static) |
-| do table | `g_SkillDoFuncs`, bound `0xBF` (shared by `srvdofunc`, `srvprgfunc1..3`, `ItemEffect`) | [C] `cmp ax, 0xBF`, `cmp eax, []` (= 0xBF); 192 slots, 152 non-null, the highest 152 (static) |
+| do table | `g_SkillDoFuncs`, bound `0xBF` (shared by `srvdofunc`, `srvprgfunc1..3`, `ItemEffect`) | [C] |
 | stat-event table | `g_StatEventFuncs`, 31 handlers (ids 1..31), bound `0x32` | [C] `cmp eax, 0x31; ja`; the non-null slots are exactly ids 1..31 (static) |
 | delay state | 121 `skilldelay` | [C] the writer's three state calls push 121 and `SKILLS_DelayOk` tests `UNIT_HasState(121)` (static) |
 | blood mana state | 114: its readers and writers are `SKILLS_PayCost` (2 calls), `SKILLS_ManaOk` (1), `BloodManaPay` (3) and `StateDo147Attached` (1), which looks up its stat list | [C] every call of the five state functions with 114 (static) |
@@ -270,7 +270,7 @@ C1. SKILLS_CanUse(unit, entry) → i32:                                [I] (SKIL
   term's `− 1` (428 cases differ without it). [C]
 - C5. `RestrictOk` (`restrict`): a null unit, entry or record refuses; 0 refuses while the unit is in a restricted
   state; 1 passes; 2 passes only in a restricted state and with one of `State1..3` (the first negative ends the list);
-  any other value passes. The restricted test (→) is any common bit between the unit's
+  any other value passes. The restricted test is any common bit between the unit's
   state bits, read only when its stat list has bit 31 of `+0x10`, and the mask words at DataTables `+0x110`. [C]
 
 - C6. `StartManaOk`: a player (type 0) with `startmana` (`+0x184`) > 0 and `stat 8 < startmana · 256` (signed) is
@@ -303,7 +303,7 @@ stat `id` at layer `p` (`STATS_GetUnitStat`, which keeps only the low 16 bits of
 
 - C8. The cap of 3 on stat 97 (`cmp eax, 3; jle`) applies to a skill of the player's own class and to a
   non-player whose base points are above 0; a player's skill of another class takes stat 97 uncapped. `+0x2C` is a
-  per-entry word added as it is; the finding does not follow its writers. Every sum is a plain 32-bit add and the
+  per-entry word added as it is; its writers are not followed. Every sum is a plain 32-bit add and the
   cap a signed compare (`jle`), so a negative stat 97 is added as it is; `SkillPage` is loaded with `movsx`, and
   the layer `8·class + page − 1` reaches `STATS_GetUnitStat` as its low 16 bits (`movzx`). No step draws. [I]
 
@@ -588,7 +588,7 @@ G3. SKILLS_QueuePeriodic(unit, id, lvl, selected):                   [I] (SKILLS
 
 - G3. The two stock `periodic` rows are 57 Thunder Storm and 277 Blade Shield; the `startmana` rows (41, 230, 266),
   the channelled rows of C6, are none of them `periodic` (`.txt` and `.bin` agree). [C] The grid is the aura grid of
-  stats/states § F, and a `periodic` row's start cancels all the unit's event-8 entries
+  [stats/states § F](../../spec-stats/states/#f-auras), and a `periodic` row's start cancels all the unit's event-8 entries
   first (D3). [I]
 - G4. **Aura select.** Selecting an `aura` row with an `aurastate` as the right skill: without `immediate` it sets the
   state and a plain list carrying the skill (stat 350) and level (stat 351); with `immediate` it runs
@@ -630,9 +630,6 @@ H3. ITEMSKILL_Cast(caster, id, lvl, target, x, y, effect) → bool:    [I] (ITEM
   no ammunition, the helpers' tries, `ItemCheckStart` and the restore of the
   target, point and bit 6 are the reading, and so is the effect flag's do function `ItemEffect`, which no line logs.
   [I]
-- H3. The effect flag is 1 only from handler 20 without `ItemTgtDo` (§ K): handler 20's `ItemTgtDo`-clear path pushes 1
-  (after `test [row+7], []; je`), and the other eight item-cast calls push 0.
-  So an item Nova, Frost Nova or Chain Lightning runs its `ItemEffect` only on attack, kill or hit. [C] (static)
 - H4. **`ItemTarget` 2 draws.** `ITEMSKILL_Cast` gives helper 2 its own caster, whose seed the helper steps twice per
   try before the try's collision test (`low mod 40 − 20` added to x and to y), at most 10 tries until the point is
   free. The first try's two steps are reproduced up to the first collision test. [C] The later tries, from the reading. [I]
@@ -877,7 +874,7 @@ ids, each as a constant:
 | 1 | Chilling Armor | `hitbymissile` | the skill's `srvmissilea` from the unit toward a hostile missile's owner | the creation's | [I] |
 | 2 | Frozen Armor | `damagedinmelee` | a packet, result `0x20`, `+0x34 = calc1`, on the attacker | none | [I] |
 | 3 | Shiver Armor | `attackedinmelee` | `SKILLS_RollElemDamage` into a packet on the attacker | 1 (2 for `EType` 10) | [I] |
-| 4 | Iron Maiden | `domeleedamage` | the cursed attacker takes back a share of its damage | none while the cursed unit survives; one step when the returned damage kills it (1 case, outside the checker's handler-seed check: catalogue § R R3) | [I] |
+| 4 | Iron Maiden | `domeleedamage` | the cursed attacker takes back a share of its damage | none while the cursed unit survives; one step when the returned damage kills it (1 case, outside the checker's handler-seed check: [catalogue § R](../catalogue/#r-in-the-game-the-phase-2-sample) R3) | [I] |
 | 5 | Life Tap | `damagedinmelee`, `damagedbymissile` | the attacker heals `MulDiv(damage, calc1, 100)` | none | [C] draws (2 calls); [I] effect |
 | 6 | stat 78 | `damagedinmelee` | physical `stat << 8` to the attacker | none | [C] draws (7 calls); [C] the attacker loses `stat << 8` life (14 calls at stat 3 with the attacker alive after; 8 attackers killed held at most `stat << 8`); [I] that the damage is physical, and the attacker's `+0xC4` bit 2 gate |
 | 7 | stat 81 | `domeleedamage`, `domissiledamage` | knockback: `low & 0x7F < c` sets result bit 3, `c` 32 for a MonStats2 `large` class, 128 for a `small` one, else 64 | 1 inline | [C] draws (103 calls); [C] effect: in 246 calls the return is 1 exactly when `low & 0x7F < c` (`c` 64 for every class fails 63 calls, the mask `0xFF` 98), and result bit 3 is set after exactly when the roll passed (66 calls with a later handler on the packet) |
@@ -969,7 +966,7 @@ L2. SummonSetLevel(owner, m, lvl, skillLvl):                         [I] (all of
       if lvl ≤ 0:
         L: i32 ← stat(owner, 12)
         lvl ← min(max(trunc(s32(3 × L) ÷ 4) + skillLvl, 1), L)      ; 32-bit product and sums, ÷ toward 0
-      if lvl ≠ 0: stat(m, 12) ← lvl                                 ; [C] (8 + 207 summons: 4 more)
+      if lvl ≠ 0: stat(m, 12) ← lvl                                 ; [C] (8 + 207 summons; 4 more)
       row ← MonLvl[min(lvl, count − 1)];  an index outside [0, count): return
       UnitAddStat(m, 31, row[d + 3x], 0);  UnitAddStat(m, 19, row[d + 3(x + 2)], 0)
         ; d: the game's +0x6D mapped 0 → 0, 1 → 1, ≥ 2 → 2; x: 1 when the game's byte +0x6A or dword +0x74 is non-zero
@@ -1024,22 +1021,6 @@ L3. SpawnOwnedMonster(block) → unit:                                  [I] (all
   type is not 7, removes the first pet of the list; type 1 keeps its stored maximum unless `max` is 1. When `petmax`
   later falls (a skill shrine wearing off), `PetLimitRefresh` recomputes each type's limit and runs `PetLimit`. [I]
 
-
-```
-L5. RaiseSkeletonDo(unit, id, lvl):            (srvdofunc 31)        [I] (all of L5 except as tagged)
-      SkillClass3SelfHit(…)                                          ; before the record test
-      the corpse test; remove the corpse; m ← SpawnOwnedMonster(…)
-      SummonSetLevel(m, 0, lvl)                                      ; L2
-      SummonClassRoll(caster, m, id, lvl):
-        class 363 (necroskeleton): flag ← 0
-          if lvl > 2 (signed): Step(caster.seed); flag ← (low mod 100) < Skills[id].Param1 (+0x148)       ; draw
-          SummonSetDataBytes(flag, …; EAX 1): copy row 1 of the 9-byte rows into
-            MonsterData +4, +5, +0xC, +0xD, +6, +7, +8, and +0x0B only when flag ≠ 0; then +9 from the row
-        class 364 (necromage): SummonSetDataBytes(0, …; EAX 1): the same copy (no +0x0B);
-          Step(caster.seed); MonsterData +0x0F, +0x10 ← low & 3; call                         ; draw
-        other classes: nothing
-      SummonInitStats(m, id, lvl, 0);  stat 349 as resistances;  add to the target list
-```
 
 - L5. **Do 31's caster draw.** In 12 of 12 Raise Skeleton casts (class 363, skill level 20; 8, 4) the caster's seed steps exactly once between the call of
   `SummonClassRoll` and its return, and nowhere else in the do event. [C]
@@ -1224,7 +1205,7 @@ N2. SkillWeaponWear(unit, chance, amount):     (from start 7, Impale, after its 
 - The unit's mode and used skill; `Unit+0xC4` bit 6 after the do, set by the do functions and by `SKILLS_SrvDo`
  among E1–E2's 124 sites. [C] (`SKILLS_SrvDo`, static)
 - A queued combat hit (start- or do-built) for [combat/delivery](../../spec-combat/delivery/); missiles for
-  [skills/missiles](../missiles/); timed states for stats/states; summoned monsters for
+  [skills/missiles](../missiles/); timed states for [stats/states](../../spec-stats/states/); summoned monsters for
   monsters/spawn and [monsters/stats](../../spec-monsters/stats/): inside the events the logs hold
   1 599 do events with a delivered hit, 82 start events with a hit test, 3 962 do events with missile creations, 873
   do and 13 start events with timed states, and 219 summons. [C] What the named specs do with them is theirs. [I]

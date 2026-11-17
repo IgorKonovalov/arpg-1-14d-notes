@@ -237,7 +237,7 @@ compiled a loose probe `cubemain.txt` into its own table.
 
 - B1. `BodyLocs`, `PlayerClass` and `Events` are among the `-txt`-only code lists above: a stock run holds only the
   row indices the compiled tables store, read as plain numbers (body location 0..10, class 0..6, event id 0..12),
-  with no lookup through the code list. Their uses are items/inventory I6,
+  with no lookup through the code list. Their uses are [items/inventory](../../spec-items/inventory/) I6,
   [player/creation](../../spec-player/creation/#inputs) and [skills/dispatch § K](../../spec-skills/dispatch/#k-stat-event-handlers). [I]
 
 - B1. The four header-less `*code.bin` files (`itemscode`, `misscode`, `skillscode`, `skilldesccode`)
@@ -809,7 +809,7 @@ where a column holds negative values; elsewhere the table docs mark fields `u`, 
    names `overseer6`, which is record 724; record 723 is the second `cr_lancer8`. By H3 the game uses
    record 723.
 3. **Item code.** The weapon code `hax` is stored at `+0x080` as `68 61 78 20`, the u32 `0x20786168`.
-   It is `weapons` record 0, so `ITEMS_GetByCode` returns item index 0.
+   It is `weapons` record 0, so `ITEMS_GetByCode(0x20786168)` returns item index 0.
 4. **TCEx record 0** is `Gold`, `Picks` 1, `Item1` = `gld` (a 3-character code: G4 tries it as an
    item code first), runtime index 161.
 
@@ -843,4 +843,4 @@ where a column holds negative values; elsewhere the table docs mark fields `u`, 
 
 - Several lead-level statements in the format and table docs (`.bin` vs `.txt`, MPQ order, item index
   order, the 161 TC slots) predate the findings and are superseded by them; this spec follows the
-  findings. The doc updates are queued for the archivist in the backlog.
+  findings, and so do the format and table docs once updated.

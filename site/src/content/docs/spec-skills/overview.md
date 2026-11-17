@@ -6,7 +6,7 @@ sidebar:
 
 ## Purpose
 
-A skill use is a chain of server events: a request, its checks, a mode start that runs the skill's start function, an action frame that runs its do function and creates its missile, the missile's frames, hits and end, the stat-event handlers its hits fire, and the units it summons. Unit stats are inputs; the combat chain a skill hit enters is combat.
+A skill use is a chain of server events: a request, its checks, a mode start that runs the skill's start function, an action frame that runs its do function and creates its missile, the missile's frames, hits and end, the stat-event handlers its hits fire, and the units it summons. Unit stats are inputs; the combat chain a skill hit enters is [combat](../../spec-combat/overview/).
 
 ```mermaid
 flowchart LR
@@ -27,10 +27,10 @@ flowchart LR
 
 ## Files
 
-| File | Covers | Status |
-|---|---|---|
-| [dispatch.md](../dispatch/) | the request, the checks, the start and do functions, costs, delay, periodic and aura skills, item skills and casts, the skill packet, progressive charges, the stat-event handlers, summons, monster skill use, ammunition and wear, the tier-A start and do functions | reviewed |
-| [missiles.md](../missiles/) | creation, the damage block, the missile's seed, the frame pass and the do function, motion, collision, the hit and its packet, the function tables, the tier-A missile functions, the re-seed sites, the end of life | reviewed |
+| File | Covers |
+|---|---|
+| [dispatch.md](../dispatch/) | the request, the checks, the start and do functions, costs, delay, periodic and aura skills, item skills and casts, the skill packet, progressive charges, the stat-event handlers, summons, monster skill use, ammunition and wear, the tier-A start and do functions |
+| [missiles.md](../missiles/) | creation, the damage block, the missile's seed, the frame pass and the do function, motion, collision, the hit and its packet, the function tables, the tier-A missile functions, the re-seed sites, the end of life |
 
 Names are ours. Primitives (`Step`, `Range`, `RangeB`, `RangePow2`, `Init`) are rng's; a calc is [data/calc](../../spec-data/calc/)'s. `MulDiv` is [monsters/stats § A](../../spec-monsters/stats/#a-muldiv-and-monlvlstats)'s. Divisions are signed and truncate toward zero unless stated; life, mana and damage are in 1/256 points.
 
@@ -76,7 +76,7 @@ Names are ours. Primitives (`Step`, `Range`, `RangeB`, `RangePow2`, `Init`) are 
 | the path planner's points | no longer an oracle: [path/search](../../spec-path/search/), every type a stock caller reaches, the draws per type in [path/overview § D](../../spec-path/overview/#d-the-17-types-planner-and-draws) | [C] the planners on the live grid, 0 mismatches over the 11 types of [path/overview § F1](../../spec-path/overview/#f1-the-planners-take-the-live-grid) |
 | the live grid at a plan or a step, and a step's cell list | a value oracle, counted: the frozen rules' prediction of the cells, without the seventh corpse caller, is wrong in 11 of 15 663 plans, and the grid is the result of its operations in order | [C] the count; [I] the step's cell list |
 | the unit order of the area helpers, the pet chosen for removal | logged values | [I] |
-| a unit's final stats | stats/aggregate | [I] |
+| a unit's final stats | [stats/aggregate](../../spec-stats/aggregate/) | [I] |
 
 ## Algorithm
 
@@ -126,7 +126,7 @@ Names are ours. Primitives (`Step`, `Range`, `RangeB`, `RangePow2`, `Init`) are 
 
 ## Outputs
 
-Queued combat hits and missile packets for combat, timed states for stats/states, summoned monsters for monsters/spawn and [monsters/stats](../../spec-monsters/stats/), `0x40` cell marks for drlg/collision, ammunition and durability changes for [items/economy](../../spec-items/economy/). [C] the hits, missiles, timed states and summons inside the events; ammunition: 130 `PLAYER_UseAmmo` calls from the skill missile creation each take one off the thrown weapon; the server's `0x40` cell writers are `MissileCreate` (a `Collision` row's path mark mask), mdo 3 and mdo 5, and `MISSILE_HitUnit` and mdo 31 unmark it (static). [I] the durability changes
+Queued combat hits and missile packets for [combat](../../spec-combat/overview/), timed states for [stats/states](../../spec-stats/states/), summoned monsters for monsters/spawn and [monsters/stats](../../spec-monsters/stats/), `0x40` cell marks for drlg/collision, ammunition and durability changes for [items/economy](../../spec-items/economy/). [C] the hits, missiles, timed states and summons inside the events; ammunition: 130 `PLAYER_UseAmmo` calls from the skill missile creation each take one off the thrown weapon; the server's `0x40` cell writers are `MissileCreate` (a `Collision` row's path mark mask), mdo 3 and mdo 5, and `MISSILE_HitUnit` and mdo 31 unmark it (static). [I] the durability changes
 
 ## Worked example
 

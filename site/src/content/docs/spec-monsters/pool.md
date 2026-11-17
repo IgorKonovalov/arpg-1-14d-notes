@@ -332,7 +332,7 @@ D6. repeat n times:
 
 - D1. [I] `m2` is none when the class's `MonStatsEx` index (read signed) is not a `monstats2` record position, that
   is `< 0` or `≥` the `monstats2` record count, the form the same lookup takes inline in `MonSpawnTry`
-  (`i2 < 0 or i2 ≥ nMonStats2`, then a null record). `MonStats2Rec`'s own test is not written in a finding.
+  (`i2 < 0 or i2 ≥ nMonStats2`, then a null record). `MonStats2Rec`'s own test is not read yet.
 
 - D1. [C] No stock class reaches the "none" exit: every `MonStatsEx` holds 0..603 and `monstats2` has 609 records,
   so on stock data the bound decides nothing and a reimplementation may use any out-of-range rule. (table survey;
@@ -578,20 +578,12 @@ Every other byte is 0. The `[C]` rows are the fields the run logs for every regi
 
 ## Worked example
 
-```
-python3 -I pool --seed 1 --diff 0 --level 1 --level 2 --level 3
-game seed Init(1) after 1 step(s): 6ac6935f:00000000; region seed = Init(6ac6935f)
-level   1 act 0 mlvl   0 pool [] seed after 6ac6935f:0000029a
-level   2 act 0 mlvl   1 pool [5(r2,3v) 19(r2,3v) 63(r2,1v)] seed after d52ffc3b:270b4ee5
-level   3 act 0 mlvl   2 pool [28(r1,1v) 58(r2,1v) 165(r1,3v)] seed after 679fafd2:63e02d41
-```
-
 `check` compares the same values with every logged region (1557/1557 for the run). The individual draws
 below come from stepping the same model; each can be re-derived with rng step 1. Seeds are
 `low:high` in hex.
 
 **A.** Game seed `Init(1)` = `00000001:0000029a`. A2: `1 × 0x6AC690C5 + 0x29A = 0x6AC6935F`, so the game seed
-becomes `6ac6935f:00000000` (logged `MPS gseed`), and `R = Init` = `6ac6935f:0000029a`.
+becomes `6ac6935f:00000000` (logged `MPS gseed`), and `R = Init(0x6AC6935F)` = `6ac6935f:0000029a`.
 
 **Level 1** (*Act 1 - Town*): `NumMon` 0, so `bound` = 0. No draw; `R` stays `6ac6935f:0000029a` (logged).
 

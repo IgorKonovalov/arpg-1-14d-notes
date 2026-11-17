@@ -288,7 +288,7 @@ only draws are one `Range(att.seed, 100)` per `El` group whose mode matches and 
 `Range(att.seed, 5)` for an element type 10 (`rand`); nothing else steps the seed. 5 060 calls reproduced, 167 with an
 `El` group applied, and 2 795 chained to the attack they open. [C] The stats it writes were value inputs of that run; a model from MonStats and MonLvl
  with the classic
-factors and the expansion bonus of overview § D reproduces stats 19, 21 and 22 in 19 750 of
+factors and the expansion bonus of [overview § D](../overview/#d-branches) reproduces stats 19, 21 and 22 in 19 750 of
 19 750 logged calls and 1 030 of 1 030 `El` writes. [C]
 
 - E. Mode 5 selects the `A2` columns, 7 and 8 the `S1` columns, and every other mode, `sequence` (14) included, the
@@ -325,14 +325,13 @@ a player or hireling (percents). [C]
 
 ## Worked example
 
-The build of combat/overview § Example 1
+The build of [combat/overview § Example 1](../overview/#example-1-a-melee-hit-in-hell-with-crushing-blow-and-leech)
 (`solo-h3`, Hell, frame 357): the `CombatSolo` Sorceress (strength 405, stats 21/22 = 32/87, stat 141 = 15, fire
 3–6, cold 15–45, magic 50–120, poison 153/153 for 100 frames) against a `fallen2`. The entry seed is the to-hit
 draw's exit. [C]
 
 | Step | Computation | Draw on `0109323f:20d5284f` → | Field |
 |---|---|---|---|
-| 2 | `mn` 32 << 8 = 8192, `mx` 87 << 8 = 22272, `ed` = `100 × 405 ÷ 100` = 405 (a Dimensional Blade: `StrBonus` 100, `DexBonus` 0); `lo` = 8192 + 33177 = 41369, `hi` = 22272 + 90201 = 112473 | `RangeB(71104)` = 50826 → `0be642ca:` | phys 92195 |
 | 3 | deadly strike 15 | `Range(100)` = 83, no doubling → `fa6da1f3:04f69279` | — |
 | 4 | fire 768..1536 | `RangeB(768)` = 120 → `465ee278:6873a378` | fire 888 |
 | 4 | lightning: no stats | no draw | 0 |

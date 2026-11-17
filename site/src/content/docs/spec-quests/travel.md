@@ -21,7 +21,7 @@ events (quest words written, quest gates) is [quests/progression](../progression
 |---|---|---|
 | the client picks a waypoint row (packet `0x49`, `{u32 object id, u16 level}`) | `Pkt49WaypointTravel` → `WaypointTravel` | [C] each of the 155 logged waypoint travels lies inside a packet-0x49 handler, called |
 | an NPC menu action other than 1–3 (13-byte packet) | `NPC_MenuAction` → `NpcTravelMove` | [C] the call: 35 logged `NpcTravelMove` runs came from `NPC_MenuAction` (returns), each with one level change; [I] the 13-byte packet and the action-code test |
-| the player uses an item whose `Misc.pSpell` is 2 (`tsc`, `tbk`) | `g_ItemUseFns[2].use` = `ITEMUSE_TownPortal`, by the dispatch of items/use § C | [C] the slot holds, `tbk` and `tsc` are the only Misc rows with `pSpell` 2 (152 rows), and the 68 logged uses came from one call site (return); [I] the use's refusals other than in a town (G1) |
+| the player uses an item whose `Misc.pSpell` is 2 (`tsc`, `tbk`) | `g_ItemUseFns[2].use` = `ITEMUSE_TownPortal`, by the dispatch of [items/use § C](../../spec-items/use/#c-the-dispatch-itemuse) | [C] the slot holds, `tbk` and `tsc` are the only Misc rows with `pSpell` 2 (152 rows), and the 68 logged uses came from one call site (return); [I] the use's refusals other than in a town (G1) |
 | click on a warp tile (unit type 5, distance below 5) | `UnitInteract` case 5 → `WarpExitPos` | [C] 114 of the 115 logged warps came from `UnitInteract` (return) with the player within 4.5 of the warp; [I] the refusal at distance 5 or more (none logged) and the one warp, at 8.1 |
 | the dead player presses "resurrect" (packet `0x41`, mode 17 only) | `Pkt41Resurrect` | [C] the 3 logged resurrections came from the packet dispatch (return) and returned 0 (h-death3); [I] the mode-17 test and the refusals |
 | a player joins the game | `PlayerPlaceInAct` (callers) | [C] the 54 logged placements came from the first caller (return); [I] the other two callers |
@@ -31,15 +31,15 @@ events (quest words written, quest gates) is [quests/progression](../progression
 
 ### Tables
 
-| Used for |
-| --- |
-| a non-zero value makes the level-point lookup draw on the level seed (§ A); 18 levels: 1, 38, 40, 46, 54, 73, 74, 75, 102, 103, 109, 121, 125, 126, 127, 132, 134, 135 |
-| the waypoint index of a level (`WAYPOINT_IndexFromLevel`): 39 indices, Act I 0–8, II 9–17, III 18–26, IV 27–29, V 30–38 |
-| the quest word another player's portal into this level requires (classic, expansion) |
-| waypoints (`OperateFn` 23, `InitFn` 17), town portals (59: `OperateFn` 15, `InitFn` 11; 60: `InitFn` 12), the lair and Arcane portals (43, 34), the Durance portal (46) |
-| whether a mode change draws the object's seed, and its bound |
-| 2 selects the town portal use function |
-| the walk after a warp |
+| Anchor | Used for |
+|---|---|
+| `Levels.txt:Position` | a non-zero value makes the level-point lookup draw on the level seed (§ A); 18 levels: 1, 38, 40, 46, 54, 73, 74, 75, 102, 103, 109, 121, 125, 126, 127, 132, 134, 135 |
+| `Levels.txt:Waypoint` | the waypoint index of a level (`WAYPOINT_IndexFromLevel`): 39 indices, Act I 0–8, II 9–17, III 18–26, IV 27–29, V 30–38 |
+| `Levels.txt:QuestFlag`, `Levels.txt:QuestFlagEx` | the quest word another player's portal into this level requires (classic, expansion) |
+| `Objects.txt:OperateFn`, `Objects.txt:InitFn` | waypoints (`OperateFn` 23, `InitFn` 17), town portals (59: `OperateFn` 15, `InitFn` 11; 60: `InitFn` 12), the lair and Arcane portals (43, 34), the Durance portal (46) |
+| `Objects.txt:Sync`, `Objects.txt:FrameDelta` | whether a mode change draws the object's seed, and its bound |
+| `Misc.txt:pSpell` | 2 selects the town portal use function |
+| `LvlWarp.txt:ExitWalkX`, `LvlWarp.txt:ExitWalkY` | the walk after a warp |
 
 ### Runtime state
 
@@ -49,7 +49,7 @@ events (quest words written, quest gates) is [quests/progression](../progression
 | game seed | Seed | drawn by `SUnitCreate` of every created object |
 | object seed | Seed, `Init(game seed low)` at creation | drawn by `UNIT_AnimInit` for `Sync` 0 rows |
 | player's unit seed (`Unit+0x20`) | Seed | drawn only by the walk command under state 42 (§ H) |
-| waypoint record | 16-byte bit field, player data `+0x1C + 4·difficulty` | save/d2s |
+| waypoint record | 16-byte bit field, player data `+0x1C + 4·difficulty` | [save/d2s](../../spec-save/d2s/) |
 | quest record | 48 words × 16 bits, player data `+0x10 + 4·difficulty` | [quests/progression § A](../progression/#a-the-quest-record) |
 | own portal id | u32, player data `+0x48` (`PlayerTravel+0x48`) | `PlayerPortalSet` |
 | act change in progress | u32, player data `+0x4C` (`PlayerTravel+0x4C`) | § E |
@@ -61,8 +61,8 @@ events (quest words written, quest gates) is [quests/progression](../progression
 
 | Name | Value | Tag |
 | --- | --- | --- |
-| waypoint travel wait | 10 000 ms after the stamp | [C] (one client, a declared stamp) |
-| portal use wait | 5000 ms after the stamp | [C] (one client, a declared stamp) |
+| waypoint travel wait | 10 000 ms after the stamp | [C] (one client; a declared stamp) |
+| portal use wait | 5000 ms after the stamp | [C] (one client; a declared stamp) |
 | placement mask, radius, step | `0x1C09`, 50, 1 | [C] (313 logged spot searches: size 2 (245) or 3 (68), both masks `0x1C09`, radius 50, step 1, no fallback) |
 | act-change second search | mask `0x1C89`, radius 50, step 5 | [C] (87 logged act-change searches: size 2, masks `0x1C89`, radius 50, step 5) |
 | portal field end search | size 3, masks `0x3E01`/`0xC01`, no fallback | [C] (62 logged field ends: size 3, masks `0x3E01`/`0x0C01` with the point, radius 50, step 1, fallback 0) |
@@ -444,35 +444,6 @@ sequenceDiagram
   P->>P: PlayerPortalSet field end
 ```
 
-```
-G1. ITEMUSE_TownPortal(player, item):                                [I]
-      player units only;  unit +0xC4 |= 0x40
-      town ← ActTownLevel(act of the player's level)
-      if RoomIsTown(the player's room) or level = 136: refuse
-      PlayerPortalClose(player)                                      ; frees the previous class-59 pair (G3)
-      if PortalObjectCreate(room, x, y, town, &field, class 59, noSearch 0):
-        PlayerPortalSet(player, field)                               ; player data +0x48
-        level 120 only: the summit hook for both ends (quests/progression § Word 39)
-
-G2. PortalObjectCreate(room, x, y, dest, &out, class, noSearch) → bool:   [C] for the draws and their order
-      if a player is given and RoomIsTown(room) and not (class = 60 and dest ∈ {39, 133, 134, 135, 136}): refuse
-      act(dest) must equal act(room's level), else fatal
-      unless noSearch: room ← COLL_FindFreeNear(room, (x, y), other (x, y), 3, 0x3E01, 0xC01, fallback 0, radius 50, step 1)
-      field ← SUnitCreate(object, class, x, y, mode 1)               ; draw 1: game seed; object seed ← Init(game seed low)
-      SetMode(field, 1)                                              ; mode unchanged: no draw
-      partner ← PortalPartnerCreate(field, dest, room's level)       ; G2a
-      flags |= 3 on both;  RoomPinSet(each end's room, 0)
-G2a. PortalPartnerCreate(field, dest, src):                          [C] for the draws and their order; [I] for the level-73 branch
-      (room, x, y) ← ActLevelSpot(act(dest), dest, type 11, size 3)   ; draw 2: dest's level seed (Position)
-      RoomUpdateOne(room)                                            ; first update: population draws on the game seed (oracle)
-      if src = 73 and QUESTS_PortalTownSpot(…):                      ; an Act II quest private byte +0x3C = 1
-        (room, x, y) ← ActLevelSpot(Act II, 40, type 12, size 3), then a step-7 search with mask 0xBE11
-      else: room ← COLL_FindFreeNear(room, (x, y), 3, 0xBE11, radius 50, step 5); if none, ActLevelSpot again
-      partner ← SUnitCreate(object, class of field, x, y, mode 2)    ; draw 3: game seed
-      partner data +4 ← src;  flags |= 3;  SetMode(partner, 2)       ; mode unchanged: no draw
-      link field ↔ partner
-```
-
 Step notes:
 
 - G2. [C] **Three draws, in order:** game seed (the field end's `SUnitCreate`), the town's level seed (`LevelPointPick`
@@ -487,7 +458,7 @@ Step notes:
 - G2. [I] With no free cell and no fallback the open fails (the caller after the return, not run).
 
 - G1. [C] The refusal in a town: six uses of the tome in the Rogue Encampment and in Harrogath returned at the town test
-  (→) with no portal created, the player's portal unchanged and no draw on the game, quest or
+with no portal created, the player's portal unchanged and no draw on the game, quest or
   player seed. (`ITEMUSE_TownPortal`: x-entry, x-entry2,
   h-entry, x-anya, nm-anya, h-anya)
 - G1. [C] Each of the 62 logged field uses created one class-59 pair and set player data `+0x48` to the new field end's
@@ -555,10 +526,10 @@ H2. WarpExitPos(player, warp):                                       [C] for the
       if dest level ∈ {73, 100, 118, 128, 132} and QUESTS_WarpGate(src level, dest level) ≠ 0: refuse
       UnitTeleport(room, x, y, 0, 0);  walk command to (x + ExitWalkX, y + ExitWalkY)
 H3. QUESTS_WarpGate(src, dest) → refuse:                             [I]
-      73 →: refuse while an Act II quest object is active with its private byte +0x0B = 0
+      73: refuse while an Act II quest object is active with its private byte +0x0B = 0
       100 → DuranceWarpGate: refuse unless the player's room level is 101 or the orb is broken in this game
-      118 or 128 with src 120 →: refuse while quest 35 is active and not done in this game
-      132 →: refuse until Baal opened the chamber
+      118 or 128 with src 120: refuse while quest 35 is active and not done in this game
+      132: refuse until Baal opened the chamber
       else 0
 H4. The walk command PlayerModeCmd(0, 2, x, y, 0) first calls PlayerModeAllowed:   [I]
       if the player is in state 42 and the current skill's Skills flag byte +7 has bit 7:
@@ -671,7 +642,7 @@ Seeds are `low:high` in hex; `Step` is rng step 1 (multiplier `0x6AC690C5`).
   level). Game seed on entry `c806df78:2ad0ed85`; level 1's seed `ffc121cf:119fbf81`; level 1's points are
   `(1132, 1162, type 0)`, `(1134, 1162, type 10)`, `(1136, 1169, type 11)`.
 - [C] **Draw 1.** The field-end search moves the portal to (17762, 5102); `SUnitCreate` steps the game seed to
-  `7c9e64dd:536dfef6`, and the field end's seed is `Init` = `7c9e64dd:0000029a`, created in mode 1.
+  `7c9e64dd:536dfef6`, and the field end's seed is `Init(0x7c9e64dd)` = `7c9e64dd:0000029a`, created in mode 1.
 
 - [C] **Draw 2.** `LevelPointPick(1, type 11)`: one matching point (`n` = 1, type 11 has no group); `Step` takes level 1's
   seed to `605d33cc:6aac5801`, `k = low mod 1 = 0`, the point (1136, 1169), subtile (5·1136 + 3, 5·1169 + 3) =

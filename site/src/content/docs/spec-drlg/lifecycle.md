@@ -41,7 +41,7 @@ stateDiagram-v2
 | Every game frame | — | [C] (5 500 frames, one tick each) |
 | A client's room changes | — | [C] |
 | A room gains its first distance-1 reference | — | [C] |
-| A room is needed at once (warp, waypoint, level point, preset level build, a unit spawn at coordinates) | — | — |
+| A room is needed at once (warp, waypoint, level point, preset level build, a unit spawn at coordinates) | — | [C] |
 | New rooms of an act, start of the next frame | — | [C] |
 | Release pass, `frame mod 12 = 0` | — | [C] |
 | Save test per unit of a released room | — | [C] |
@@ -52,16 +52,16 @@ stateDiagram-v2
 
 ### Tables
 
-| Used for |
-| --- |
-| leveldefs `+0x94`: the save rule's starting value (§ F); 0 only for levels 0, 1, 40, 50, 75, 103, 109 |
-| levels `+0x2E`: the wanderer gate (§ I) |
-| levels `+0x03`: the wanderer list row (§ I) |
-| `+0x130`, a byte, through `MonStats.txt:MonStatsEx`: 0 never save, 2 always save (§ F) |
-| `+0x0D` bit 6: creation flag `0x80` of a restored monster (§ H) |
-| the unit alignment `MonSpawnTry` sets (0 → 0, 1 → 2, 2 → 1), which the record keeps (§ G) |
-| a dead monster with a `udead` state is not saved (§ F) |
-| the object save rule (objects § B4) |
+| Anchor | Used for |
+|---|---|
+| `Levels.txt:SaveMonsters` | leveldefs `+0x94`: the save rule's starting value (§ F); 0 only for levels 0, 1, 40, 50, 75, 103, 109 |
+| `Levels.txt:MonWndr` | levels `+0x2E`: the wanderer gate (§ I) |
+| `Levels.txt:Act` | levels `+0x03`: the wanderer list row (§ I) |
+| `MonStats2.txt:restore` | `+0x130`, a byte, through `MonStats.txt:MonStatsEx`: 0 never save, 2 always save (§ F) |
+| `MonStats.txt:flying` | `+0x0D` bit 6: creation flag `0x80` of a restored monster (§ H) |
+| `MonStats.txt:Align` | the unit alignment `MonSpawnTry` sets (0 → 0, 1 → 2, 2 → 1), which the record keeps (§ G) |
+| `States.txt:udead` | a dead monster with a `udead` state is not saved (§ F) |
+| `Objects.txt:Restore`, `Objects.txt:RestoreVirgins` | the object save rule (objects § B4) |
 
 ### Runtime state
 
@@ -285,40 +285,6 @@ D1. NewRoomsUpdate(game):                                         [C]
 
 ### E. Release
 
-```
-E1. RoomsDeactivate(game):                                        [C]
-      for a in 0 ..< 5 with an act:
-        room ← act's room list head
-        while room:
-          next ← room.next                                        ; read before the room may be freed
-          room.idle ← 0 if room[+0x78] ≠ 0 else room.idle + 1     ; RoomIdleCount, u32
-          if room.idle > 10 and RoomReleaseAllowed(act, room):
-            for u in room.units, head first (next = u[+0xE8], read before the call):
-              InactiveUnitSaveTest(game, u)                       ; § F
-            ActiveRoomFree(act, room)                             ; E3
-          room ← next
-
-E2. RoomReleaseAllowed(act, room) → bool:                         [C]
-      if act[+0x50] ≠ 0: fatal error                              ; [I] never taken, 0 on the server at every pass
-      R ← room.drlg
-      if R.flags &: return false                         ; pinned
-      if R's act is a client act: fatal error                     ; [I] never taken
-      if R.status < 2: return false
-      if R's level is a town or level 120:
-        if any DRLG room of the level has status < 2: return false   ; [I] for level 120, not reached
-      return true
-
-E3. ActiveRoomFree(act, room):                                    [C] the unlink and R[+0x30] ← 0: 3 212 freed rooms absent from the next pass's list, `+0x30` = 0 until re-activation; [I] the near-list removal, the unit bits and the order
-      unlink room from the act list
-      for each neighbour of room's near list but room itself: remove room (swap with the last entry)
-      RoomReleaseWrap(R ← room.drlg, EDX ← act[+0x50], room.flags):
-        R[+0x30] ← 0;  R[+0x60] ← room.flags & 1
-        if R.flags & 0x100000: RoomTilesRelease(R, EDX ← (wrapper EDX = 0))   ; room-tiles § Release
-      DUNGEON_RoomFree(room):
-        for u still in room.units: u[+0xC4] |=; unless u[+0xC4] bit 22: u[+0xC8] |= 0x20; unlink u
-        free the collision map, the tile lists and the room
-```
-
 - [C] **Frames.** The count rises only on passes with `+0x78` = 0 and drops to 0 on any pass that sees a client, so
 a room is freed on the 11th client-free pass in a row: 120 frames after the first client-free pass, which falls 0 to 11
 frames after the last client's room change **that a pass saw**. Of 2 440 releases, 2 224 came at the first eligible
@@ -459,7 +425,7 @@ All records of a released room hang off one 0x18-byte **room record**, found or 
 
 | Record | Size | Fields (offset: meaning) | Tag |
 |---|---|---|---|
-| room record | 0x18 | `+0x00` x, `+0x04` y (the key); `+0x08` item list; `+0x0C` monster list; `+0x10` unit list; `+0x14` next (x descending) | [C] (two inserters, each walk stopping at the first lower x; the three heads' writers and `InactiveRecordTake`, `InactiveRoomRec+0x00`) |
+| room record | 0x18 | `+0x00` x, `+0x04` y (the key); `+0x08` item list; `+0x0C` monster list; `+0x10` unit list; `+0x14` next (x descending) | [C] (two inserters, each walk stopping at the first lower x; the three heads' writers and `InactiveRecordTake`; `InactiveRoomRec+0x00`) |
 | unit record | 0x34 | objects § B4's record (x, y, type, class, mode, frame, `+0xC4`, `+0xC8`, `+0x20` unit id or shrine timer, `+0x24` sparkle or timer, `+0x28` interact, `+0x2C` unit `+0xB8`); also type 5 and a kept player corpse | [C] (3 037 records, `InactiveUnitRec+0x20`) |
 
 **Monster record** (0x5C, `InactiveMonsterSave`):
@@ -496,7 +462,7 @@ packet-beta
 |---|---|---|
 | `+0x00`, `+0x04` | x, y of the unit | [C] |
 | `+0x08`, `+0x0C` | class, unit id (the id is reused at the restore) | [C] |
-| `+0x18` | record flags, below | — |
+| `+0x18` | record flags, below | [C] |
 | `+0x1C` | group leader id (AI control `+0x2C` when the AI link type `+0x30` is 1), else −1; read into `MonSetOwnerRestore` | [C] |
 | `+0x20`, `+0x24`, `+0x28` | AI control `+0x34`, saved in the `+0x1C` branch (only when the link type `+0x30` is 1; else `+0x20` stays 0), after which the save clears AI control `+0x2C` to −1 and `+0x34` to 0; the preset path moved out of AI control `+0x38` (and moved back by the AI restore); the AI record's first dword, passed to `MonAiInit` | [C] |
 | `+0x2C` | monster data `+0x58`, passed to `MonRegionUnitLeave` at the restore | [C] |
@@ -598,7 +564,7 @@ flag-0 reading of H2c rests on a second tool's reading of the calls (`[C]`).
 comes back at + 3, which does not separate the flag.
 - [C] **`SpecialMonRestore` applies the flag-1 handlers through its `SpecialModsApply` call**.
 `SpecialModsApply` always calls the special's own handlers with flag 1, mods 1–4 and the saved list, and its group callback with flag 0. The code reading and the 15 champion restores above agree, and flag 0
-gives 15 mismatches, so the run separates the two readings. (§ 11.1 (c), `g_UModAlwaysMods`)
+gives 15 mismatches, so the run separates the two readings. (§ 11.1 (c); `g_UModAlwaysMods`)
 - [C] **The 0 that `SpecialMonRestore` pushes is the `minions` argument** of `SpecialModsApply` (pushed,
 read once, where a zero skips the call of `UniqueMinions`). [I] So the special is restored without new minions: that is the skipped callee's role by its name. § 6 first read that 0 as the handler
 flag. The run does not separate "no minions" from another use of the argument.
@@ -635,7 +601,7 @@ H4. InactiveItemsRestore(game, room, recs), oldest first:         [C] except the
 - [C] Two game-seed draws per item (876 of 876; one draw would fail every item). The start seed `+0x28` is the saved
 one for an item stored in full (289) and **0** for a simple item, record flags bit `0x200000` (587: gold, potions, keys);
 the unit seed is `Init(+0x28)` in both cases. The item comes back at its saved x, y (876), and its expiry is
-`max(saved, frame + 15000)` (876). The bit layout of the bytes is save/d2s § I.
+`max(saved, frame + 15000)` (876). The bit layout of the bytes is [save/d2s § I](../../spec-save/d2s/#i-one-item).
 - [C] **An item record whose non-zero expiry has passed is dropped at the restore**: 5 records in 2 restores of one
 session at frame 19 158, with expiries 18 720 and 18 324 (four records); no item is re-created for any of them. A
 record with expiry 0, kept by the same test, was not reached.
@@ -844,6 +810,6 @@ hold the static
 - objects § B: the object save (B4) and
   re-creation (B5).
 - monsters/spawn § A, § H and § K; [monsters/special](../../spec-monsters/special/);
-  [monsters/stats](../../spec-monsters/stats/); save/d2s § I; rng.
+  [monsters/stats](../../spec-monsters/stats/); [save/d2s § I](../../spec-save/d2s/#i-one-item); rng.
 - Tables: Levels, MonStats, MonStats2,
   Objects, States.

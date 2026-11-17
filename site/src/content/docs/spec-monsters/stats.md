@@ -43,7 +43,7 @@ flowchart TD
 | Classic nightmare and hell factors | — | [C] |
 | Any later change of max HP (stat 7) | — | [C] |
 | Special-mod handlers (stat writes) | → the handlers of § G | [C] for the handlers met |
-| Attack: to-hit and damage (reference only; the attack is combat) | — | [C] for its draws and for stats 21, 22 and 19 from the mode's MonLvl cells; [I] for the other terms |
+| Attack: to-hit and damage (reference only; the attack is [combat](../../spec-combat/overview/)) | — | [C] for its draws and for stats 21, 22 and 19 from the mode's MonLvl cells; [I] for the other terms |
 
 ## Inputs
 
@@ -129,7 +129,7 @@ It predicts the unit-seed draws of `MonStatsInit`, the base stats after the clas
 | mod lists and flags | value input | which handlers run, with which flag, in which order | [monsters/special](../special/#c-mod-handlers) | [C] |
 | re-created monster's stats 7, 12, 13 | specified elsewhere | the restore writes 13 and 7 from the inactive record; 12 is this spec's `MonsterInit` level plus the re-applied mods | [drlg/lifecycle § H](../../spec-drlg/lifecycle/#h-the-restore) | [C] |
 
-Out of scope: to-hit, damage and elemental damage (attack time, § H), skills, the AI and what an aura does in combat. [I] (architect ruling)
+Out of scope: to-hit, damage and elemental damage (attack time, § H), skills, the AI and what an aura does in combat. [I]
 
 ## Algorithm
 
@@ -190,44 +190,6 @@ flowchart TD
   b9 --> b10["B10 skills"]
   b10 --> b11["B11 MonProp (F)"]
   b11 --> b12["B12 MonEquip"]
-```
-
-```
-MonStatsInit(game, room, regionEntry), unit = the new monster:   [C] except the lines tagged [I]
-B1. UnitStatListCreate(unit, callback: MonStatCallback)          ; before the first SetStat
-B2. MonComponentsPick(regionEntry, unit):                        ; unit-seed draws
-      if regionEntry ≠ 0 and regionEntry.nVariants ≠ 0:
-        i ← RangeB(unit.seed, regionEntry.nVariants)             ; draw#1
-        appearance[0..15] ← regionEntry.variant[i]               ; 16 bytes to MonsterData+0x04
-      else for k in 0 ..< 16:
-        c: i32 ← MonCompCount(unit, k)                           ; MonStats2 component count
-        if c < 1: appearance[k] ← 0                              ; no draw
-        else: Step(unit.seed); appearance[k] ← (c is a power of 2) ? low & (c − 1) : low mod c   ; one draw, also for c = 1
-B3. if class = 311: MonsterData.b0E ← Range(unit.seed, 4)        ; [C] draw
-    if class = 312: MonsterData.b0E ← MonsterData.b0F ← Range(unit.seed, 4)   ; [C] one draw
-B4. pb ← MonPlayerBonus(game, room, unit)                        ; § C
-B5. d, level as in pool § E
-    SetStat(12, level);  SetStat(100, max(1, pb.players))
-    SetStat(36, ResDm[d]); SetStat(37, ResMa[d]); SetStat(39, ResFi[d])
-    SetStat(41, ResLi[d]); SetStat(43, ResCo[d]); SetStat(45, ResPo[d])   ; s16 cells, as they are
-    SetStat(20, ToBlock[d])                                      ; u8
-    SetStat(68, 100); SetStat(67, 75); SetStat(69, 100); SetStat(352, 128)
-B6. o ← MonLvlStats(class, L, d, level, mask 7)                  ; § A2
-B7. base: i32 ← o.minHp + RangeB(unit.seed, o.maxHp − o.minHp + 1)   ; draw; no step when the range is < 1
-B8. hp: i32 ← base + MulDiv(base, pb.hpPct, 100)
-    if hp ≥: hp ←
-    SetStat(7, hp << 8);  SetStat(6, hp << 8)
-    SetStat(31, o.ac)
-    SetStat(13, o.exp + MulDiv(o.exp, pb.xpPct, 100))
-    r: u32 ← MonStats.DamageRegen                                ; r < 0 → fatal 222; r & 0xFFFFF000 → fatal 223 [I]
-    if r = 0: SetStat(74, 0)
-    else if (hp << 8) > 0x7FFFFFFF ÷ r: SetStat(74, ((hp << 8) >> 12) × r)   ; [I] overflow branch
-    else: SetStat(74, ((hp << 8) × r) >> 12)
-B9. MonClassicDiffAdjust(unit, game.expansion, game.difficulty)  ; § D
-B10. for k in 0 ..< 8:                                           ; [C]
-       if Skill[k] ≥ 0 and Sk_lvl[k] > 0: UnitSkillAdd(unit, Skill[k], Sk_lvl[k] + pb.skillBonus)
-B11. MonProp (§ F)
-B12. MonEquipInit(unit, …, level, level, 1)                      ; [C] the call; its walk: note B12
 ```
 
 Step notes:
@@ -370,7 +332,7 @@ sets stat 74 to 0; with flag 0 (group members) and in `possessed` and `berserk` 
 
 
 E3. The callback's other cases (stats 9, 11, 83, 97, 98, 107, 126, 127, 151, 188, 204) are not reached by a creation
-stat. They are specified in stats/aggregate § G: stats 9 and 11 rescale current mana and stamina by the rule of E1 (a player's 5 752 rescales of
+stat. They are specified in [stats/aggregate § G](../../spec-stats/aggregate/#g-the-maxima-the-rescale-and-the-stat-callback): stats 9 and 11 rescale current mana and stamina by the rule of E1 (a player's 5 752 rescales of
 stats 7, 9 and 11 reproduced). [C] The skill,
 item-aura and state cases are read from the code. [I]
 
@@ -551,7 +513,7 @@ which only ratio classes fill; such a monster's `El` attack sets min = max = 0 a
 
 
 H1. The attack that uses these stats (to-hit, the damage build, the defender's reductions and delivery) is specified
-in combat; a reimplementation takes the stats of H1 as that spec's inputs. [I]
+in [combat](../../spec-combat/overview/); a reimplementation takes the stats of H1 as that spec's inputs. [I]
 
 
 ### Draw order on the unit seed
@@ -701,6 +663,7 @@ One of its three minions, the same class created with `RangeB(1717)` = 411: base
 
 ## Evidence
 
+- The *Out of scope* line under *Inputs and oracles* is the architect's ruling.
 - Tables: MonStats,
   MonLvl, MonProp,
   DifficultyLevels, MonUMod,

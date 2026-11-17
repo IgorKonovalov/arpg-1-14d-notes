@@ -6,7 +6,7 @@ sidebar:
 
 ## Purpose
 
-What the server does when two players trade, from the request to the exchange or the cancel. A request opens a trade window between two players in town; each player puts items on its own offer page (page 2), and the server copies each one to the partner's view page (page 1); either player can offer gold; both accept; the commit tests gold and room, then copies each side's offer into the other's inventory and moves the gold. Every other way out (a close, a cancel at the commit, a player leaving or dying) rebuilds both inventories from a snapshot taken when the window opened. Grids and placement are items/inventory, the gold cap is [items/economy § G](../economy/#g-gold-payment-caps-piles-and-the-death-loss), and the event that steps the timed states is player event 13 of [sim/frame § F](../../spec-sim/frame/#f-dispatch-the-event-tables-the-freeze-drop-kinds-6-and-11).
+What the server does when two players trade, from the request to the exchange or the cancel. A request opens a trade window between two players in town; each player puts items on its own offer page (page 2), and the server copies each one to the partner's view page (page 1); either player can offer gold; both accept; the commit tests gold and room, then copies each side's offer into the other's inventory and moves the gold. Every other way out (a close, a cancel at the commit, a player leaving or dying) rebuilds both inventories from a snapshot taken when the window opened. Grids and placement are [items/inventory](../inventory/), the gold cap is [items/economy § G](../economy/#g-gold-payment-caps-piles-and-the-death-loss), and the event that steps the timed states is player event 13 of [sim/frame § F](../../spec-sim/frame/#f-dispatch-the-event-tables-the-freeze-drop-kinds-6-and-11).
 
 ```mermaid
 flowchart LR
@@ -37,10 +37,10 @@ The sections below say which branches the run covers. [C]
 
 ### Tables
 
-| Used for |
-| --- |
-| a base with `quest` (Items `+0x12A`) is tested against the partner's items by code, and a cube (`box `) with contents is refused (§ D) |
-| the offer's sizes in the room test and the moves |
+| Anchor | Used for |
+|---|---|
+| `Misc.txt:quest` | a base with `quest` (Items `+0x12A`) is tested against the partner's items by code, and a cube (`box `) with contents is refused (§ D) |
+| `Misc.txt:invwidth`, `Misc.txt:invheight` | the offer's sizes in the room test and the moves |
 
 The gold cap is `level × 10 000` (`PLAYER_GoldCap`, [items/economy § G](../economy/#g-gold-payment-caps-piles-and-the-death-loss)); carried gold is stat 14. [I]
 
@@ -131,7 +131,7 @@ The state is `PlayerData+0x50`; only the trade module writes it. [I]
 ```
 A1. TradeStateTick(p), p's player event 13:                         [I] (all of A1)
       s: u32 ← pd(p).state
-      if s ≤ 4: return                                     , the tick never touches 0–4
+      if s ≤ 4: return                                     ; the tick never touches 0–4
       switch s:
         5:  state ← 6;  queue event 13 at frame + 1
         6:  state ← 3;  clear bits 22 and 23
@@ -337,7 +337,7 @@ flowchart TD
 ```
 
 - F2. [C] **The room test searches in the FIRST order, the moves in the BEST order.** A scratch's owner is 0, so
-  `InvSpotFindBySize` takes the non-player orders of items/inventory § B B1;
+  `InvSpotFindBySize` takes the non-player orders of [items/inventory § B](../inventory/#b-the-placement-search) B1;
   `TradeMoveItems` places into the player's own inventory through `InvPlaceAnywhere`, which takes the player orders.
   Every logged commit (T1, T4, T5, T6, T13) had each scratch cell where the FIRST model puts it and each owner word
   0, and each real placement of the commits that moved items where the BEST model puts it.
@@ -430,17 +430,6 @@ H3. TradeAbort(leaver L):                                             [I] (all o
 
 ### I. The save mid-trade
 
-```
-I1. PLRSAVE_Save(p):                                                  [I] (all of I1)
-      flag ← 1 if p's interaction is set and of kind 0, else 0
-      on the route for game byte +0x6A ∈ {1, 2}: D2S_WriteSave(…, flag) → D2S_WriteItemList(…, flag)
-      the routes receive the flag; not followed to the writer
-I2. SaveItemListOrSnapshot(buf, room, flag, …), unit u:              [I] (all of I2)
-      if flag ≠ 0 and u is a player and u has a record and rec.bytes ≤ room (signed):
-        copy rec.bytes from rec.buffer;  return rec.bytes        ; the opening inventory
-      else ITEMS_WriteInventoryList(u, …)                         ; the live list
-```
-
 - I. [I] So a player saved with an open record (from the target's accept to the end) is saved with the items as they
   were at opening and the carried gold as it is; in the request phase (no record) the live list is saved. Which
   `PLRSAVE_Save` route the saves at the drops took, and the file written, were not observed: J's save file on disk was
@@ -467,7 +456,7 @@ Page 0 is 10 × 4. J's page 0: a 2 × 2 at (3, 1), a 2 × 4 at (7, 0), a 2 × 3 
 | `TradeCancel` |  | both inventories from the snapshots | both 5 → 6 → 3, `gcv` back with J |
 
 [C] Each scratch cell and each placement above is a logged value that the FIRST and BEST models of
-items/inventory § B predicted.
+[items/inventory § B](../inventory/#b-the-placement-search) predicted.
 
 T4, in the same window before T13: H offers its 2 × 4 axe instead. No two adjacent columns of J's page 0 are free, so
 B's offer fails J's scratch: `side` 1, `0x77` 9 to J then `0x0A` to H, cancel, nothing moved. [C]
@@ -498,5 +487,5 @@ B's offer fails J's scratch: `side` 1, `0x77` 9 to J then `0x0A` to H, cancel, n
 
 - § 2: the first reading, corrected by 0003
   at its dated notes (the request distance, the gold offer, the `0x77` codes).
-- items/inventory (§ B the search orders, § E the pages), [items/economy § G](../economy/#g-gold-payment-caps-piles-and-the-death-loss),
-  [sim/frame § F](../../spec-sim/frame/#f-dispatch-the-event-tables-the-freeze-drop-kinds-6-and-11), save/d2s § H.
+- [items/inventory](../inventory/) (§ B the search orders, § E the pages), [items/economy § G](../economy/#g-gold-payment-caps-piles-and-the-death-loss),
+  [sim/frame § F](../../spec-sim/frame/#f-dispatch-the-event-tables-the-freeze-drop-kinds-6-and-11), [save/d2s § H](../../spec-save/d2s/#h-item-lists).

@@ -418,7 +418,7 @@ of the tier-A functions were run under emulation up to a call that ends the repr
 ## The function catalogue: what every other skill and missile function does
 
 Tier A names the skills whose own functions the machinery spec writes out. The
-function catalogue covers the rest: every numbered start, do, progressive,
+[function catalogue](../../spec-skills/catalogue/#purpose) covers the rest: every numbered start, do, progressive,
 item-effect and periodic-state entry a stock Skills or States row uses, and every missile do, hit and damage entry a
 stock Missiles row uses (310 entries in all, counting the six general-purpose ones). Each entry says what it tests,
 what it writes, which missiles, units, states and packets it makes, and which random draws it makes in order. The
@@ -432,13 +432,13 @@ A reader starts from a table row and follows one column to an entry number.
 |---|---|---|
 | A skill's start of animation | Skills `srvstfunc` | the class section below, or the monster sections, by skill row |
 | A skill's action frame | Skills `srvdofunc` (`srvprgfunc1..3` for a progressive skill) | the same sections |
-| An item that casts a skill | `ItemEffect` | the item, charge and shrine callers |
+| An item that casts a skill | `ItemEffect` | the [item, charge and shrine callers](../../spec-skills/catalogue/#n-item-charge-and-shrine-callers-st-3-do-4-113-151) |
 | A timed state that acts each period | States `srvactivefunc` | the section of the class that owns the state |
-| A missile's every-frame code | Missiles server do function | missile do entries |
-| What happens when a missile hits | Missiles server hit function | the hit entries, 1 to 29 and 31 to 59 |
-| How a missile's damage is built | Missiles server damage function | the damage entries |
+| A missile's every-frame code | Missiles server do function | [missile do entries](../../spec-skills/catalogue/#c-missile-do-entries-mdo-136) |
+| What happens when a missile hits | Missiles server hit function | the hit entries, [1 to 29](../../spec-skills/catalogue/#e-missile-hit-entries-129) and [31 to 59](../../spec-skills/catalogue/#f-missile-hit-entries-3159-and-row-568) |
+| How a missile's damage is built | Missiles server damage function | the [damage entries](../../spec-skills/catalogue/#d-missile-damage-entries-mdmg-114) |
 
-The spec's first section fixes the naming (start entry,
+The spec's [first section](../../spec-skills/catalogue/#a-how-an-entry-is-written) fixes the naming (start entry,
 do entry, missile do, hit and damage entry) and says how far each statement reaches: an entry that ends in a
 callee is described up to that call, and what follows is marked as reading.
 
@@ -446,15 +446,15 @@ callee is described up to that call, and what follows is marked as reading.
 
 | Section | What it holds |
 |---|---|
-| Sorceress | start entries 11 to 14; do entries 17 to 29 and 144 |
-| Amazon | start entries 4 to 10; do entries 6 to 8 and 10 to 16 |
-| Necromancer | start entries 15 to 21; do entries 30 to 32 and 55 to 63 |
-| Paladin | start entries 29, 31 and 35 to 37; do entries 64 to 67, 73, 79 to 82 and 150 |
-| Barbarian | start entries 32 to 34 and 38 to 41; do entries 2, 9, 68 to 72 and 74 to 78 |
-| Druid | start entries 56 to 58; do entries 114 to 124, and entries 145 and 146 |
-| Assassin | start entries 22 to 28; do entries 33 to 35, 42 to 52 and 54; progressive entries 36 to 41 and 143 |
-| Item, charge and shrine callers | start entry 3; do entries 4, 113 and 151, and the callers of the stat-event handlers and shrines |
-| Monster skills, Skills rows 156 to 189, 190 to 289 and 290 to 338 | the entries the monster Skills rows name, grouped by row range; which monster uses which skill, and when, is the monster-AI plan's |
+| [Sorceress](../../spec-skills/catalogue/#g-sorceress-st-1114-do-1729-144) | start entries 11 to 14; do entries 17 to 29 and 144 |
+| [Amazon](../../spec-skills/catalogue/#h-amazon-st-410-do-68-1016) | start entries 4 to 10; do entries 6 to 8 and 10 to 16 |
+| [Necromancer](../../spec-skills/catalogue/#i-necromancer-st-1521-do-3032-5563) | start entries 15 to 21; do entries 30 to 32 and 55 to 63 |
+| [Paladin](../../spec-skills/catalogue/#j-paladin-st-29-31-3537-do-6467-73-7982-150) | start entries 29, 31 and 35 to 37; do entries 64 to 67, 73, 79 to 82 and 150 |
+| [Barbarian](../../spec-skills/catalogue/#k-barbarian-st-3234-3841-do-2-9-6872-7478) | start entries 32 to 34 and 38 to 41; do entries 2, 9, 68 to 72 and 74 to 78 |
+| [Druid](../../spec-skills/catalogue/#l-druid-st-5658-do-114124-entries-145-146) | start entries 56 to 58; do entries 114 to 124, and entries 145 and 146 |
+| [Assassin](../../spec-skills/catalogue/#m-assassin-st-2228-do-3335-4252-54-progressive-3641-143) | start entries 22 to 28; do entries 33 to 35, 42 to 52 and 54; progressive entries 36 to 41 and 143 |
+| [Item, charge and shrine callers](../../spec-skills/catalogue/#n-item-charge-and-shrine-callers-st-3-do-4-113-151) | start entry 3; do entries 4, 113 and 151, and the callers of the stat-event handlers and shrines |
+| Monster skills, [Skills rows 156 to 189](../../spec-skills/catalogue/#o-monster-skills-skills-rows-156189-st-4253-do-8398-110-111), [190 to 289](../../spec-skills/catalogue/#p-monster-skills-skills-rows-190289-st-54-55-59-60-64-do-99109-112-125127-141-152) and [290 to 338](../../spec-skills/catalogue/#q-monster-skills-skills-rows-290338-st-6163-do-128137-139-140-147149) | the entries the monster Skills rows name, grouped by row range; which monster uses which skill, and when, is the monster-AI plan's |
 
 ### The draws, by seed
 
@@ -486,7 +486,7 @@ emulation did not follow, the spec stops its description there and marks the res
 
 ### Short floors left open
 
-Open questions in the spec lists them. In short:
+[Open questions in the spec](../../spec-skills/catalogue/) lists them. In short:
 
 - **Baal's tentacle skill** was not reached in a game, so one value that decides which of two draw counts it makes is
   unknown.
@@ -694,7 +694,7 @@ From the specs' open questions:
 - The specs: [skills overview](../../spec-skills/overview/#reimplementation-notes),
   [dispatch](../../spec-skills/dispatch/#reimplementation-notes) and
   [missiles](../../spec-skills/missiles/#reimplementation-notes), and the
-  catalogue for the numbered functions. Each *Reimplementation notes* section lists the
+  [catalogue](../../spec-skills/catalogue/#reimplementation-notes) for the numbered functions. Each *Reimplementation notes* section lists the
   traps for someone rebuilding the system.
 - The [glossary](../../reference/glossary/) for D2 terms: start and do functions, progressive charges and the finisher, the
   server missile, pet type and pet limit.

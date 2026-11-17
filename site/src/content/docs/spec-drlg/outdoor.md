@@ -45,16 +45,16 @@ link builder that places the other acts' outdoor levels, and the warp points bui
 
 ### Tables
 
-| Used for |
-| --- |
-| the level size the link builder starts from; level 76's size for the three jungles, 79–83's for the Kurast stack (§ J) |
-| level 75's position (Act III's anchor, § J1); level 117's position |
-| `Vis0..7`/`Warp0..7`: a slot with `Vis` ≠ 0 and `Warp` −1 is a walkable seam, an empty slot (`Vis` 0, `Warp` −1) none (§ C1); slot *k* gives the warp-slot flag `0x10 << k` (§ E1) |
-| the border style (§ E2) |
-| the operand of the file rotation (§ D2) |
-| a preset's footprint in cells, `SizeX ÷ 8` × `SizeY ÷ 8` (§ D1) |
-| the border-stamp records of a `Type` and their DS1 groups (§ G) |
-| how a border-stamp record stamps, and its cell scale (§ G) |
+| Anchor | Used for |
+|---|---|
+| `Levels.txt:SizeX`, `Levels.txt:SizeY` | the level size the link builder starts from; level 76's size for the three jungles, 79–83's for the Kurast stack (§ J) |
+| `Levels.txt:OffsetX`, `Levels.txt:OffsetY` | level 75's position (Act III's anchor, § J1); level 117's position |
+| `Levels.txt:Vis0`, `Levels.txt:Warp0` | `Vis0..7`/`Warp0..7`: a slot with `Vis` ≠ 0 and `Warp` −1 is a walkable seam, an empty slot (`Vis` 0, `Warp` −1) none (§ C1); slot *k* gives the warp-slot flag `0x10 << k` (§ E1) |
+| `Levels.txt:LevelType` | the border style (§ E2) |
+| `LvlPrest.txt:Files` | the operand of the file rotation (§ D2) |
+| `LvlPrest.txt:SizeX`, `LvlPrest.txt:SizeY` | a preset's footprint in cells, `SizeX ÷ 8` × `SizeY ÷ 8` (§ D1) |
+| `LvlSub.txt:Type`, `LvlSub.txt:File` | the border-stamp records of a `Type` and their DS1 groups (§ G) |
+| `LvlSub.txt:BordType`, `LvlSub.txt:GridSize` | how a border-stamp record stamps, and its cell scale (§ G) |
 
 Which `LvlPrest` records each act places is surveyed in LvlPrest § Outdoor presets
 and § Outdoor placement; the outdoor levels, their sizes and
@@ -151,7 +151,7 @@ A1. OutdoorLevelBuild(L):                                            [C]
       VertexRingBuild(L); OutVertsToCells(O.ring)                    ; § C, no draw
       ── window start: L.seed as LevelInit re-seeded it ──
       a: u32 ← (L.id = 134) ? 1 : DRLG_ActFromLevelId(L.id)          ; 0-based act index
-      OutdoorActa                                               ; § H (0) … § L (4)
+      OutdoorAct[a](L)                                               ; § H (0) … § L (4)
       ── window end ──
       OutdoorRoomsCreate(L)                                          ; drlg/overview step 8
 ```
@@ -283,7 +283,7 @@ C5. OutVertsToCells(ring): every vertex ÷ 8 (signed);                [C]
   compares the new node with the head: before the head when `LevelAdjLess(new, head)`, after it otherwise. Into a list of
   two or more nodes it does not compare with the head, so a node that sorts before the head is not put before it; a node
   that does not sort before the head goes where C2 puts it. Where a node that sorts before the head goes instead is not
-  written in a finding (Open questions).
+  read yet (Open questions).
 - [I] **A reimplementation keeps the list in C2's full order.** Of the act link model's 177 inserts, 19 go into a list of
   two or more nodes; in 5 the new node sorts before the head, and in all 5 the head is on another side, so the
   within-side order is the same either way; the same run with a full compare gives 0 mismatches. Example: a list holding
@@ -478,9 +478,6 @@ E3. BorderCornerDef(inCode, outCode, style) → i32:                    [C]
       return style ≥ 4 ? g_BorderDefsA5[2k + style − 6] : g_BorderDefs[4k + style]   ; row k of E2a's table
 ```
 
-- [C] **`g_BorderCornerIdx`** (`i32[9][9]`, read as `[ + 4·(in + 9·out)]`). Rows are
-  the out code, columns the in code; `·` is −1 (no corner piece).
-
   | out \ in | −4 | −3 | −2 | −1 | 0 | +1 | +2 | +3 | +4 |
   |---|---|---|---|---|---|---|---|---|---|
   | −4 | 1 | 9 | 9 | · | · | 1 | 8 | · | · |
@@ -589,7 +586,7 @@ G3. BorderSubGroup(rec, g) → bool:                                    [C]
   that is `baseDef + wildcard`, the value the context's wildcard (G2) names; such a cell matches any `Def`. A
   reimplementation tests the computed piece against `baseDef + 62`, or the sub-index against 63, not against a bare 62.
 
-- G4. Four points of the match and the stamp are not in a finding and are listed under *Open questions*: the DS1 layer
+- G4. Four points of the match and the stamp are not read yet and are listed under *Open questions*: the DS1 layer
   read, a sub-index-63 cell in a replacement variant, which cells "the others" are, and `N < 0` in G3.
 - [C] **`BordType`**: 0 = one `RangeB(groups)` picks the start group, and the record stops after its first stamp; 1 = every
   group is tried and stamped at most once; 2 = every group is stamped at every matching position. Stock: `Border - Cliffs`
@@ -721,11 +718,6 @@ H4. A1RiverMidTransCave(L):                                          [C]
         else:     ok ← PlaceRandom(L, 51 Cave Entrance, −1, pad 1, sides 0xF)              ; 2N draws + rotation
         not ok → fatal error;  O.flags |= 0x40
 ```
-
-- [C] **The river index table** `g_A1RiverIdx` is read as `[ + 8·p]` for the 26 piece and `[ + 8·p]`
-  for the 27 piece, `p` the border `Def` in the cell. Only rows `p` 4–15 are read (`i32[12][2]`):
-  rows 0–3 would overlap the King Tomb table, but `p` = 0 takes the covered rule and no river column holds `Def` 1–3. For
-  `p` = 7 at the seam opening (file bits `0x30000`) both pieces take 3.
 
   | border `Def` p | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 |
   |---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -1230,11 +1222,6 @@ JungleRectRel(parent, w, h, d) → rect:                                [C]
   | 6 S+E | 558 | 0 | 0 | 559 | | 13 N+S+W | 0 | 571 | 0 | 0 |
   | 7 S+E+W | 0 | 0 | 0 | 560 | | 14 N+S+E | 572 | 0 | 0 | 0 |
 
-- [C] **`g_JungleClearingDefs`**, read as `[ + 4·(v >> 4)]`; `v >> 4` is the clearing's own sides (W 1, E 2,
-  S 4, N 8): 1 → 575, 2 → 576, 3 → 577, 4 → 578, 5 → 579, 6 → 580, 7 → 0, 8 → 581, 9 → 582, 10 → 583, 11 → 0, 12 → 584.
-  Entry 0 is the last flag of `g_LinkOutdoorFlags` (never read here, since `v ≥ 16`), and entries 13–15 are row 0 of
-  `g_JungleSideDefs`. Entries 7, 11 and 13–15 are 0, so a clearing with three or four sides is fatal (0x799).
-
 - [I] The side lookup of J2e has no bound: a second side bit on one cell would index a row `d` ≥ 545, past the table.
   No logged layout had one (every `LNKS` list and Act III window of the run matches).
 
@@ -1271,9 +1258,6 @@ J4. OutdoorAct3(L):  OutSeamMark(L); OutJungleCells(L); OutKurastLevel(L); OutTr
 
 - [C] Each clearing of a jungle level gets a distinct file of its three through permutation row `r`. Level 76 takes the
   Webby clearings 575–584, 77 the Boggy 585–594, 78 the Pygmy 595–604.
-- [C] **The clearing tables.** The offset table is read as `[ + 4·L.id]`, so its data are the three `i32` for levels 76, 77, 78: `0, 10, 20`. `g_JungleClearingPerm` (`i32[6][3]`, read as `[k + 3r]`)
-  has the rows `0 1 2`, `1 0 2`, `0 2 1`, `1 2 0`, `2 0 1`, `2 1 0`; `r` is `Range(6)` with three clearings, else
-  `Range(2)` (rows 0–1), and `k` counts the clearings in placing order.
 
 ```
 J5. OutKurastLevel (79 … 82):                                        [C]
@@ -1285,7 +1269,7 @@ J5. OutKurastLevel (79 … 82):                                        [C]
           PlaceRandom(631, 0);  Fill(651 …);  Fill(649, 650);  Fill(648)
       82: Place(0, 0, 652, 0)                                        ; the bridge, explicit index: no draw
       ; the arguments 80 and 81 leave out, OutFillRandom's shuffle width and fit test, and
-      ; PlaceRandom(631, 0)'s pad and sides are not in a finding: Open questions
+      ; PlaceRandom(631, 0)'s pad and sides are not read yet: Open questions
     Fill = OutFillRandom(lo, hi, max):                               [C]
       list ← the shuffle of all cw·ch cells                          ; 2·cw·ch level draws
       for each cell: d ← lo + Range(L.seed, hi − lo + 1)             ; drawn also when hi = lo
@@ -1349,22 +1333,6 @@ block-beta
   c0["836"] c1["858 Arm W"] c2["862 Heart"] c3["859 Arm E"] c4["836"]
   d0["836"] d1["836"] d2["860 Arm S"] d3["836"] d4["836"]
   e0["836"] e1["836"] e2["857 Entry"] e3["836"] e4["836"]
-```
-
-```
-K1. OutdoorAct4(L):                                                  [C]
-      OutSeamMark(L)
-      if L.id = 108: DiabloGrid(L); return                           ; K2
-      OutBorderBuild(L)
-      FortressTransition: O.flags & → Place(0, 1, 798, −1);  O.flags & → Place(0, 4, 798, −1)
-      OutBorderSubApply(L, 1, 799); (L, 2, 799); (L, 3, 799)
-      MesaFills:                                                     ; all PlaceRandom(·, −1, 0, 0xF); failures ignored
-        if L.id = 106: PlaceRandom(811)
-        a: i32 ← g_A4MesaBase[L.id − 104];  p: i32 ← g_A4PitsBase[L.id − 104]   ; 104, 105, 106: a 812, 817, 823; p 828, 832, 832
-        PlaceRandom(a); PlaceRandom(a + 1) ×2; (a + 2) ×2; (a + 3) ×2; if L.id = 105: PlaceRandom(822); (a + 4) ×4
-        PlaceRandom(p); (p + 1) ×2; (p + 2) ×2; (p + 3) ×4
-K2. DiabloGrid(L): for i in 0 ..< 25: Place((i % 5)·3, (i ÷ 5)·3, g_A4DiabloGrid[i], −1)   ; i = 5·row + column
-                                                                     [C]
 ```
 
 - [C] **The Mesa bases** `g_A4MesaBase` (`i32[3]`) `812, 817, 823` and `g_A4PitsBase` (`i32[3]`) `828, 832, 832`, by
@@ -1456,7 +1424,7 @@ L3. BarricadeRavine(L):                                               [C]
   so each new ravine `Def` draws its first use.
 - L4. [C] **Gates.** Each edge's first `0x400` cell gets one gate, file −1: 909 top, 908 bottom, 910 left, 907 right.
 
-- L4. Which row or column is each edge, and the direction each is scanned in, are not in a finding (*Open questions*).
+- L4. Which row or column is each edge, and the direction each is scanned in, are not read yet (*Open questions*).
 - L4. [C] **Caves**, `g_A5CaveEntries` (`i32[3][5]` `{level, file, far, defTall, defWide}`): `(112, 0, 0, 913, 914)`,
   `(117, 0, 1, 983, 984)`, `(117, 0, 0, 985, 986)`. For each row of the level, in table order: a wide level (`L.h < L.w`)
   gets `Place(far ? cw − 2 : 0, 2, defWide, file)`, a tall one `Place(2, far ? ch − 2 : 0, defTall, file)`. No fit test, no
@@ -1464,7 +1432,7 @@ L3. BarricadeRavine(L):                                               [C]
 - L5. [C] **Stamps.** `Type` 12 (`Barricade`, `BordType` 2, `GridSize` 2) through G1's record loop with base 0, the Act V
   match callback and `Def` map: DS1 main index 48 names the border or ravine piece expected, 49 the Barricade piece 915–930
   (987–1002 on snow) it becomes; sub 31 of main 48 is the wildcard −5.
-- L5. Whether the Act V match callback also refuses a seam opening, as G4's match does, is not in a finding (*Open
+- L5. Whether the Act V match callback also refuses a seam opening, as G4's match does, is not read yet (*Open
   questions*).
 - L5. [C] **The stamp `Def` map**, `g_A5SubDefMap` (`i32[10][5]` `{main, subLo, subHi, defDirt, defSnow}`). For a DS1
   wall cell with `main = (W >> 20) & 0x3F` and `sub = (W >> 8) & 0xFF`, main 48 or 49, the first row with that `main` and
@@ -1486,7 +1454,7 @@ L3. BarricadeRavine(L):                                               [C]
 - L6. [C] **Prisons (111).** While fewer than 3 and up to 90 attempts: `x ← 2·Range(L.seed, cw ÷ 2)`,
   `y ← 2·Range(L.seed, ch ÷ 2)`; a Barricade 1–8 piece (915–922) there becomes `Def + 16` (931–938, file −1). Then two more
   `Range` draws, always, start a full scan for the rest. Fewer than 3 is a fatal error.
-- L6. The fallback scan's order is not in a finding (*Open questions*).
+- L6. The fallback scan's order is not read yet (*Open questions*).
 - [C] The prisons' fallback scan places prisons in Frigid Highlands for map seed 312: 2 by the scan in each of the two
   windows, every draw matched.
 - L7. [C] **Table**, `g_A5PlaceTable` (`i32[15][7]` `{level, defTall, defWide, file, unused, count, required}`; column 4

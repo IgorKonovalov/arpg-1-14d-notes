@@ -291,7 +291,7 @@ E1. SUNIT_ScheduleModeEvents(game, unit):                         [C] (SUNIT_Sch
       T: i32 ← game.frame;  t: i32 ← T;  S: i32 ← UNIT_AnimStartFrame(unit) << 8
       if unit.+0x30 ≠ 0: r ← unit.+0x3C; L ← unit.+0x34            ; a sequence
       else:              r ← (i32)(i16) unit.+0x4C; L ← unit.+0x48
-      if r = 0: UnitQueueEvent(kind 1, frame T + 1); return        ; [C] no logged rate is 0, 40 cases
+      if r = 0: UnitQueueEvent(kind 1, frame T + 1); return        ; [C] no logged rate is 0; 40 cases
       f: i32 ← S >> 8;  n: i32 ← 0;  acc: i32 ← S + r
       while acc < L:                                               ; signed 32-bit compares
         t ← t + 1
@@ -419,7 +419,7 @@ G3. the sequence advance (in UNIT_AnimAdvance, monster mode 14):   [C] (UNIT_Ani
 - G4. [C] **The event of a sequence is the sequence row's**, never the `animdata.d2` byte of the row's frame, in the
   advance: with `+0x30` set, `UNIT_AnimAdvance` took every output from the sequence rows while `+0x50` pointed at
   undeclared memory and no read of it was traced (1 500 cases, 647 with an event). [I] The schedule reads the sequence record too while
-  `+0x30` is set (→, not run), and a row's `frame` only sets `+0x44`; so `monseq` steps whose frame
+  `+0x30` is set (not run), and a row's `frame` only sets `+0x44`; so `monseq` steps whose frame
   lies past the user's record (249 on stock data) read nothing through the record.
 
 - G5. [C] **A player's sequence** (mode 18) is scheduled once from its step `+0x3C` and length `+0x34` (E1) and is not
@@ -538,7 +538,7 @@ stateDiagram-v2
 
 | Row | Mode | Frame function | End | `schedule` | Tag |
 |---:|---|---|---|---:|---|
-| 0 | DT | not moving: mode 12 at once; moving: step, advance, 12 at the end | mode 12, event 13; `SplEndDeath` | 1 | — |
+| 0 | DT | not moving: mode 12 at once; moving: step, advance, 12 at the end | mode 12, event 13; `SplEndDeath` | 1 | [C] |
 | 1 | NU | `UNIT_CancelEvents(0, 0)` | — | 0 | [C] |
 | 2, 15 | WL, RN | trails, step; arrival → generic end | — | 1 | [C] the step and the generic end on a return of 2; [I] "trails" as the meaning of WL's state 13 and 22 calls |
 | 3, 6 | GH, BL | `UNIT_CancelEvents(0, 0)`, run at a frame event of the record | generic | 1 | [C] |
@@ -1002,6 +1002,6 @@ sequenceDiagram
 
 ## Evidence
 
-- Upstream: rng, stats/aggregate, [monsters/stats](../../spec-monsters/stats/).
-  Downstream: [skills/dispatch](../../spec-skills/dispatch/), combat, objects,
+- Upstream: rng, [stats/aggregate](../../spec-stats/aggregate/), [monsters/stats](../../spec-monsters/stats/).
+  Downstream: [skills/dispatch](../../spec-skills/dispatch/), [combat](../../spec-combat/overview/), objects,
   [anim/movement](../movement/).

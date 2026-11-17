@@ -56,7 +56,7 @@ flowchart LR
 - [C] Vendors, gambling, the cube and imbue reach the same builders by other paths, some with forced affixes: the
   affix model of this spec reproduces the vendors' 8 787 chained creations, the cube's 140
   (12 picks with a forced id) and the 17 imbued rares. This spec
-  covers the builders as a drop reaches them; those callers belong to items/vendors and
+  covers the builders as a drop reaches them; those callers belong to [items/vendors](../vendors/) and
   [items/cube](../cube/) (its forced `pre=`/`suf=` ids: [§ E](../cube/#e-building-one-output--recipeoutputcreate)).
   (`ITEMS_PickMagicAffix`, `ItemCreateRec+0x68`, aff 2)
 
@@ -177,8 +177,7 @@ Step notes:
   `+0x3E + 2i`, `ITEMS_SetRareName1` → `+0x32`, `ITEMS_SetRareName2` → `+0x34`, `ITEMS_SetAutoAffix` → `+0x36`). A
   save stores block-relative ids instead (`save/d2s`). [C]
 - A1. `magicsuffix` row 0 is a real row with id 1 (`of Health`, `frequency` 0); `magicprefix` row 0 is blank and never
-  a candidate (no name, `frequency` 0, no `itype`). Read from the full tables, row identity pinned by `
-  diff`. [C] (`MagicPrefix.txt:frequency`, `MagicSuffix.txt:frequency`, aff 9)
+  a candidate (no name, `frequency` 0, no `itype`). Read from the full tables, row identity pinned. [C] (`MagicPrefix.txt:frequency`, `MagicSuffix.txt:frequency`, aff 9)
 
 ### B. The affix level (alvl)
 
@@ -802,7 +801,6 @@ boundary; quality 4 takes no socket roll), which hands the automagic pick `c35f8
 
 | Step | Draw | Seed after | Value |
 |---|---|---|---|
-| J4, C2 | 1 | `:517d17c7` | mustRoll: the bit is ignored |
 | C4 | — | — | block `automagic`, group 303, alvl 2: one candidate, id 1426 (automagic row 9, *of the Jackal*), weight `6 × 1` |
 | C7 | 2 | `be791936:001f9a30` | W = 6, `0xbe791936 mod 7 = 5` → 5 − 6 < 0 → **1426** |
 | J4 | oracle | `8d4260be:4f71e1d0` | automagic properties; the return seed (`ICX`) |

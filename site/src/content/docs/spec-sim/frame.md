@@ -41,9 +41,9 @@ flowchart TD
 
 ### Tables
 
-| Used for |
-| --- |
-| which pets player kind 11 reports (§ F4); it reads no other table |
+| Anchor | Used for |
+|---|---|
+| `PetType.txt:partysend` | which pets player kind 11 reports (§ F4); it reads no other table |
 
 No excel table is read by `GameTick`'s own code, the queue or the walks; each event's function reads its own. [C] (none of the 44 table accessors called and no data-tables address named)
 
@@ -342,7 +342,7 @@ E3. EventFree(rec):                                               [C] (all of E3
 - E3b. [C] **Cancel and free-all, the code's map** (`cancel`, 150 cases): `UNIT_CancelEvents(game, unit, kind, a)` frees, in chain order
   (newest first), each record whose kind byte equals `kind` and whose `a` equals `a` when `a` ≠ 0; `UnitCancelEventsByCb`
   the same on the callback, with no zero shortcut; `UnitFreeAllEvents` frees every record, clears its `unit` field and
-  sets the chain head to 0. Thin but sufficient, as the finding says: `a` compared even when 0 separates 10, a callback of
+  sets the chain head to 0. Thin but sufficient: `a` compared even when 0 separates 10, a callback of
   0 taken as "any" 3, the chain walked oldest first 5, and each fails all it separates.
 - E4. [I] **The state-54 branch:** `UninterruptibleEnd(unit, 0)` clears state 54 and, if the unit has a game, under state 92
   clears 92 and either kills the unit (`UnitKilled(0, 1)`, when `UnitStoredUnit9C` gives none) or applies a hit from that
@@ -500,7 +500,7 @@ G1a. ActClockTick(act, a): on the dwords at [act+4]               [C] (all of G1
   changes room is visited in the new room only. Flag 4 of the room is the client copy's bit, so only server rooms list their
   units. The 78 marking sites are not each read; the order holds for whatever marks a unit.
 - G3a. [I] `UnitFrameReset` is the per-frame flag clear: bits of `+0xC4` and `+0xC8` for every unit, the inventory pass, and clears per unit type;
-  an item's bit 13 is save/d2s, the route to `UnitFree` § J's rank 15. No spec names each bit (*Open questions*). `UnitMarkUpdated` on a null unit is a fatal line.
+  an item's bit 13 is [save/d2s](../../spec-save/d2s/#item-flag-bit-13-0x2000), the route to `UnitFree` § J's rank 15. No spec names each bit (*Open questions*). `UnitMarkUpdated` on a null unit is a fatal line.
 
 - G4. [I] **Removal notes.** `RoomUnitOp` pushes a 12-byte note `{type, guid, next}` on `room+0x18` and sets the act's `+0x58`.
   `ClientRoomSync` sends each note of the client's near rooms as packet 0x0A, missiles skipped, the client's own player
@@ -624,7 +624,7 @@ I1. QUESTS_TimersRun(game):                                       [C] (all of I1
   records (`expiry < frame`, signed), up to the first unit reached or record freed.
 - I4b. [I] **Beyond its position,** that the sweep unlinks, sends and frees in a game is a reading; the sweep is the one pass that
   removes units by a frame test alone, so its frames are where an item can disappear with no event. Its lifecycle is
-  [drlg/lifecycle § A](../../spec-drlg/lifecycle/#a-the-frame) and items/inventory § K.
+  [drlg/lifecycle § A](../../spec-drlg/lifecycle/#a-the-frame) and [items/inventory § K](../../spec-items/inventory/#k-a-ground-items-life).
 
 - I5. [C] **The periods in a game:** `T20`, `D12` and `U11` are seen at every due frame, complete, in every window of the two batches;
   the town's first window 12 of 12, 21 of 21, 23 of 23. Scope: the line is at the call site, so it shows the call's frames,
@@ -763,7 +763,7 @@ K2. For each window, reader rev 2 keeps each chained seed's value:   [I] (all of
 |---|---|---:|---|---|
 | kill | `TC_ResolveDrops`; `ITEMS_DropRollQuality` | 122 | [items/tc § D](../../spec-items/tc/#d-the-resolver--tc_resolvedrops), [items/quality](../../spec-items/quality/) | [C] the sites, 124 steps in events holding a `KD`; [I] the count on a chained seed |
 | room | `RoomWandererTick`, `MonSpawnTry`, `SpawnPosPick`, `MonRegionPickClass`, `SpawnTypeRoll`, `RoomObjectsPopulate`, the object placement and `OBJPOP_` handlers | 847 | [lifecycle § I](../../spec-drlg/lifecycle/#i-the-wanderer-tick), monsters/spawn § H, objects § E, § F | [C] the listed functions only, 1 720 steps with a walk open; [I] the count on a chained seed |
-| owner | `MonCritDouble` with a missile event open, 3 hits, and 2 more on a monster's own seed in its own attack; `COMBAT_ToHitRoll` stepped 19 times, each with the monster's own event open (4 and 22 over the nine windows with `XS`); `COMBAT_ApplyStun` none | 3 | [combat/to-hit](../../spec-combat/to-hit/), combat/overview | [C] the sites; [I] the chained reading |
+| owner | `MonCritDouble` with a missile event open, 3 hits, and 2 more on a monster's own seed in its own attack; `COMBAT_ToHitRoll` stepped 19 times, each with the monster's own event open (4 and 22 over the nine windows with `XS`); `COMBAT_ApplyStun` none | 3 | [combat/to-hit](../../spec-combat/to-hit/), [combat/overview](../../spec-combat/overview/) | [C] the sites; [I] the chained reading |
 | defender | `COMBAT_DefenceRoll`, `COMBAT_DurabilityLoss`, `ITEMS_DurabilityLossRoll`, 2 each, all in 5511 #1; `COMBAT_ApplyCold`, `GetHitRoll`, `HitClassPick`, `COMBAT_ApplyDamage`: none | 8 | [combat/to-hit § C](../../spec-combat/to-hit/#c-the-hit-test-and-the-defence-rolls), [items/economy § H](../../spec-items/economy/#h-wear-durability-quantity-charges-replenish) | [C] |
 | `killev` | `UModPartyDeadDeath` sites: **none hit** | 0 | [items/quality](../../spec-items/quality/) | [I] |
 
@@ -811,12 +811,6 @@ K2. For each window, reader rev 2 keeps each chained seed's value:   [I] (all of
 
 - The order of a game's frame: the rank of each event and the order inside each list. [C] ranks 1, 3, 4, 6–9, 14 and 17–20 (§ B1,
   § D1); [I] ranks 2, 5, 10–13, 15 and 16
-- The game state after the frame, and the queued packets, flushed after it. [C] Besides them, one direct send: `GameTick` → `ClientsRoomSync`
-  → `AutosaveTick` → → sends a one-byte packet `0xB0` through the transmit routine at once,
-  not through the queue, per client when `AutosaveTick`'s save conditions hold and `[]` is non-zero; `GameTick`'s
-  direct-call graph does not reach `ClientFlushPackets`. [I] What sets `[]`, so whether single player takes
-  that branch, is not read, and nothing else leaves the frame: 751 indirect calls of the graph are not followed.
-
 - For the [chain](../../spec-chain/overview/): the activation-order record, § H5, as an input. [I]
 
 ## Worked example
@@ -864,4 +858,4 @@ sequenceDiagram
 
 ## Evidence
 
-- Specs the frame composes: [anim/timing § H](../../spec-anim/timing/#h-the-event-queue-and-the-frame-order), [drlg/lifecycle](../../spec-drlg/lifecycle/), monsters/ai, [skills/dispatch § P](../../spec-skills/dispatch/#p-draws-and-seeds-per-event-kind), [skills/missiles](../../spec-skills/missiles/), combat/overview, [items/tc](../../spec-items/tc/), [chain](../../spec-chain/overview/).
+- Specs the frame composes: [anim/timing § H](../../spec-anim/timing/#h-the-event-queue-and-the-frame-order), [drlg/lifecycle](../../spec-drlg/lifecycle/), monsters/ai, [skills/dispatch § P](../../spec-skills/dispatch/#p-draws-and-seeds-per-event-kind), [skills/missiles](../../spec-skills/missiles/), [combat/overview](../../spec-combat/overview/), [items/tc](../../spec-items/tc/), [chain](../../spec-chain/overview/).

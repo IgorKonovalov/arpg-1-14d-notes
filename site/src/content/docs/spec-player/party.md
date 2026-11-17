@@ -41,10 +41,10 @@ flowchart LR
 
 ### Tables
 
-| Used for |
-| --- |
-| the three states that move the credit (§ A) |
-| `Align` 0 takes the player bonus, any other gets `players` 1 (§ E) |
+| Anchor | Used for |
+|---|---|
+| `States.txt:exp` | the three states that move the credit (§ A) |
+| `MonStats.txt:Align` | `Align` 0 takes the player bonus, any other gets `players` 1 (§ E) |
 
 ### Runtime state
 
@@ -153,8 +153,8 @@ flowchart LR
 | `MonPlayerBonus` in `MonStatsInit` | count now | at the monster's creation | stat 100 ← `max(1, players)`, where `Align` 0 takes the count and any other 1 | [C] | [monsters/stats C1](../../spec-monsters/stats/#c-the-player-count-monplayerbonus) |
 | a monster's hit points | count at creation, frozen in the value | at creation; never rescaled | `+50 %` per player beyond the first | [C] | [monsters/stats C1, C2](../../spec-monsters/stats/#c-the-player-count-monplayerbonus) |
 | a monster's experience, stat 13 | count at creation, frozen in the value | at creation; `XP_OnMonsterKill` reads the stat | `+50 %` per player beyond the first | [C] | [monsters/stats C1, C2](../../spec-monsters/stats/#c-the-player-count-monplayerbonus) |
-| crushing blow divisor | frozen stat 100 | at the stat event | `k + MulDiv(k, PlayerHpPct(n), 100)` | [C] | [combat/delivery E1](../../spec-combat/delivery/#e-the-stat-events-crushing-blow-open-wounds-freeze), combat § D |
-| `MonAttackStats` damage | frozen stat 100 | at each attack | expansion, Nightmare and Hell: `+ value × b ÷ 128`, `b = 8(n − 1)` for `n < 9` | [C] | [monsters/stats H1](../../spec-monsters/stats/#h-to-hit-and-damage-at-attack-time-reference-only), combat § D |
+| crushing blow divisor | frozen stat 100 | at the stat event | `k + MulDiv(k, PlayerHpPct(n), 100)` | [C] | [combat/delivery E1](../../spec-combat/delivery/#e-the-stat-events-crushing-blow-open-wounds-freeze), [combat § D](../../spec-combat/overview/#d-branches) |
+| `MonAttackStats` damage | frozen stat 100 | at each attack | expansion, Nightmare and Hell: `+ value × b ÷ 128`, `b = 8(n − 1)` for `n < 9` | [C] | [monsters/stats H1](../../spec-monsters/stats/#h-to-hit-and-damage-at-attack-time-reference-only), [combat § D](../../spec-combat/overview/#d-branches) |
 | NoDrop | count now, and the party count now | at each resolve | `n = party + (PlayerCount − party) ÷ 2`, scaled through the x87 formula | [C] | [items/tc F](../../spec-items/tc/#f-nodrop-scaling) |
 | NoDrop's cap | frozen stat 100 of a monster source; an object source has none | at each resolve | `n ← min(n, max(1, stat 100))`; it never acted in a logged call | [I] for the cap's effect; [C] for no cap on an object source | [items/tc F2](../../spec-items/tc/#f-nodrop-scaling) |
 | four think functions | no count: `MonPlayerBonus` computes it and they read only the block's difficulty word | at their own run | nothing by the count; a changed `/players` has no effect here (below) | [C] | [monsters/stats C3](../../spec-monsters/stats/#c-the-player-count-monplayerbonus) |

@@ -138,7 +138,7 @@ A2. DamagePercent(ctx) → i32:                                         [C] (COM
  The 400 against a non-hireling and the 25 % of hireling against
   hireling were not reached in the run; `COMBAT_DamagePercent` emulated over 2 500 cases returns A2's values, 400 in
   111 and 25 in 40, every branch separated. [C] `Unit+0xC4` bit 31's
-  meaning is not named by the finding. [I]
+  meaning is not named. [I]
 - A2. "Boss" is MonStats `boss` (`+0x0C` bit 6), not a unique or superunique: 191 mercenary hits on champions,
   uniques and superuniques that are not MonStats `boss` took P 100, 79 on Andariel P 35 or 25. [C]
 
@@ -301,7 +301,7 @@ Hell the classic −50, and the Hell melee hit physical damage through DR and th
 **A field driven negative.** In `sor-n-plains` frame 3249 (Normal) a `fallenshaman1` fire bolt carries fire 1018:
 `1018 − 3072 = −2054`, the resistance is skipped, and the packet's fire and total are −2054. [C]
 
-**A monster defender.** In combat/overview § Example 1
+**A monster defender.** In [combat/overview § Example 1](../overview/#example-1-a-melee-hit-in-hell-with-crushing-blow-and-leech)
 the `fallen2` (physical 15, fire 110, cold 40) takes physical `MulDiv(92195, 85, 100)` = 78365, fire 0 (immune, 110
 capped to 100), cold `MulDiv(10448, 60, 100)` = 6268, the cold length `MulDiv(100, 60, 100)` = 60; magic 22020 and
 poison 153 pass unreduced. No penalty and no cap apply to the monster. [C]

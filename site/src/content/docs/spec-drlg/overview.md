@@ -39,21 +39,21 @@ seeds are defined in rng/seeds steps 3–5.
 
 ### Tables
 
-| Used for |
-| --- |
-| both dispatches: 1 maze, 2 preset, 3 outdoor (leveldefs `+0x30`) |
-| the level type (level `+0x1C0`): outdoor room DT1 mask, maze file-rotation base |
-| `LvlSub` records rolled for each outdoor room (leveldefs `+0x38`, `+0x3C`) |
-| `LvlPrestByLevel`: the first record whose `LevelId` is the level's id |
-| `LvlPrestByDef`: the record of a preset def |
-| operand of the file-index draw (`+0x40`) |
-| `File1..6` (`+0x44 + 0x3C·i`): the DS1 of index i |
-| preset instance size, when both are non-zero (`+0x28`, `+0x2C`) |
-| map-scan gate before a preset's rooms are made (`+0x34`, `+0x38`) |
-| every preset room's DT1 mask (`+0x1AC`), see room-tiles.md |
-| the first maze room's size |
-| `Prob[SubTheme]` of each `SubType` record in the outdoor room roll (`+0x11C`) |
-| OR-ed into an outdoor room's DT1 mask when its record is picked (`+0x48`) |
+| Anchor | Used for |
+|---|---|
+| `Levels.txt:DrlgType` | both dispatches: 1 maze, 2 preset, 3 outdoor (leveldefs `+0x30`) |
+| `Levels.txt:LevelType` | the level type (level `+0x1C0`): outdoor room DT1 mask, maze file-rotation base |
+| `Levels.txt:SubType`, `Levels.txt:SubTheme` | `LvlSub` records rolled for each outdoor room (leveldefs `+0x38`, `+0x3C`) |
+| `LvlPrest.txt:LevelId` | `LvlPrestByLevel`: the first record whose `LevelId` is the level's id |
+| `LvlPrest.txt:Def` | `LvlPrestByDef`: the record of a preset def |
+| `LvlPrest.txt:Files` | operand of the file-index draw (`+0x40`) |
+| `LvlPrest.txt:File1` | `File1..6` (`+0x44 + 0x3C·i`): the DS1 of index i |
+| `LvlPrest.txt:SizeX`, `LvlPrest.txt:SizeY` | preset instance size, when both are non-zero (`+0x28`, `+0x2C`) |
+| `LvlPrest.txt:Scan`, `LvlPrest.txt:Pops` | map-scan gate before a preset's rooms are made (`+0x34`, `+0x38`) |
+| `LvlPrest.txt:Dt1Mask` | every preset room's DT1 mask (`+0x1AC`), see room-tiles.md |
+| `LvlMaze.txt:Level`, `LvlMaze.txt:SizeX`, `LvlMaze.txt:SizeY` | the first maze room's size |
+| `LvlSub.txt:Prob0` | `Prob[SubTheme]` of each `SubType` record in the outdoor room roll (`+0x11C`) |
+| `LvlSub.txt:Dt1Mask` | OR-ed into an outdoor room's DT1 mask when its record is picked (`+0x48`) |
 
 ### Runtime state
 
@@ -259,7 +259,7 @@ Step notes:
    **Rotation counters are per build.** The list lives at
    level `+0x1CC`, nodes are prepended, and `LevelUnload` frees it and zeroes the field,
    so each build starts without counters. [C] (per-build counters
-   reproduce 1648 first-use draws and 2424 rotations over 393 builds, rebuilds included:
+   reproduce 1648 first-use draws and 2424 rotations over 393 builds, rebuilds included;
    `LevelUnload` frees a non-empty list in 76 unloads) Every use, the first included, advances the counter before
    it is used: the first use of a def yields `(RangeB + 1) mod Files`. [C]
    (16 first uses and 18 rotations in
@@ -290,7 +290,6 @@ For each built level: its DRLG rooms, linked at level `+0x10` (newest first), ea
 | Step | Operation | Level seed after | Result |
 |---|---|---|---|
 | 2 | `Init(base + 8)` | `015B2E7F:0000029A` | |
-| 9 | first maze room: `DRLG_RoomCreate` | `E18C3A55:` | room `+0x04 = C176B603` |
 | 9 | maze generator ([maze.md](../maze/#worked-example), example 1) | `334AA35A:02E00A8C` | list: def 98 at (1500, 1024), def 83 at (1524, 1000), def 58 at (1500, 1000), all 24 × 24, forced index −1 |
 | 9a, 4 | def 98, `Files 1`: `Range(1)` | `12CE5ECE:1564B05F` | idx 0 (a draw even though n = 1) |
 | 9b | 98 is outside (52, 68): kept | | `Act1\Caves\CaveNSpec.ds1` |

@@ -23,7 +23,7 @@ here; which event sets each bit is [quests/progression](../../spec-quests/progre
 | A monster dies: TC choice, then the quest TC switch | → → → `MONSTER_DropItems` | [C] |
 | The same death, after the drop: the quest scripts' death event (event 8) | `QUESTS_MonsterDeathEvent` → `Quest+0xC0` of each quest the monster is hooked to | [C] |
 | Game creation: the quest objects and the quest seed | `QUESTS_InitGame` | [C] |
-| A quest object is operated (the Hellforge, quest chests, the altar, item objects): the quest script is the object's `OperateFn` slot itself | `OBJ_OperateDispatch` → `g_ObjOperateFns``[OperateFn]` (slots in § E and § D4) | [I] (§ 9) for the altar (24), the Malus (21) and the orifice (25); [C] the Hellforge's slot 49 (the only reference to `ForgeOperate`), and the slots logged on the operates: 33 Wirt's body, 12 the Inifuss tree, 28 the tome, 39–41 the cube, scroll and staff chests, 57–59 the heart, eye and brain chests |
+| A quest object is operated (the Hellforge, quest chests, the altar, item objects): the quest script is the object's `OperateFn` slot itself | `OBJ_OperateDispatch` → `g_ObjOperateFns[OperateFn]` (slots in § E and § D4) | [I] (§ 9) for the altar (24), the Malus (21) and the orifice (25); [C] the Hellforge's slot 49 (the only reference to `ForgeOperate`), and the slots logged on the operates: 33 Wirt's body, 12 the Inifuss tree, 28 the tome, 39–41 the cube, scroll and staff chests, 57–59 the heart, eye and brain chests |
 | Object event 7, a timer some operate slots and scripts queue on a quest object (the forge's waves, Wirt's gold piles): dispatch by object class | — | [C] for classes 268 (Wirt's body →, 18 events) and 367 (the Kurast sewer lever →, one event), the logged chain; the Hellforge's (376) [C] below; [I] the other classes' targets (§ 9) |
 | The Hellforge's timer, after the third strike | `QUESTS_ObjectEvent` → | [C] (the only references in the image force the event-7 route, § 9) |
 | An NPC menu action: imbue (Charsi), socket (Larzuk), personalize (Anya) | `NPC_MenuAction` | [C] |
@@ -70,7 +70,7 @@ here; which event sets each bit is [quests/progression](../../spec-quests/progre
 | `FORGE_RUNES[0]`, `[1]` | `r01`…`r11` (Normal), `r12`…`r22` (Nightmare) | `g_ForgeRunesNormal`, `g_ForgeRunesNightmare` | [C] |
 | `FORGE_RUNES[2]` | `r15`…`r25` (Hell) | `g_ForgeRunesHell` | [C] (owner-played session 3507: entry 4 → `r19`) |
 | `QUAL_KEHK_RUNES` | `r07 r08 r09` | `g_QualKehkRunes` | [C] (given in that order) |
-| `ANYA_REWARDS[d]` | per class row (§ F5) | `g_AnyaRewardsNormal`, `g_AnyaRewardsNightmare`, `g_AnyaRewardsHell` | [C] (the three arrays read from the image against their reader, § S2c qd 47: each difficulty's table, the code read from it by the logged draw) |
+| `ANYA_REWARDS[d]` | per class row (§ F5) | `g_AnyaRewardsNormal`, `g_AnyaRewardsNightmare`, `g_AnyaRewardsHell` | [C] (the three arrays read from the image against their reader, § S2c qd 47; each difficulty's table, the code read from it by the logged draw) |
 | `INIT_HIGH` | 666 (`0x29A`), the high word of every `Init` | rng step 5 | [C] |
 
 ### Inputs and oracles
@@ -80,7 +80,7 @@ here; which event sets each bit is [quests/progression](../../spec-quests/progre
 | the quest bits a test reads | input | when a script, an NPC or the save loader sets them is game simulation; the tests on them are modelled | [C] (1431 quest-bit writes, each "old" word as the earlier writes left it) |
 | the per-player counts of a script | input | the forge's `n`, the players a death or chest loop credits | [I] |
 | the quest seed on entry to a scripted drop | boundary oracle | quest code that creates no item also draws it, so a reimplementation asserts the seed at each drop; its start value is modelled (A1) | [C] (28 fetches, every entry seed the one the model held, no oracle value taken) |
-| the item created | modelled | through the ordinary item creation of [uniques-sets](../uniques-sets/), [affixes](../affixes/) and [properties](../properties/) | — |
+| the item created | modelled | through the ordinary item creation of [uniques-sets](../uniques-sets/), [affixes](../affixes/) and [properties](../properties/) | [C] |
 
 ## Algorithm
 
@@ -124,7 +124,7 @@ Step notes:
   `QUESTS_InitGame`, and every scripted drop of the run found the quest seed where the model's previous draw left it.
   (`QUESTS_InitGame`: 53 starts, 28 fetches)
 - A1. [C] **The step is game-seed draw 4.** Game creation steps the game seed in `MonRegionsInit` (draw
-  1), `OBJRGN_Create` (draw 2), `NPCSTORE_CtlCreate` (draw 3, the store seed of items/vendors) and then
+  1), `OBJRGN_Create` (draw 2), `NPCSTORE_CtlCreate` (draw 3, the store seed of [items/vendors](../vendors/)) and then
   `QUESTS_InitGame`: in all 53 sessions of the run, and in the 7 owner-played ones, the game seed at `QUESTS_InitGame`'s
   entry was exactly three steps past `Init(N)` of the session's seed (rng/seeds step 7a).
 
@@ -224,12 +224,6 @@ reproduces both drops.
 - B6b. [I] Only the resolved player's own record is read; no other party member's record enters. No party was run,
   and no non-player killer that no step resolves (every logged one had an owner), so B6b's return is not met either.
 
-- B6. [I] **No class gets a special mode-0 record.** `MonModeRecord` tests `MonStats+0x1A5`, then
-  switches on the class in two jump tables (classes 243–418 and 544–709, and 543 directly), which reach five targets:
-  four give a special record only for modes 4, 5, 8, 9, 10 or 11, and the fifth, like every class outside the ranges,
-  falls to ` + 16·mode`. The run reached the default record and Baal's block; Diablo's block and
-  the two others were not run, so Diablo's record and his drop-before-script order rest on this reading.
-  (qd 13)
 
 **The quest-dependent TCs.** Exactly five classes have a `TCQuestId`, and each has all three `TreasureClass4` cells.
 [C]
@@ -247,7 +241,7 @@ reproduces both drops.
 | class | killer's word | TC | Tag |
 |---|---|---|---|
 | Andariel | clear (fresh) | quest TC | [C] (Normal) |
-| Andariel | bit 0 only, bit 1 clear (reported to Warriv) | quest TC, in every later game | [C] (Normal and Hell: the game after the report) |
+| Andariel | bit 0 only, bit 1 clear (reported to Warriv) | quest TC, in every later game | [C] (Normal and Hell; the game after the report) |
 | Andariel | bit 1 (killed in this game, not yet reported) | normal TC | [I] |
 | Andariel | bits 1 and 15 (saved before the report) | normal TC for good | [C] (the test stops at bit 15) |
 | Duriel | clear, or bit 0 only | quest TC | [C] |
@@ -310,7 +304,7 @@ qd 21)
   level id 0, and any value below 2 becomes 1. So an object in a level with no `Levels` record, or with a monster level
   of 0 or 1 (the towns), drops at ilvl 1.
 - C2. [C] Every `QUESTS_GiveItem` creation is a fresh store-path creation (`ITEMS_CreateForStore`), as
-  items/vendors uses: all 20 logged calls created their item through it (kind 4, noEthereal 1) and placed
+  [items/vendors](../vendors/) uses: all 20 logged calls created their item through it (kind 4, noEthereal 1) and placed
   it in the inventory. The calls with ilvl 0 (Qual-Kehk, Malah, Alkor, Meshif) made their items at the player's
   clvl, 80.
 
@@ -701,17 +695,13 @@ F3. Personalize(player, item):                                    [C] (NPC_MenuA
 #### F0. The shared tail
 
 - [C] Before the result is placed, each of the three services calls `ItemRepairAll`, then
-  `ItemIdentifyAttach`, in that order (18 of each; a scroll's identify, which also ends there, is items/use H1). The repair refilled a throwable stack to its maximum
+  `ItemIdentifyAttach`, in that order (18 of each; a scroll's identify, which also ends there, is [items/use H1](../use/#h-the-other-kinds)). The repair refilled a throwable stack to its maximum
   (throwing knives 20 → 160 and 30 → 160, `maxstack` 160) and the durability (1 → 4, 2 → 4 of 4); the identify left
   every item identified.
 - [I] The repair also refills charges and clears the broken flag, and the identify attaches socketed children; the
   run's one gem-holding item carried its child into the call already, so these are not separated.
 
   66. Why the leg's rare is identified at creation is not read.
-- [I] The gate is `ItemCanRepair`, called first in `ItemRepairAll`: it refuses a non-item,
-  an unidentified item (`+0x18 & 0x10` clear) and an ethereal one (`& `), so an ethereal item comes back from
-  any of the three services unrepaired. No run had an identified ethereal item at the tail (the run's ethereal imbued
-  `cap` was unidentified too, at full durability).
 
 #### F4. Given items (`QUESTS_GiveItem`)
 

@@ -10,7 +10,7 @@ frame or is called when a mode ends. One event runs a few checks, looks for a ta
 the unit's own seed and gives one command: a mode, a skill, a path request, or a wait until the next event. This page explains
 that system and how much of it has been checked. It restates the overview, the
 [machinery](../../spec-monster-ai/machinery/#purpose) and, for row detail it does not repeat, the
-catalogue.
+[catalogue](../../spec-monster-ai/catalogue/#purpose).
 
 The mode's frames are [animation and timing](../animation/). The skill behind a command is [skills and missiles](../../characters/skills/). The
 planners behind a path request are [pathing](../pathing/). How a monster is created is [monsters](../../world/monsters/).
@@ -432,25 +432,25 @@ That puts row 20 under the claim.
 
 ## The catalogue
 
-The other rows of the table and the 18 state rows are the catalogue, one entry each. **Row detail belongs there, and this page does not repeat it**: `aip` meanings, decision trees and draws in order.
+The other rows of the table and the 18 state rows are [the catalogue](../../spec-monster-ai/catalogue/#purpose), one entry each. **Row detail belongs there, and this page does not repeat it**: `aip` meanings, decision trees and draws in order.
 
 | Batch | Rows | State rows |
 |---|---:|---:|
-| 0: the machinery rows | 2 | 2 |
-| 1: acts I and II | 16 | 0 |
-| 2: acts II and III | 14 | 0 |
-| 3: ranged, maggots, the Zakarum, nests | 17 | 0 |
-| 4: skeleton mages to the traps | 18 | 0 |
-| 5: summons | 16 | 1 |
-| 6: hirelings | 1 | 3 |
-| 7: bosses | 9 | 0 |
-| 8: towers, turrets, javelins and blowguns, Venom Lords, the siege | 13 | 0 |
-| 9: act V minions | 10 | 2 |
-| 10: act V rest, the Ancients, Baal's minions | 12 | 0 |
-| 11: Diablo, Nihlathak, the Baal rows, Uber Diablo and Baal | 7 | 0 |
-| 12: towns, NPCs and the state rows | 13 | 10 |
+| [0: the machinery rows](../../spec-monster-ai/catalogue/#batch-0-the-machinery-rows) | 2 | 2 |
+| [1: acts I and II](../../spec-monster-ai/catalogue/#batch-1-pool-a-acts-i-and-ii) | 16 | 0 |
+| [2: acts II and III](../../spec-monster-ai/catalogue/#batch-2-pool-b-acts-ii-and-iii) | 14 | 0 |
+| [3: ranged, maggots, the Zakarum, nests](../../spec-monster-ai/catalogue/#batch-3-pool-c-ranged-maggots-the-zakarum-nests) | 17 | 0 |
+| [4: skeleton mages to the traps](../../spec-monster-ai/catalogue/#batch-4-pool-d-skeletonmage-to-the-traps) | 18 | 0 |
+| [5: summons](../../spec-monster-ai/catalogue/#batch-5-summons) | 16 | 1 |
+| [6: hirelings](../../spec-monster-ai/catalogue/#batch-6-hirelings) | 1 | 3 |
+| [7: bosses](../../spec-monster-ai/catalogue/#batch-7-bosses-a) | 9 | 0 |
+| [8: towers, turrets, javelins and blowguns, Venom Lords, the siege](../../spec-monster-ai/catalogue/#batch-8-pool-e-towers-turrets-javelins-and-blowguns-venom-lords-the-siege) | 13 | 0 |
+| [9: act V minions](../../spec-monster-ai/catalogue/#batch-9-pool-f-act-v-minions) | 10 | 2 |
+| [10: act V rest, the Ancients, Baal's minions](../../spec-monster-ai/catalogue/#batch-10-pool-g-act-v-rest-the-ancients-baals-minions) | 12 | 0 |
+| [11: Diablo, Nihlathak, the Baal rows, Uber Diablo and Baal](../../spec-monster-ai/catalogue/#batch-11-bosses-b-diablo-nihlathak-the-baal-rows-uber-diablo-and-baal) | 7 | 0 |
+| [12: towns, NPCs and the state rows](../../spec-monster-ai/catalogue/#batch-12-towns-npcs-and-the-state-rows) | 13 | 10 |
 
-The catalogue states the census. Of the 130 rows outside the tier: **55 have their first call compared, 2 are logged but have no model, so their first call is not raised, and 73 have no decision logged in the three kept batches.** A state row's own decisions, where
+The [catalogue states the census](../../spec-monster-ai/catalogue/#how-to-read-an-entry). Of the 130 rows outside the tier: **55 have their first call compared, 2 are logged but have no model, so their first call is not raised, and 73 have no decision logged in the three kept batches.** A state row's own decisions, where
 it has any, are counted in its entry.
 
 **Every entry's block is a code reading.** What can sit on top of it:
@@ -466,7 +466,7 @@ Past those, nothing else in the catalogue is confirmed, and no row's role, name 
 ### How far the blocks have been read
 
 A block restates the project's notes on the code, and those were wrong in places no earlier check caught. The state of that is stated in one place, and it moves, so it is by link:
-**How to read an entry** names the blocks read line by line against the instructions, and by whom, the blocks not read, and the rate of error measured on a sample of them. Read
+[**How to read an entry**](../../spec-monster-ai/catalogue/#how-to-read-an-entry) names the blocks read line by line against the instructions, and by whom, the blocks not read, and the rate of error measured on a sample of them. Read
 that paragraph before relying on a block outside its read set. Within that sample, an error changed a branch or a command's argument, and none a draw's order or count.
 
 ### Row 106's pick
@@ -477,7 +477,7 @@ The spec's reading was run against the think's instructions as a check of the tr
 
 ### The tables of rows 25 and 94
 
-Will-o'-wisps dance and desert turrets sweep by tables held in the code. Row 25's and row 94's are given in the catalogue, listed or by a rule, and **each value is compared with the game's image**, which says what they hold and not how they were made. How the thinks use them is **read from the code**, and no log holds a decision of either row. The wisp's grant to a player ends by the timed list's expiry, and death may free it first, also read from the code. As data, row 25's wisps are in the spawn columns of some levels and one superunique.
+Will-o'-wisps dance and desert turrets sweep by tables held in the code. [Row 25's](../../spec-monster-ai/catalogue/#batch-2-pool-b-acts-ii-and-iii) and [row 94's](../../spec-monster-ai/catalogue/#batch-8-pool-e-towers-turrets-javelins-and-blowguns-venom-lords-the-siege) are given in the catalogue, listed or by a rule, and **each value is compared with the game's image**, which says what they hold and not how they were made. How the thinks use them is **read from the code**, and no log holds a decision of either row. The wisp's grant to a player ends by the timed list's expiry, and death may free it first, also read from the code. As data, row 25's wisps are in the spawn columns of some levels and one superunique.
 
 ### The Uber rows
 
@@ -517,6 +517,6 @@ From the specs' open questions:
 
 ## Where to read more
 
-- The specs: overview, [machinery](../../spec-monster-ai/machinery/#reimplementation-notes) and catalogue, whose *Reimplementation notes* list the traps.
+- The specs: overview, [machinery](../../spec-monster-ai/machinery/#reimplementation-notes) and [catalogue](../../spec-monster-ai/catalogue/#reimplementation-notes), whose *Reimplementation notes* list the traps.
 - The [glossary](../../reference/glossary/) for D2 terms and `aip`.
 - Related wiki pages: [monsters](../../world/monsters/) (how a monster is created and what its stats are), [skills and missiles](../../characters/skills/) (what a skill command does), [pathing](../pathing/) (the planners behind a request), [the server frame](../server-frame/) (the order of events in a frame), [animation and timing](../animation/) (a mode's frames and the step), [characters and hirelings](../../characters/characters/), [randomness](../../foundations/randomness/) (unit seeds and draws) and [how we know](../../reading-the-tags/).

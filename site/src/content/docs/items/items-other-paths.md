@@ -12,7 +12,7 @@ the quality roll, uniques and sets, affixes, [base stats](../../reference/glossa
 here. This page restates four reviewed specs:
 [socket filling and runewords](../../spec-items/sockets-runewords/#purpose),
 [the Horadric Cube](../../spec-items/cube/#purpose),
-vendor stock and gambling and
+[vendor stock and gambling](../../spec-items/vendors/#purpose) and
 [quest drops, quest rewards and special drops](../../spec-items/quest-drops/#purpose).
 
 ## The big picture
@@ -584,7 +584,7 @@ cube.
 
 ### Akara's stock at character level 30
 
-Copied from vendors § Worked example. Expansion, Normal, Act I, so the
+Copied from [vendors § Worked example](../../spec-items/vendors/#worked-example). Expansion, Normal, Act I, so the
 stock level is min(35, 12) = 12. Akara's list has 5 bases and 10 permanent codes.
 
 | Draw | Result |
@@ -647,12 +647,12 @@ Collected from the specs' open questions and unconfirmed points:
 ## Where to read more
 
 - The specs: [socket filling and runewords](../../spec-items/sockets-runewords/#purpose),
-  [the Horadric Cube](../../spec-items/cube/#purpose), vendor stock and gambling,
+  [the Horadric Cube](../../spec-items/cube/#purpose), [vendor stock and gambling](../../spec-items/vendors/#purpose),
   [quest drops and rewards](../../spec-items/quest-drops/#purpose).
 - Each spec's *Reimplementation notes* lists the traps:
   [sockets](../../spec-items/sockets-runewords/#reimplementation-notes),
   [cube](../../spec-items/cube/#reimplementation-notes),
-  vendors,
+  [vendors](../../spec-items/vendors/#reimplementation-notes),
   [quests](../../spec-items/quest-drops/#reimplementation-notes).
 - The [glossary](../../reference/glossary/) for the terms, and the wiki pages on [item drops](../items/),
   [using items and the inventory](../inventory/) (pickup, drop, stacks and the belt), [randomness](../../foundations/randomness/) and

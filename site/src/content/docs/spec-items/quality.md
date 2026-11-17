@@ -409,7 +409,7 @@ What item creation does with the code is owned by `items/uniques-sets`, and by `
 
 - [C] **Vendor stock and gambling never reach this roll.** Their builders choose the quality on the store seed
   (normal or superior stock, 4 for magic stock, 4–7 for a gamble slot) and pass it in the creation record; the
-  creation-side roll above returns it with no draw. See vendors.md.
+  creation-side roll above returns it with no draw. See [vendors.md](../vendors/#f-the-creation-record-items_createforstore-and-the-item-seeds).
 
 - [I] **Pre-switch overrides.** Before its switch, `ItemCreateByQuality` rewrites the item's
   quality by four rules, in this order, a later one overwriting an earlier: an `ItemTypes.Magic` type gets 7 for a

@@ -49,7 +49,7 @@ This layout was checked on 35 stubs.
 The server then checks the stub in a fixed order: length, checksum, the size field, the version (92 to 96), the
 name, the status word and the class byte. Every stub of the creation run passed. The same header checks, run later
 on deliberately broken saves, confirmed each failure code and the order wherever two tests could be told apart
-(save/d2s § D3–D5, the [saves](../saves/) page). The client adds the
+([save/d2s § D3–D5](../../spec-save/d2s/#d3d5-reading-a-save), the [saves](../saves/) page). The client adds the
 checksum when it writes the stub, and every stub the server read carried it. When the "new" bit is set, the server
 clears it and builds a fresh character instead of reading the rest of the file; a test stub followed by 10 extra
 bytes failed with load error 9, and the same stub without them made a new character. An older save (version 87 in
@@ -213,7 +213,7 @@ The level-up characters of the test run were prepared saves with unusual values 
 run backs the arithmetic and the "no draw" result, not what a naturally levelled character's life would be. Such
 values meet a limit of the save file: life, mana and stamina are written in fields that hold at most 8191.99 points,
 and a larger value is written as that maximum; the same runs' saves confirm it
-(save/d2s § F, and the [saves](../saves/) page).
+([save/d2s § F](../../spec-save/d2s/#f-character-stats-gf), and the [saves](../saves/) page).
 
 ## Other ways to gain or lose experience
 
@@ -563,7 +563,7 @@ From [hirelings § Open questions](../../spec-hirelings/overview/):
   [player/party](../../spec-player/party/#algorithm) and
   [hirelings](../../spec-hirelings/overview/#algorithm), with their *Reimplementation notes*.
 - How the first save and a mercenary's header are stored: the [saves](../saves/) page and
-  save/d2s § D.
+  [save/d2s § D](../../spec-save/d2s/#d-header-fields).
 - The seeds behind all of this: the [randomness](../../foundations/randomness/) page.
 - How a character's stats add up from items, sets, passives and states: the [stats and states](../stats-and-states/)
   page.

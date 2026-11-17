@@ -147,7 +147,7 @@ Scale(v: i32, m: i32, t: i32) → i32:                                  [C]
   § B–§ D.
 - [C] The run separates the large form at the NPC step and in the stat terms: with it the 26 525 price calls
   reproduce, and with the small form alone reports 1 846 mismatch lines (NPC step) and
-  2 737 (stat terms) on the same logs (architect review, 2026-10-19).
+  2 737 (stat terms) on the same logs.
 - [C] At the other steps that have it the large form holds under emulation: `AddTerm` tests `P` for all three sums
   of the affix, set and unique terms (1 047 large-form terms; the small form alone fails 156), the staff-mod term
   divides the multiplier first (231 entries; fails 77), and the recharge cost tests `T = K × 10 000` (133 entries in
@@ -225,33 +225,6 @@ flowchart TD
   SO --> ET["C8 ethereal, class item: S ÷ 4 each"]
 ```
 
-```
-C1. if not ItemQualityMagicPlus(item):            ; quality not 4..9              [C]
-      (P, S, R) ← StaffModTerm(item, P, S, R, n)   ; C9
-C2. if not (item.flags & 0x10): goto C7            ; unidentified                  [C]
-C3. dP, dS, dR: i32 ← 0, 0, 0                                                       [C]
-    if automagic id ≠ 0: AddTerm(a.multiply, a.add)      ; a = its affix record
-C4. by quality (jump table, quality − 1):                                 [C]
-      1 low:                (dP, dS, dR) ← (−(P ÷ 2), −(S ÷ 2), −(R ÷ 2))   ; replaces C3
-      2 normal:             nothing
-      3 superior, 9 tempered: terms ← true
-      4 magic:              AddTerm for prefix 0, then suffix 0;  terms ← true
-      6 rare, 8 crafted:    for i in 0 ..< 3: AddTerm for prefix i, then suffix i;  terms ← true
-      5 set:                AddTerm(SetItems[fileIndex].cost mult, .cost add)
-      7 unique:             AddTerm(UniqueItems[fileIndex].cost mult, .cost add)   ; no record: as 4 magic
-C5. if terms: (P, S, R) ← StatTerms(item, P, S, R, n)    ; table below          [C]
-C6. P ← P + dP ÷ n;  S ← S + dS ÷ n;  R ← R + dR ÷ n     ; signed idiv           [C]
-    if ItemQualityMagicPlus(item): (P, S, R) ← StaffModTerm(item, P, S, R, n)
-C7. for each child in the item's own inventory (socketed gems, runes, jewels):     [C]
-      h ← child.base.cost ÷ 2;  P ← P + h;  S ← S + h;  R ← R + h
-C8. if item.flags &: S ← S ÷ 4                  ; ethereal               [C]
-    if ItemTypes[own type].Class < 7: S ← S ÷ 4          ; class item, again
-
-AddTerm(m, a):                                     ; the test is on P for all three  [C]
-  if P > 0xFFFF and m ≠ 0: dP += (P ÷ 1024) × m + a;  dS += (S ÷ 1024) × m + a;  dR += (R ÷ 1024) × m + a
-  else:                    dP += (m × P) ÷ 1024 + a;  dS += (m × S) ÷ 1024 + a;  dR += (m × R) ÷ 1024 + a
-```
-
 Step notes:
 
 - C3–C4. [C] The run reproduces qualities 1–7 (the low halving, the set row's terms in 66 inputs, the rare item's
@@ -324,43 +297,6 @@ StaffModTerm(item, P, S, R, n):                                                 
   (`Skills.txt:cost` mult, `ItemTypes.txt:StaffMods`)
 
 ### D. Mode steps, the NPC row, quantity and the result
-
-```
-D1. if mode = 1 and item.flags & and ItemHasDurability(item) and M ≠ 0 and D ≤ 0:   [C]
-      S ← 0                                              ; a broken ethereal item
-D2. if mode = 3 and not ItemTypeQuiver(item) and not Throwable(item) and ItemHasDurability(item):   [C]
-      if M = 0 or D ≥ M:     R ← 0
-      else if own stat 252 ≠ 0: R ← (D < M − 1) ? ((M − 1) × R) ÷ M : 0     ; item_replenish_durability
-      else:                  R ← ((M − D) × R) ÷ M
-D3. rec ← NpcGetByClass(npcClass);  if rec = none: fatal error 0xCDC               [C]
-    P ← Scale(P, rec.sell mult, rec.sell mult)
-    S ← Scale(S, rec.buy mult,  rec.sell mult)            ; the test is sell mult
-    R ← Scale(R, rec.rep mult,  rec.rep mult)
-    for k in A, B, C:
-      if rec.questflag k ≠ 0 and (QuestBit(word rec.questflag k, bit 0) or QuestBit(word rec.questflag k, bit 1)):
-        P ← Scale(P, rec.questsellmult k, same);  S ← Scale(S, rec.questbuymult k, same);  R ← Scale(R, rec.questrepmult k, same)
-D4. if not IsType(item, 18 book) and not ItemTypeQuiver(item):                       [C]
-      P ← P × q
-      if base.stackable and ItemCanRepair(item):
-        Ms: i32 ← MaxStack(item)
-        if q < Ms and own stat 253 = 0: R ← R × (Ms − q);  S ← Ms × S − R
-        else:                          S ← S × Ms;  R ← 0
-      else: S ← S × q
-D5. if mode = 3 and not (item.flags &): R ← R + RechargeCost(item)          [C]
-D6. S′ ← min(S, rec.max buy[d])                                                       [C]
-D7. if mode = 1: return max(S′, 1)                       ; "S′ < 1 → 1"             [C]
-    if mode = 3: if r ≠ 0: R ← R − MulDiv(R, r, 100);  return R < 1 ? 1 : R
-    if r ≠ 0: P ← P − MulDiv(P, r, 100);  return P < 1 ? 1 : P       ; mode 0 and any other mode
-
-RechargeCost(item):                                                                   [C]
-  total: i32 ← 0
-  for each stat 204 (item_charged_skill) entry with current c = value & 0xFF < max x = value >> 8:
-    k ← Skills[param >> 6];  lvl ← param & 0x3F             ; the same two globals as Encode 2, 3
-    K: i32 ← lvl + 2 × (k.reqlevel ÷ 6) + 2;  T: i32 ← K × 10000
-    t: i32 ← (T > 0xFFFF and k.cost mult ≠ 0) ? (T ÷ 1024) × k.cost mult : (k.cost mult × T) ÷ 1024
-    total ← total + ((x − c) × (t + k.cost add)) ÷ x
-  return total
-```
 
 Step notes:
 
@@ -489,7 +425,7 @@ Step notes:
 - [C] **The store record's bytes `+0x24..+0x26` are not read in the windows played.** A read watchpoint on
   Charsi's `NpcStoreRec` `+0x24..+0x27`, with a control watch on `+0x00` writing to the end of each session, fired 5
   times, each at `NPC_TradeOpen`'s compare of the byte `+0x27` (the stale byte of
-  items/vendors § C), and never on `+0x24..+0x26`. The windows: Charsi's trade, sale,
+  [items/vendors § C](../vendors/#c-when-stock-is-built-reset-and-marked-stale)), and never on `+0x24..+0x26`. The windows: Charsi's trade, sale,
   single-item and partial repairs, repair-all and imbue; Gheed's trade and gamble; Akara; Kashya's list; Larzuk,
   his socket service, Anya, her personalization and Malah in Normal; Larzuk, Malah, Anya, Halbu and Charsi in Hell;
   ten gamble windows. In session 4505 the watch was set at frame 1769 as the first Gheed gamble window opened and
@@ -512,7 +448,7 @@ Step notes:
   writes 0, and the rest add `delta` (395); writing the cap instead fails 101 cases, and the caps without the type
   test fail 68.
 - G4. [I] In a party with another member in the level, a pickup goes through `PartyGoldShare` (a split by the party
-  count). Where gold stands in a pickup's order: items/inventory § I.
+  count). Where gold stands in a pickup's order: [items/inventory § I](../inventory/#i-pickup).
 
 **The pile amount.** A gold pile's amount is fixed when the gold item is created, then a monster drop is scaled:
 
@@ -709,7 +645,7 @@ Step notes:
 - H2. [C] **An indestructible item makes no draw.** All 50 rolls without a draw were on two items with stat 152 = 1
   in their full-stat cache (a set `xtb`, 12 rolls, and a unique `uit`, 38, session 4381), whose bases have
   `nodurability` 0, `durability` 18 and 86 and whose maximum is not 0, so only stat 152 makes `ItemHasDurability`
-  false; every roll on an item without stat 152 drew (architect review, 2026-10-19).
+  false; every roll on an item without stat 152 drew.
 - H2. [I] A melee weapon whose durability reaches 0 gets `D = 0` and quantity 0 but no `ItemBreak`; `HandsRefresh`
   calls `ItemBreak` only for a stackable or throwable `weap` of quantity ≤ 0, magic or better, without stat 125. The
   one weapon taken to 0 in the run had no broken flag at the roll's exit.
@@ -882,8 +818,6 @@ so the amount is `5 + 19 = 24`, unchanged by `mul=`. G7: the killer's stat 79 is
   (index 4, bodyloc 8, the belt); `Step` → `d3d536e0:4e0f1a44`, `w = 0xd3d536e0 mod 18 = 0`. From index 4 the belt
   holds `armo` and `0 < 2`, so the belt is rolled. `Step` → `714054a4:585a976c`, `roll = 0x714054a4 mod 100 = 80`,
   not below 10: no loss (durability stays 4). Three steps of the defender's seed.
-- **Weapon (frame 859).** The Barbarian's axe (`D` 3 of 24): attacker seed `d1712f2d:0b0beb6e`, `Step` →
-  `:575b5184`, `roll = 51`, not below 4: no loss. One step of the attacker's seed.
 
 ## Reimplementation notes
 
@@ -922,8 +856,8 @@ so the amount is `5 + 19 = 24`, unchanged by `mul=`. G7: the killer's stat 79 is
   Skills § Charge cost columns,
   Hireling § Costs.
 - Specs: upstream rng, [items/properties § A](../properties/#a-base-stats-on-the-unit-seed),
-  [items/tc § H](../tc/#h-item-pick-and-hand-off), stats/aggregate,
+  [items/tc § H](../tc/#h-item-pick-and-hand-off), [stats/aggregate](../../spec-stats/aggregate/),
   [monsters/stats § A](../../spec-monsters/stats/#a-muldiv-and-monlvlstats), [hirelings § E](../../spec-hirelings/overview/#e-an-entry-hireling_rollentry);
-  downstream items/vendors § I, [hirelings § K](../../spec-hirelings/overview/#k-named-only),
+  downstream [items/vendors § I](../vendors/#i-prices-and-repair), [hirelings § K](../../spec-hirelings/overview/#k-named-only),
   [items/quest-drops D6](../quest-drops/#d6-baals-first-kill), [combat/delivery § F](../../spec-combat/delivery/#f-the-boundary-at-delivery).
 - Plan: 0043.

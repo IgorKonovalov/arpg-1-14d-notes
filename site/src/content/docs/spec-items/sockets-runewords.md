@@ -11,7 +11,7 @@ tests before it sends the request, what the server tests and in which order, wha
 the children make a runeword, and which draws on which seed roll the runeword's properties. It also gives the two
 socket-count setters, the creation one with its quality clamps and the load one without them. The number of sockets a
 drop gets is in [items/properties § F](../properties/#f-ethereal-and-sockets); the bits a socketed item and a runeword
-leave in a save are in save/d2s § I.
+leave in a save are in [save/d2s § I](../../spec-save/d2s/#i-one-item).
 
 Names of functions and fields are ours. "Item seed" is the seed at `ItemData+0x04` (`ITEMS_GetSeed`), not the unit
 seed at `Unit+0x20`. Item flags are `ItemData+0x18`: bit 4 (`0x10`) identified, bit 11
@@ -519,7 +519,7 @@ Step notes:
   *Sanctuary*, *Gloom*, *Enigma*, *Stone*, *Bramble*'s aura, *Call to Arms*'s `oskill`, *Famine*, *Duress*, *Bone*,
   and every func 19 charge). [C]
 - E1. **That seed's state.** A rune loaded from a save has item seed `{startSeed, 666}` at its insert (49 of 49 such
-  completing runes), the reader's seed init of save/d2s I5; gem and rune transfers make
+  completing runes), the reader's seed init of [save/d2s I5](../../spec-save/d2s/#i-one-item); gem and rune transfers make
   no draws (§ C), so nothing moves it before the rolls. A rune made in the session (the cube's Nef) carried an advanced
   seed, and *Black* completed by it reproduced from that seed. [C]
 - E1. **Already applied.** A parent that already holds a state-171 list gets nothing, and `Apply` returns 0: the save
@@ -529,7 +529,7 @@ Step notes:
   returned 0; the list and El's seed were unchanged (flag bit 26 was already set by the reader), and the insert still
   made the parent update (bit 0) and ran the timers (E4). [C]
 - E1. The test is by state alone: `RUNEWORD_Apply` pushes `0x40` and `0xAB`, but
-  `UnitFindStatList` searches by state alone when the state is non-zero (→), so the
+  `UnitFindStatList` searches by state alone when the state is non-zero, so the
   `0x40` is not read. [I]
 - E2. The stock `runes` rows have no gap in `T1Code1..7` and no unknown code (data check over 169 rows), so "first
   blank ends" and "skip blanks" give the same result on stock data. [C]
@@ -558,13 +558,6 @@ Step notes:
   stats 21, 23, 159 and 22, 24, 160 (+3 each), which only the non-weapon branch writes, and `dmg%` 20 as stats 17/18;
   *Famine* and the five *Splendor* (`ac%` on shields) reproduced in the run with the rune as the item. [C]
 
-- E3. **Per-func coverage.** The run's 50 runewords reached funcs 1, 2, 3, 5, 6, 7, 8, 10, 11, 15, 16, 17, 19, 21, 22
-  and 23, counted from the logged `SLOT` lines between `RWA` and `RWX` (the per-func table; `
-  check` prints it), and every slot reproduced draw for draw. Ranged lines drew for funcs 1 and 22; the 36 func 3
-  slots drew nothing, 15 of them on ranged lines. Funcs 8, 10 and 21 met only fixed lines (`min` = `max`), so their
-  one-draw case rests on the shared `PROP_RollValue`, which the ranged lines of funcs 1, 2 and 22 corroborate. The
-  second run's three runewords (*Prudence*, *Eternity*, *Leaf*) add func 20 and func 17's `par`-0 branch at
-  `min` = `max`, each reproduced. [C]
 - E3. The `[I]` rows of the table (func 8's reuse branch, func 17's `par`-0 roll on a ranged line, func 11's ilvl
   branch, func 7's `+1` fallback, func 24) are read from the handlers, with the stock-row counts,
   and none has a stock case: funcs 8 and 11 as their rows say; func 17's ranged rows and func 24's *Faith* are `server`

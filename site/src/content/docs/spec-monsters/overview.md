@@ -15,13 +15,13 @@ rng; seed owners are in rng/seeds.
 
 ## Files
 
-| File | Covers | Status |
-|---|---|---|
-| [pool.md](../pool/) | the monster regions built at game creation (pool pick, appearance sets, copied Levels fields), the monster level rule, client critters | reviewed |
-| spawn.md | random population of a room: gate, density, class pick, normal or special, groups, champion packs, unique and MonStats minions, placement | reviewed |
-| [special.md](../special/) | champion or unique mods, mod handlers, unique minions and `xfer`, pack members, superuniques, MonPlace 2 and 3, the client name roll | reviewed |
-| — | the AI tick, the AI table and state, target search, the command, the path request, following, the 18 tier AIs | reviewed |
-| [stats.md](../stats/) | hit points, defence, experience, resistances and block from `MonStats` × `MonLvl` per difficulty, the player count (at creation only), the classic nightmare/hell factors, the stat callback, MonProp, the mod handlers' stat effects | reviewed |
+| File | Covers |
+|---|---|
+| [pool.md](../pool/) | the monster regions built at game creation (pool pick, appearance sets, copied Levels fields), the monster level rule, client critters |
+| spawn.md | random population of a room: gate, density, class pick, normal or special, groups, champion packs, unique and MonStats minions, placement |
+| [special.md](../special/) | champion or unique mods, mod handlers, unique minions and `xfer`, pack members, superuniques, MonPlace 2 and 3, the client name roll |
+| — | the AI tick, the AI table and state, target search, the command, the path request, following, the 18 tier AIs |
+| [stats.md](../stats/) | hit points, defence, experience, resistances and block from `MonStats` × `MonLvl` per difficulty, the player count (at creation only), the classic nightmare/hell factors, the stat callback, MonProp, the mod handlers' stat effects |
 
 ## Data flow
 

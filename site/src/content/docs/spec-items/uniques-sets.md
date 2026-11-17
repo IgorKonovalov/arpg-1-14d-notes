@@ -47,7 +47,7 @@ flowchart LR
   reproduces what they build: the vendors' stock and gamble creations (8 787 through the item chain, a unique gambled
   in Normal and three set picks that failed to magic among them), the cube's 140 creations and the quest scripts'
   1 856, the quality-7 hammers among them. This spec covers the builders as a drop reaches them; those callers belong
-  to items/vendors, `items/cube` and `items/quest-drops`. The version-0 builders and the restore path
+  to [items/vendors](../vendors/), `items/cube` and `items/quest-drops`. The version-0 builders and the restore path
   (`rec+0x2C` ≠ 0) are named in § B and § C only.
 - [I] The cube changes the made-uniques set through one path only: a `usetype` output with `reg` whose input 1 is a
   unique. `RecipeOutputCreate` rebuilds that unique by row; when the row's made bit was clear before
@@ -654,4 +654,4 @@ The one case where a failed builder had drawn. Classic Nightmare, item 320 `brs`
   Misc, TreasureClassEx.
 - Specs: rng (`Step`, `Range`, `Init`), rng/seeds (step 7a),
   [items/tc](../tc/) (hand-off), [items/quality](../quality/) (the code and § F). Downstream:
-  stats/aggregate § J (a set item's bonuses once worn).
+  [stats/aggregate § J](../../spec-stats/aggregate/#j-set-bonuses) (a set item's bonuses once worn).

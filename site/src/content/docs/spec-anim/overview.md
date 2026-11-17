@@ -125,5 +125,5 @@ rate and mode machine.
 ## Evidence
 
 - Plan: 0050. Upstream: rng,
-  stats/aggregate. Downstream: [skills/dispatch](../../spec-skills/dispatch/),
-  combat, objects, [monsters/stats](../../spec-monsters/stats/).
+  [stats/aggregate](../../spec-stats/aggregate/). Downstream: [skills/dispatch](../../spec-skills/dispatch/),
+  [combat](../../spec-combat/overview/), objects, [monsters/stats](../../spec-monsters/stats/).

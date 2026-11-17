@@ -45,7 +45,13 @@ priority; a lookup walks that list and the first archive that has the file wins.
 `patch_d2`, then `d2exp`, then `d2kfixup`, then `d2delta`, then `d2data`. `d2exp` is opened whenever it exists,
 even for a classic game, so classic and expansion games read the same tables.
 
-Loose files on disk are only looked at when the game runs with `-direct` (or when no archive is open at all), and then they beat every archive. In a normal run a loose file never overrides an archive. Only the place of the two optional archives in the middle of the list (the install has neither) and the case with no archive open (no lookup ran before the first open) are read from the code. The video archive is opened later, when a cinematic is played, and goes to the front of its priority group.
+Loose files on disk are only looked at when the game runs with `-direct` (or when no archive is open at all), and
+then they beat every archive. In a
+normal run a loose file never overrides an archive. This is confirmed in runs that watched the game from before
+its start-up code: the archive opens, the sorted list after each open and every file lookup match these rules, a run
+with loose files but no `-direct` read none of them, and the same kind of files with `-direct` were read from disk.
+Only the place of the two optional archives in the middle of the list (the install has neither) and the case with no
+archive open (no lookup ran before the first open) are read from the code. The video archive is opened later, when a cinematic is played, and goes to the front of its priority group.
 
 ## The game reads the .bin, not the .txt
 

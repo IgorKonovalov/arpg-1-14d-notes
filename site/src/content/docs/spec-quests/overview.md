@@ -15,10 +15,10 @@ below.
 
 ## Files
 
-| File | Covers | Status |
-|---|---|---|
-| [progression.md](../progression/) | the quest record and its load rule, the 41 quest objects and the event dispatch, the join's game-wide pass, timers, NPC interaction, the quest-seed and player-seed draws, a section per quest (bit table and state diagram), the warp and portal gates, the creation-path readers | reviewed |
-| [travel.md](../travel/) | placement (`ActLevelSpot`, the level-point lookup, the free-cell search), waypoint activation and travel, act change through an NPC, the Durance and other travel portals, town portals (open, use, close), warps, resurrection and join placement, the real-time gates | reviewed |
+| File | Covers |
+|---|---|
+| [progression.md](../progression/) | the quest record and its load rule, the 41 quest objects and the event dispatch, the join's game-wide pass, timers, NPC interaction, the quest-seed and player-seed draws, a section per quest (bit table and state diagram), the warp and portal gates, the creation-path readers |
+| [travel.md](../travel/) | placement (`ActLevelSpot`, the level-point lookup, the free-cell search), waypoint activation and travel, act change through an NPC, the Durance and other travel portals, town portals (open, use, close), warps, resurrection and join placement, the real-time gates |
 
 Not covered: the quest drops, rewards and item services, the dialogue text and the quest log's presentation, the AI and combat that decide when a boss dies (inputs here).
 
@@ -105,4 +105,4 @@ fetch outside any logged event.
 | rng/seeds | act `+0x094` as the true tomb |
 | [items/cube](../../spec-items/cube/) | the cow-portal gate words |
 | drlg/collision, [drlg/warps](../../spec-drlg/warps/) | the level-point lookup and warp pairing used by placement |
-| save/d2s | the record's load rule and the saved words |
+| [save/d2s](../../spec-save/d2s/) | the record's load rule and the saved words |

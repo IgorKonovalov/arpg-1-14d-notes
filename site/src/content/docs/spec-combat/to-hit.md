@@ -11,7 +11,7 @@ hit with one draw on the **attacker's** seed, then the defender's block and avoi
 seed. The result is the packet's result word, which decides whether the damage build of a monster runs and whether
 any damage is applied. Missiles reuse the chance to hit
 and the defence roll with their own flags. The event that contains this test, its seeds and its chaining are in
-combat/overview. Primitives (`Step`, `Range`) are those of rng; `RangeB` in our
+[combat/overview](../overview/). Primitives (`Step`, `Range`) are those of rng; `RangeB` in our
 symbol names is the second compile of `Range` and behaves the same.
 
 ```mermaid

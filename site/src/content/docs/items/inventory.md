@@ -7,7 +7,7 @@ sidebar:
 This page explains what the server does when a player uses an item (drinks a potion, reads a scroll, opens the cube),
 where an item can go (the inventory, the stash, the belt, the cursor, the ground), how pickup and drop work, and how
 long an item then lies on the ground, and how two players trade. It restates three reviewed specs:
-item use, inventory and
+[item use](../../spec-items/use/#purpose), [inventory](../../spec-items/inventory/#purpose) and
 [trade](../../spec-items/trade/#purpose). They describe the server's outcomes in game frames. What the screen shows and
 the cube's recipes are out of scope; the cube's transmute is on the
 [other item paths](../items-other-paths/#the-horadric-cube) page.
@@ -15,12 +15,13 @@ the cube's recipes are out of scope; the cube's transmute is on the
 ## How sure each statement is
 
 Most of this area is known in one of five ways, and the page names which at each statement. The specs spell out the
-same split in their sections on how to read the tags and
-the inventory's. The differences matter here,
+same split in their sections on [how to read the tags](../../spec-items/use/#how-to-read-the-tags) and
+[the inventory's](../../spec-items/inventory/#how-to-read-the-tags). The differences matter here,
 because the two runs of the real game were small.
 
 | Kind | What it is | Where it stops |
 |---|---|---|
+| **Seen in a game** | Two runs of the real game, three kept logs, with the server's calls logged and compared with a prediction. Seeds, amounts, cells and frames were read from the log. The first run was one fresh process, and two of its requests carried a field written by hand (named below; they stay readings). The second used a fresh process per session and forced nothing. | They cover a few cases: 17 potion uses by one Sorceress, 80 ground drops, 118 ground searches; each count is given where it is used. Only the expiry amounts and the 16 stored rates were checked against a table committed before the kept sessions. The rest compare the reading with the log case by case, on inputs the log gives: that checks the code against its reading, and says nothing of which inputs occur. |
 | **Emulated** | The game's own code run in an emulator on made-up inputs, and compared bit for bit with the project's model. It shows what the code does with the bytes it is given. | It is not a game. It says nothing about which inputs a game produces. Many runs stop at a named call into another function, and what is after that call is not covered. |
 | **Confirmed by a second reading** | The instructions read again with a second tool, or a scan of every call of or store into the thing named. The spec counts it confirmed. | It covers what the code says, as far as the scan reaches, not that a game reached it. |
 | **Read from the code** | The instructions were read, and nothing ran. | It can be wrong in ways no run has checked. |
@@ -191,7 +192,7 @@ heal and not seen in a game (the 17 uses had no golem).
 
 ### Pages
 
-An item sits in a unit's **inventory** in one of five modes (§ A,
+An item sits in a unit's **inventory** in one of five modes ([§ A](../../spec-items/inventory/#a-pages-and-rows),
 read from the code): on a page, on the body, in the belt, on the ground or on the cursor. A player has pages for the
 inventory, the cube, the stash and two for [trading](#trading-between-players).
 
@@ -241,7 +242,12 @@ unless a section below says more. A handler's refusal changes nothing beyond the
 | cursor to belt, belt to cursor, swap | `0x23`, `0x24`, `0x25` | [belts](#belts) |
 | inventory item to belt | `0x63` | the [belt's search](#belts), then that box |
 
-Seen in a game: **`0x19` (item to the cursor) moved neither the player's nor the game's seed, 80 of 80 request pairs**, and the cursor drop `0x17` likewise (80 of 80). This bounds those two seeds around the handler only. By the reading, a stash page that the packet names needs no open stash for a **placed** item: the item is on the cursor, so the "busy" test passes; it needs a room in town.
+Seen in a game: **`0x19` (item to the cursor) moved neither the player's nor the game's seed, 80 of 80 request pairs**,
+and the cursor drop `0x17` likewise (80 of 80). This bounds those two seeds around the handler only. By the reading,
+a stash page that the packet names needs no open stash for a **placed** item: the item is on the cursor, so the
+"busy" test passes; it needs a room in town. **One forced case ran** (in the first run): a placement to the stash page in town with no stash
+open was accepted, but only after the page field was written into the packet by hand, which the real client
+cannot send, so it stays a reading.
 
 ### Belts
 
@@ -269,6 +275,8 @@ flowchart TD
   boxes beyond its four go to the inventory page by the placement search, and to the ground if they do not fit. A community
   text about the remastered game says the same, and a death with a belt holding items above the fourth box is among the
   [cases left open](#what-is-not-known-yet).
+- **One forced case:** a belt placement to box 12 of a 12-box belt stayed in box 12, after the box field was written into
+  the packet by hand. The stock route, and whether a smaller belt's overflow later takes the item, were not run.
 
 ### Stacks
 
@@ -729,7 +737,7 @@ class columns of a table: 1.14d's table has no such column, and the scale is in 
 
 ## Where to read more
 
-- The specs: item use, inventory and [trade](../../spec-items/trade/), each with its worked example
+- The specs: [item use](../../spec-items/use/), [inventory](../../spec-items/inventory/) and [trade](../../spec-items/trade/), each with its worked example
  and
   reimplementation notes.
 - Related pages: [items](../items/) (how an item is made, which a monster's drop starts with), [other item

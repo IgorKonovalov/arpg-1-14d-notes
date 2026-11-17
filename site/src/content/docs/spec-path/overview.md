@@ -9,7 +9,7 @@ sidebar:
 A unit that moves, or a missile that needs a route, holds a path record with a **path type** `0..16`. `PathPlan` takes that record, checks the
 request, builds a 0x34-byte context, takes the unit's own marks off the collision grid, calls the type's planner, puts the marks back, and aims the path at
 the first point it got. This page is the request, the 17 types, the dispatch, the draws per type and the grid a planner reads. The planners
-themselves, as pseudocode, are [path/search](../search/). Who asks for a plan and why is each caller's (skills/catalogue,
+themselves, as pseudocode, are [path/search](../search/). Who asks for a plan and why is each caller's ([skills/catalogue](../../spec-skills/catalogue/),
 [skills/missiles](../../spec-skills/missiles/), [anim/movement](../../spec-anim/movement/), the AI's in [monsters/ai/machinery § D](../../spec-monster-ai/machinery/#d-the-path-request)); the
 per-frame step along the points is [anim/movement § B](../../spec-anim/movement/#b-the-per-frame-step). The grid's cells and marks are drlg/collision.
 
@@ -27,7 +27,7 @@ flowchart LR
 
 | When | Function | Tag |
 |---|---|---|
-| Every plan: 68 direct calls in 58 functions, 34 server and 34 client (§ E) | — | — |
+| Every plan: 68 direct calls in 58 functions, 34 server and 34 client (§ E) | — | [C] |
 | A type is set | — | [C] |
 | A path is planned again: a blocked step (`PathStepMove`), a path ended short of `+0x18` with no target or a target moved more than 5 (`PathStepTargetCheck`) | — | [I] |
 | The record is created | — | [C] (nine calls) |
@@ -112,7 +112,7 @@ A record holds two masks, and they are not interchangeable. [C] In the `PATH_` f
 | player | `0x1C09` | `0x80` | [C] (`PATH_DynamicCreate`: every logged plan from `PlrModeStartMove`, 3 999, and Charge, 213; the other 558 are the skill overrides below, Whirlwind's `0xC01`, 158, and the Leap or Leap Attack flight's 0 / 0, 400), the marks at drlg/collision § F |
 | monster | `PATH_MonTestMask`: `flying` `0x1804`, `opendoors` `0x3401`, else `0x3C01`; the wraith (`BaseId` 38) `0x804`, `PATH_DynamicCreate`'s own branch, taken before `PATH_MonTestMask` is called | `0x100` | [C] (`PATH_MonTestMask`: mark `0x100` in 21 375 of 21 375 monster plans, the test by this rule in 21 126, the function's three arms 21 099 and the wraith branch 27) |
 | a vulture after its take-off | 0: `AiVultureTakeOff` calls `PathSetCollMask(path, 0)` | `0x100` | [C] (the 249 other monster plans, classes 111 and 113) |
-| missile | `g_MissileCollideTypes[CollideType].mask` | 0 at creation; `0x40` when Missiles `Collision` ≠ 0 | [C] the mark and the test: `MissileCreate` passes `[CollideType·8 +]` to `PathSetCollMask`, the missile module's one call |
+| missile | `g_MissileCollideTypes[CollideType].mask` | 0 at creation; `0x40` when Missiles `Collision` ≠ 0 | [C] |
 | Whirlwind, the plan (start 38, no target) | `0xC01` | no zeroing found at the start | [C] the test mask, to the boundary |
 | Whirlwind, the flight | `0x401`, the old mask kept at `ebp−0x14` | no zeroing found at the start; the end restores it | [I] |
 | Jump | not stated here | no zeroing found at the start; the end restores it | [I] |
@@ -164,11 +164,11 @@ C. PathPlan(path, unit, force) → i32:                              [C] 3–16b
 16a. tu ← 0;  if t and UNIT_GetSizeX(t) ≠ 0 and flags & 0x800: tu ← UNIT_CollUnmark(t, 0)     ; shown on units whose unmark returns at once; the grid's half is § F4's T1
 16b. go ← 1;  if flags & 0x1000 and Blocked(ctx.room, tx, ty, pattern, testMask): go ← PathTargetFree(ctx)   ; C3
 17.  path.fx, fy ← ctx.target;  +0x24 ← 0;  +0x28 ← 0              ; [C] written before the slot read (241 cases)
-18.  n ← 0;  if go: n ← g_PathPlanFuncsctx.type             ; [C] the slot's argument to IsBadCodePtr, every type 0–16; [C] the call, the planner g_PathPlanFuncs[ctx.type] in 24 707 of 24 707 logged calls; [I] IsBadCodePtr ≠ 0: fatal 0x37E, not taken on stock
+18.  n ← 0;  if go: n ← g_PathPlanFuncs[ctx.type](ctx)             ; [C] the slot's argument to IsBadCodePtr, every type 0–16; [C] the call, the planner g_PathPlanFuncs[ctx.type] in 24 707 of 24 707 logged calls; [I] IsBadCodePtr ≠ 0: fatal 0x37E, not taken on stock
 19.  +0x28 ← n                                                     ; [I] 19–26: past the import, the tail
 20.  start changed: fatal 0x389                                    ; a planner may move the target, not the start
-21.  if tu ≠ 0: UNIT_CollMark(path.+0x58): the field read again, not t
-22.  UNIT_CollMark(unit): [C] also when the free step returned 0 (13 plannoop cases)
+21.  if tu ≠ 0: UNIT_CollMark(path.+0x58)                          ; the field read again, not t
+22.  UNIT_CollMark(unit)                                           ; [C] also when the free step returned 0 (13 plannoop cases)
 23.  if n = 0: flags &= ~0x20;  return 0
 24.  PathAimNextPoint(path, 1; 1);  if +0x24 ≥ +0x28: goto fail    ; every point at the position
 25.  PathPointsOutsideRoom(path);  +0x14, +0x16 ← +0x10, +0x12;  +0x38 ← 0
@@ -455,10 +455,9 @@ flowchart TD
 - H1. [C] `PathPlanToUnit` and `PathFirstLine` call `PathAimNextPoint(path, 1; 1)`, so where a point remains their aim makes the facing step.
 - H1. [I] `PathPlan`'s tail makes the same call (C's step 24, past the import).
 - H1. [I] **`PathStep`'s call is `PathAimNextPoint(path, 1; 1)`** (`EDX` = 1, `push 1`), skipped for type 4 and once `+0x24 ≥ +0x28`. With `arg` ≠ 0, every aim after a move step with a point ahead calls `PathFaceDir`, so the facing is aimed at the next point after every such step.
-- H2. [I] The names are the reverser's, not an observed use: `+0x64` the facing, `+0x65` the direction to turn to, `+0x66` the turn step per direction difference. `+0x66` is applied by the client's turn step (H5).
+- H2. [I] The names are ours, given at the code reading, not an observed use: `+0x64` the facing, `+0x65` the direction to turn to, `+0x66` the turn step per direction difference. `+0x66` is applied by the client's turn step (H5).
 - H3. [C] `PathSetFacing(path, dir)` writes `dir & 0x3F` to both `+0x64` and `+0x65`; a null path writes nothing (200 emulated cases, 120 with dir ≥ 64 and 20 null paths, controls `mask7f` and `oneonly` separating, family `facing`).
 - H3. [I] **The other writers of the three bytes.** `PathSetDir(path, dir)` has `PathFaceDir`'s body (H2), the dir on the stack, and takes the fatal path for a dir ≥ 64. `PathFaceXY(path, x, y, now)` takes the direction to a subtile centre; with `now` ≠ 0 it writes `+0x64` and `+0x65` as `PathSetFacing` does, else it calls `PathFaceDir`. With those, `PathFaceDir` and the turn step (H5), the image's stores at `+0x66` on a path are `PathFaceDir`'s and `PathSetDir`'s only. The getters are `PathGetFacing` (`+0x64`, 21 call sites) and `PathGetFacingTarget` (`+0x65`, 5).
-- H4. [C] **`PathFaceDir`'s read of `g_PathFaceStep`:** index `(dir − +0x64) & 63`, 4 bytes apart, and only the low byte goes to `+0x66` (`mov al, [ + edx*4]`, a `u8`). The family's 173 reads of the table are that read; its model takes the same bytes from the image, so they say nothing of what the table holds.
 
 ```
 g_PathFaceStep   i 0..63:   d = ((i + 32) & 63) - 32                  ; -32..31
@@ -513,4 +512,4 @@ A class 225 missile's type-10 plan, line 1633, its exit at line 1634.
 ## Evidence
 
 - Tables: PathTypes, MonStats2, Objects, Missiles.
-- Specs: drlg/collision §§ F, F5, F6, F7; [anim/movement](../../spec-anim/movement/); [skills/missiles](../../spec-skills/missiles/) H1, H4, D3; skills/catalogue K11; rng.
+- Specs: drlg/collision §§ F, F5, F6, F7; [anim/movement](../../spec-anim/movement/); [skills/missiles](../../spec-skills/missiles/) H1, H4, D3; [skills/catalogue](../../spec-skills/catalogue/) K11; rng.

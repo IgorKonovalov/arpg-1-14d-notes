@@ -8,8 +8,8 @@ This page explains how a character's final numbers come about: how the game adds
 its set bonuses, its passive skills and the states on it (curses, auras, potions, shrines) into the strength, life
 or resistance that the rest of the game reads; and how a timed state is put on a unit, refreshed, refused, replaced
 and ended. It also covers the per-frame regeneration of life, mana and stamina, auras, and shrines and wells. It
-restates the reviewed stats specs: the overview in stats, the adding up in
-aggregate and the states in states. The
+restates the reviewed stats specs: the overview in [stats](../../spec-stats/overview/#purpose), the adding up in
+[aggregate](../../spec-stats/aggregate/#purpose) and the states in [states](../../spec-stats/states/#purpose). The
 specs carry the exact arithmetic; this page tells the story. Where something is read from the code but not yet seen
 in a test run, or is still unknown, the page says so. "Confirmed by a second reading" means the instructions were read
 again with a second tool, or every call of or store into the thing was scanned: it covers what the code says, not that
@@ -164,7 +164,7 @@ refresh (step 4) and for any other item its next unequip and equip.
 
 ## Dual wield and the weapon switch
 
-From aggregate § I:
+From [aggregate § I](../../spec-stats/aggregate/#i-dual-wield-and-the-weapon-switch):
 
 - **A Barbarian's second weapon counts without its damage.** The weapon that is not the primary one is added with
   its damage-related stats left out of the wearer's totals; its other stats count. Confirmed over 32 such adds.
@@ -176,7 +176,7 @@ From aggregate § I:
 
 ## Set bonuses, partial and full
 
-From aggregate § J, all confirmed except where noted:
+From [aggregate § J](../../spec-stats/aggregate/#j-set-bonuses), all confirmed except where noted:
 
 ```mermaid
 flowchart TD
@@ -262,7 +262,7 @@ such call, confirmed by a second reading of the use routine's call sites.
 
 ## How a state ends
 
-From states § C:
+From [states § C](../../spec-stats/states/#c-expiry-and-removal):
 
 - **At its end frame.** Each apply and each refresh with a duration schedules its own end event. A state applied at
   frame `f` for `d` frames is removed by the event at `f + d`; its stats leave the totals at once, and if a maximum
@@ -312,7 +312,7 @@ Every frame, while the player is alive, one tick changes life, then stamina, the
 
 ## Auras
 
-From states § F, confirmed except where noted:
+From [states § F](../../spec-stats/states/#f-auras), confirmed except where noted:
 
 - **The perdelay grid.** An aura does not run every frame. It runs on a fixed grid of frames: every `perdelay`
   frames (from the skill's formula, at least 5), always on a frame one past a multiple of `perdelay`. Prayer and
@@ -408,9 +408,9 @@ From the specs' open questions:
 
 ## Where to read more
 
-- The specs: stats overview,
-  aggregate and
-  states. Each *Reimplementation notes* section lists the traps for
+- The specs: [stats overview](../../spec-stats/overview/#files),
+  [aggregate](../../spec-stats/aggregate/#reimplementation-notes) and
+  [states](../../spec-stats/states/#reimplementation-notes). Each *Reimplementation notes* section lists the traps for
   someone rebuilding the system.
 - The [glossary](../../reference/glossary/) for D2 terms.
 - Related wiki pages: [combat](../combat/) (what reads these stats), [skills and missiles](../skills/) (the skills that

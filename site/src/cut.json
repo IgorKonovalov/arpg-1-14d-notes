@@ -58,6 +58,10 @@
       "label": "Spec: Combat"
     },
     {
+      "slug": "spec-stats",
+      "label": "Spec: Stats and states"
+    },
+    {
       "slug": "spec-skills",
       "label": "Spec: Skills and missiles"
     },
@@ -76,6 +80,10 @@
     {
       "slug": "spec-quests",
       "label": "Spec: Quests and travel"
+    },
+    {
+      "slug": "spec-save",
+      "label": "Spec: Save files"
     },
     {
       "slug": "spec-chain",

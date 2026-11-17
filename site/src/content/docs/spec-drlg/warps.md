@@ -42,18 +42,18 @@ those of rng; the act seed is that of rng/seeds step 3.
 
 ### Tables
 
-| Used for |
-| --- |
-| `Vis0..7` (leveldefs `+0x48 + 4k`): the destination level of slot *k*, or a seam neighbour |
-| `Warp0..7` (leveldefs `+0x68 + 4k`): the LvlWarp `Id` of slot *k*; −1 = no warp (a seam) |
-| `[difficulty]` (`+0x0C + 4·diff`, `+0x18 + 4·diff`): every level rect's size |
-| `+0x24`/`+0x28`: anchor entries' and unplaced levels' positions |
-| the level whose position an unplaced level's offset is relative to |
-| the town-index write (preset levels 1 and 40), the border pass (outdoor levels) |
-| the warp record of a slot |
-| `+0x1C`/`+0x20`: the warp unit's offset from its cell |
-| `+0x14`/`+0x18`: where the server puts a unit that comes out of the paired warp |
-| `+0x2C`: `'b'`, `'l'`, `'r'` record fitting (room-tiles.md step 10) |
+| Anchor | Used for |
+|---|---|
+| `Levels.txt:Vis0` | `Vis0..7` (leveldefs `+0x48 + 4k`): the destination level of slot *k*, or a seam neighbour |
+| `Levels.txt:Warp0` | `Warp0..7` (leveldefs `+0x68 + 4k`): the LvlWarp `Id` of slot *k*; −1 = no warp (a seam) |
+| `Levels.txt:SizeX`, `Levels.txt:SizeY` | `[difficulty]` (`+0x0C + 4·diff`, `+0x18 + 4·diff`): every level rect's size |
+| `Levels.txt:OffsetX`, `Levels.txt:OffsetY` | `+0x24`/`+0x28`: anchor entries' and unplaced levels' positions |
+| `Levels.txt:Depend` | the level whose position an unplaced level's offset is relative to |
+| `Levels.txt:DrlgType` | the town-index write (preset levels 1 and 40), the border pass (outdoor levels) |
+| `LvlWarp.txt:Id` | the warp record of a slot |
+| `LvlWarp.txt:OffsetX`, `LvlWarp.txt:OffsetY` | `+0x1C`/`+0x20`: the warp unit's offset from its cell |
+| `LvlWarp.txt:ExitWalkX`, `LvlWarp.txt:ExitWalkY` | `+0x14`/`+0x18`: where the server puts a unit that comes out of the paired warp |
+| `LvlWarp.txt:Direction` | `+0x2C`: `'b'`, `'l'`, `'r'` record fitting (room-tiles.md step 10) |
 
 - [C] Stock data: all 236 `Vis` cells resolve to levels. The links are symmetric except 133 → 17. 228 slots hold
   `Vis` + `Warp`, 8 hold `Vis` without `Warp` (26↔27, 27↔28, 32↔33, 107↔108), and none hold `Warp` without `Vis`.
@@ -96,24 +96,6 @@ flowchart TD
 ```
 
 ### A. Per-act link setup
-
-```
-A1. ActLinkInit(act):                                                [C]
-      act 0 (I):  Build(check Act1A, after LinkOutdoorFlags)
-                  Build(check Act1B, after LinkOutdoorFlags)
-                  LevelBorderAdj(1 … 17)
-      act 1 (II): Build(check Act2A);  Build(check Act2B)
-                  LevelBorderAdj(40 … 46)
-      act 2 (III): level 75 at its Levels offset; jungle layout /   ; outdoor.md § J
-                  LevelSeamsByTouch(75, 83);  LevelBorderAdj(75 … 83)
-      act 3 (IV): Build(check Act4A);  Build(check Act4B)
-                  level 104's outdoor data (+0x14) |= g_LinkPickOutdoorFlag   ; set by its pick (B2)
-                  LevelBorderAdj(103 … 106)
-      act 4 (V):  Build(no check);  Build(no check)
-                  LevelSeamsByTouch(111, 112);  LevelBorderAdj(111 … 112)
-                  LevelSeamsByTouch(110, 111);  LevelSeamsByTouch(109, 110)
-                  Build(check Act5C)
-```
 
 - A1. [C] This runs inside `DRLG_ActCreate` after the act seed's own draws (rng/seeds steps 3a–3c) and before the town is
   built. The run predicted the act seed at every `LevelLinkBuild` entry and exit and the act's link lists after

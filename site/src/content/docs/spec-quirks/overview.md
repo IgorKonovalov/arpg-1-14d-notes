@@ -79,14 +79,14 @@ flowchart LR
 | Q14 | Experience is unsigned: thresholds above 2³¹ and `nextexp` compare and store as `u32`. | [C] | [player/creation](../../spec-player/creation/#reimplementation-notes) n4 |
 | Q15 | With stock `ExpRatio` and shift 10, the kill-experience shift count `(r >> s) + s` is 10 or 11 (11 on the 70 rows at 1024, 10 elsewhere and above `MaxLvl`). | [C] | [player/creation](../../spec-player/creation/#reimplementation-notes) n7 |
 | Q16 | `StatPerLevel` is read as an `i8`. | [I] | [player/creation](../../spec-player/creation/#reimplementation-notes) n9 |
-| Q17 | The item bitstream's width clamp is unsigned: a negative value written into an `n`-bit field becomes `2^n − 1`, not 0. | [C] | save/d2s n8 |
-| Q18 | The `gf` stats writer clamps signed instead: a negative value of an unsigned stat becomes 0. | [I] | save/d2s n8 |
-| Q19 | An item property's param is read unsigned (a 9-bit 270 stays 270). | [C] | save/d2s n13 |
-| Q20 | `CSvParam` is read signed in the `gf` list; no stock row reads one. | [I] | save/d2s n13 |
+| Q17 | The item bitstream's width clamp is unsigned: a negative value written into an `n`-bit field becomes `2^n − 1`, not 0. | [C] | [save/d2s](../../spec-save/d2s/#reimplementation-notes) n8 |
+| Q18 | The `gf` stats writer clamps signed instead: a negative value of an unsigned stat becomes 0. | [I] | [save/d2s](../../spec-save/d2s/#reimplementation-notes) n8 |
+| Q19 | An item property's param is read unsigned (a 9-bit 270 stays 270). | [C] | [save/d2s](../../spec-save/d2s/#reimplementation-notes) n13 |
+| Q20 | `CSvParam` is read signed in the `gf` list; no stock row reads one. | [I] | [save/d2s](../../spec-save/d2s/#reimplementation-notes) n13 |
 | Q21 | Missile function numbers are tested as s16, `> 0` first, so row 568's hit function does not run. | [C] | [skills/missiles](../../spec-skills/missiles/#reimplementation-notes) n1 |
-| Q22 | The regeneration tick adds stat 74 whatever its sign: positive heals up to the maximum, negative (poison) bleeds the player. | [C] | stats/states § E |
-| Q436 | Signed and unsigned tests: a blank `SubMissile1` (−1) passes the `≠ 0` test of mdo 21, 22, 23, 25 and 26; class 0 passes do 68's test while do 73 and 80 refuse it; do 31 tests `pettype` signed, do 49 unsigned, and do 44 and 45 turn a bad one into 0. | [C] | skills/catalogue n7 |
-| Q475 | Store the Inventory `gridX` and `gridY` as bytes: the Hireling second-set rows hold 255 from blank cells. | [C] | items/inventory n7 |
+| Q22 | The regeneration tick adds stat 74 whatever its sign: positive heals up to the maximum, negative (poison) bleeds the player. | [C] | [stats/states § E](../../spec-stats/states/#e-the-regeneration-tick) |
+| Q436 | Signed and unsigned tests: a blank `SubMissile1` (−1) passes the `≠ 0` test of mdo 21, 22, 23, 25 and 26; class 0 passes do 68's test while do 73 and 80 refuse it; do 31 tests `pettype` signed, do 49 unsigned, and do 44 and 45 turn a bad one into 0. | [C] | [skills/catalogue](../../spec-skills/catalogue/#reimplementation-notes) n7 |
+| Q475 | Store the Inventory `gridX` and `gridY` as bytes: the Hireling second-set rows hold 255 from blank cells. | [C] | [items/inventory](../../spec-items/inventory/#reimplementation-notes) n7 |
 | Q476 | Row 13's kind-9 bound compares an AI distance with a square, and row 22's bounds are 32-bit signed `imul` squares of an i16. | [I] | [monsters/ai/machinery](../../spec-monster-ai/machinery/#reimplementation-notes) n3 |
 | Q477 | `PathDirCell`'s `& 1` is not a sign: it changes the cell only for an even non-zero minor term. | [C] | [path/search](../../spec-path/search/#reimplementation-notes) n4 |
 
@@ -110,11 +110,11 @@ flowchart LR
 | Q36 | So the `+1` comes before the percentage: `h + ⌊h · dur%/100⌋`, which differs by one from the other order for some values. | [I] | [items/properties](../../spec-items/properties/#reimplementation-notes) n14 |
 | Q37 | `MonHpAddPct` truncates before it multiplies once max HP × 256 exceeds `0x100000` (HP > 4 096). | [C] | [monsters/stats](../../spec-monsters/stats/#reimplementation-notes) n4 |
 | Q38 | Two hpregen formulas: creation `((hp << 8)·r) >> 12`, the stat callback `((new >> 8)·r) >> 4`; they can differ by one, and a group member keeps the callback's value. | [C] | [monsters/stats](../../spec-monsters/stats/#reimplementation-notes) n5 |
-| Q39 | The life rescale truncates a float32, and never takes current life below 1. | [C] | stats/aggregate n5 |
+| Q39 | The life rescale truncates a float32, and never takes current life below 1. | [C] | [stats/aggregate](../../spec-stats/aggregate/#reimplementation-notes) n5 |
 | Q40 | A path step that would pass its point lands on the subtile centre, so frames per point are a ceiling and the next step starts from the centre. | [C] | [anim/movement](../../spec-anim/movement/#reimplementation-notes) n3 |
 | Q41 | The missile step direction is a lookup in `g_PathDirTable`, not a trigonometric function. | [C] | [skills/missiles](../../spec-skills/missiles/#reimplementation-notes) n10 |
 | Q454 | A monster with few hit points has no regeneration: stat 74 is `((hp << 8) × r) >> 12`, so 0 while `hp × r < 16`. | [I] | [monsters/stats § B](../../spec-monsters/stats/#b-monstatsinit-in-order) |
-| Q478 | `calc1` of a healing or mana potion is a total, not a per-frame amount: it is scaled, maybe doubled and divided by `len`, and the division truncates, so a potion can deliver less than its total. | [C] | items/use n1 |
+| Q478 | `calc1` of a healing or mana potion is a total, not a per-frame amount: it is scaled, maybe doubled and divided by `len`, and the division truncates, so a potion can deliver less than its total. | [C] | [items/use](../../spec-items/use/#reimplementation-notes) n1 |
 
 ### 3. Wrap and overflow
 
@@ -127,7 +127,7 @@ flowchart LR
 | Q46 | `raritySum` wraps mod 256 with large `Rarity` values; stock data cannot reach it (13 × 2 at most), and no run exercised it. | [I] | [monsters/pool](../../spec-monsters/pool/#reimplementation-notes) n7 |
 | Q48 | `XP_ApplyExpRatio` switches to `(exp >> s) × r` when `exp × r` would overflow the shift; no kill reached it. | [I] | [player/creation § G](../../spec-player/creation/#g-kill-experience--xp_compute) |
 | Q49 | A gold add over a cap writes 0, not the cap; callers clip first, so only paths that skip the clip (the PvP death write) differ. | [I] | [items/economy](../../spec-items/economy/#reimplementation-notes) n8 |
-| Q50 | Hang and crash path: a progressive ring's step count is used untested; 0 never ends, a negative count reads below the direction tables until the index wraps. | [I] | [combat/delivery](../../spec-combat/delivery/#reimplementation-notes) n11; skills/catalogue n8 |
+| Q50 | Hang and crash path: a progressive ring's step count is used untested; 0 never ends, a negative count reads below the direction tables until the index wraps. | [I] | [combat/delivery](../../spec-combat/delivery/#reimplementation-notes) n11; [skills/catalogue](../../spec-skills/catalogue/#reimplementation-notes) n8 |
 | Q446 | The party share's wraps: `d²` is 32-bit, compared unsigned, so a wrapped value inside the bound passes; the total's product is i32, so past its wrap the total may go negative. | [C] | [player/party](../../spec-player/party/#reimplementation-notes) n6; [player/creation § J](../../spec-player/creation/#j-other-level-and-experience-changes) |
 
 ### 4. Bounds, comparisons and table edges
@@ -144,7 +144,7 @@ flowchart LR
 | Q58 | Pierce does not lower a monster's immunity. | [C] | [combat/reductions](../../spec-combat/reductions/#reimplementation-notes) n4 |
 | Q59 | The player-row reduction loop stops at the first monster-only row, so for a player or hireling attacker the steal percents are not scaled by P. | [C] | [combat/reductions](../../spec-combat/reductions/#reimplementation-notes) n6 |
 | Q60 | No minimum damage: nothing in the reduction path keeps a hit above 0. | [C] | [combat/reductions](../../spec-combat/reductions/#reimplementation-notes) n7 |
-| Q61 | The life tick floors a player at 256 (one point), not 0; a monster's tick can kill. | [I] | stats/states n6 |
+| Q61 | The life tick floors a player at 256 (one point), not 0; a monster's tick can kill. | [I] | [stats/states](../../spec-stats/states/#reimplementation-notes) n6 |
 | Q62 | The TCEx loader stops at the first empty name, and the item loop at the first empty `ItemN` (an `Item5` after a blank `Item4` is ignored); `Picks` 0 becomes 1. | [I] | [data/excel § G](../../spec-data/excel/#g-treasure-classes); [data/excel](../../spec-data/excel/#reimplementation-notes) n5 |
 | Q63 | Monster references after the duplicate `cr_lancer8` are off by one: a pool cell is a MonStats record position (723 is the second `cr_lancer8`), not a name to look up. | [C] | [monsters/pool](../../spec-monsters/pool/#reimplementation-notes) n5; [data/excel § H](../../spec-data/excel/#h-monster-references); [data/excel](../../spec-data/excel/#reimplementation-notes) n7 |
 | Q64 | Language id 13 is not `ENG`: ids 0–12 give their entry, only ids ≥ 14 map to entry 0. | [C] | data/strings n8; [data/excel § I](../../spec-data/excel/#i-string-table-keys) |
@@ -180,8 +180,8 @@ flowchart LR
 | Q96 | The TC item count `max` is global to the call (6 for monster drops): the 6th item ends the whole recursion and skips gold find. | [C] | [items/tc](../../spec-items/tc/#reimplementation-notes) n9 |
 | Q97 | Unique durability is ×3 or ×2 of the current values, each capped at 255, only for a base with durability (`GetUnitStat` for 72, `GetUnitBaseStat` for 73). | [C] | [items/uniques-sets](../../spec-items/uniques-sets/#reimplementation-notes) n10 |
 | Q98 | Set weight 0 counts as 1 and a negative weight is kept; a zero total returns before any draw, a negative total reaches `RangeB` (no draw, 0) and the walk may run off the end. | [C] | [items/uniques-sets](../../spec-items/uniques-sets/#reimplementation-notes) n11 |
-| Q99 | Vendor stock level is not clamped to 99 in Nightmare and Hell (`clvl` 99 gives 104), while the gamble `lvl` is clamped to 5..99. | [C] | items/vendors n7 |
-| Q100 | A 33rd failure ends the whole vendor build, permanent items included, at the next limit test; no stock build reaches it. | [I] | items/vendors n8 |
+| Q99 | Vendor stock level is not clamped to 99 in Nightmare and Hell (`clvl` 99 gives 104), while the gamble `lvl` is clamped to 5..99. | [C] | [items/vendors](../../spec-items/vendors/#reimplementation-notes) n7 |
+| Q100 | A 33rd failure ends the whole vendor build, permanent items included, at the next limit test; no stock build reaches it. | [I] | [items/vendors](../../spec-items/vendors/#reimplementation-notes) n8 |
 | Q101 | A level's monster candidate count is the number of leading non-negative slots (of 25), not the number of set slots. | [I] | [monsters/pool](../../spec-monsters/pool/#reimplementation-notes) n6 |
 | Q102 | The variant duplicate check tests `tries = 0`, not `≤ 0`: two equal existing sets make one try cost two, `tries` passes 0, and the loop runs on (a `≤ 0` control differs in exactly those 192 of 3 000 calls). | [C] | [monsters/pool](../../spec-monsters/pool/#reimplementation-notes) n8 |
 | Q103 | That loop ends with probability 1 but has no bound on its draws. | [I] | [monsters/pool](../../spec-monsters/pool/#reimplementation-notes) n8 |
@@ -192,14 +192,14 @@ flowchart LR
 | Q108 | `XP_Compute` returns 0 at the level cap. | [C] | [player/creation](../../spec-player/creation/#reimplementation-notes) n6 |
 | Q109 | For a non-positive input `XP_Compute` returns 1, not 0. | [I] | [player/creation](../../spec-player/creation/#reimplementation-notes) n6 |
 | Q110 | The eclipse period is 15 or 16, not up to 17: `RandLoHi(15, 17)` is one `Step`, period `15 + (low & 1)` (run for level 44). | [C] | [quests/progression § G](../../spec-quests/progression/#g-the-draws); [quests/progression](../../spec-quests/progression/#reimplementation-notes) n6 |
-| Q111 | Simple items have no `n_filled`: their bit 108 is the realm flag. | [C] | save/d2s n10 |
-| Q112 | Saved prefix ids are rebased, suffix ids are not. | [C] | save/d2s n11 |
-| Q113 | Grouped properties (17, 48, 50, 52, 54, 57) carry one id, followed by the next ids' values with no id and no param. | [C] | save/d2s n12 |
-| Q114 | The save reader stops at 8 KiB (`0x2000` bytes). | [C] | save/d2s n14 |
-| Q115 | The writer's buffer is 8 KiB; no write passed it. | [I] | save/d2s n14 |
+| Q111 | Simple items have no `n_filled`: their bit 108 is the realm flag. | [C] | [save/d2s](../../spec-save/d2s/#reimplementation-notes) n10 |
+| Q112 | Saved prefix ids are rebased, suffix ids are not. | [C] | [save/d2s](../../spec-save/d2s/#reimplementation-notes) n11 |
+| Q113 | Grouped properties (17, 48, 50, 52, 54, 57) carry one id, followed by the next ids' values with no id and no param. | [C] | [save/d2s](../../spec-save/d2s/#reimplementation-notes) n12 |
+| Q114 | The save reader stops at 8 KiB (`0x2000` bytes). | [C] | [save/d2s](../../spec-save/d2s/#reimplementation-notes) n14 |
+| Q115 | The writer's buffer is 8 KiB; no write passed it. | [I] | [save/d2s](../../spec-save/d2s/#reimplementation-notes) n14 |
 | Q116 | Missile `LevRange` counts every level: `LevRange · lvl + Range`, not from level 2. | [C] | [skills/missiles](../../spec-skills/missiles/#reimplementation-notes) n8 |
 | Q117 | The path's tenth subtile crossing is unchecked: a very fast step can pass a blocked subtile after ten free crossings. | [C] | [anim/movement](../../spec-anim/movement/#reimplementation-notes) n4 |
-| Q437 | Crash path on reachable data: `MissNovaCreate` with `n ≥ 41` (mhit 38, 45), do 123's class at or past the Missiles count and st 20's item class past the item count reach the fatal path. | [C] | skills/catalogue n4 |
+| Q437 | Crash path on reachable data: `MissNovaCreate` with `n ≥ 41` (mhit 38, 45), do 123's class at or past the Missiles count and st 20's item class past the item count reach the fatal path. | [C] | [skills/catalogue](../../spec-skills/catalogue/#reimplementation-notes) n4 |
 | Q447 | The party distance's edge is inclusive and unsigned: d² = 6400 shares, 6401 does not. | [C] | [player/party](../../spec-player/party/#reimplementation-notes) n6; [player/creation § J](../../spec-player/creation/#j-other-level-and-experience-changes) |
 | Q449 | Past Q448's call is unread, and a party list holds at most 8 players, so no stock game reaches the call. | [I] | [player/party](../../spec-player/party/#reimplementation-notes) n5; [player/creation § J](../../spec-player/creation/#j-other-level-and-experience-changes) |
 | Q455 | The crushing-blow cut is `cb − MulDiv(cb, min(stat 36, 100), 100)` for a positive stat 36, logged at 15 to 90 on a monster defender. | [C] | [combat/delivery § E](../../spec-combat/delivery/#e-the-stat-events-crushing-blow-open-wounds-freeze) |
@@ -228,15 +228,15 @@ flowchart LR
 | Q128 | The callback sets the new missile's seed to `Init(w + arg)` and its `PathPlan` steps it before returning (20 steps for each of 442 Firestorm sub-missiles, 38 for each of 8 class-195 missiles). | [C] | rng/seeds n11 |
 | Q129 | Skill do 124 makes one `RNG_Range(caster+0x20, 0x10000)` on the caster's seed after its record, `aurastate` and used-skill tests and bit 6, before `STATLIST_Alloc` or `StatListSetEnd`. | [C] | rng/seeds n12 |
 | Q130 | Do 124 stores that `r` on the used skill node, and Armageddon's first period re-seeds the caster from it when no other writer of `+0x18` runs between; Hurricane is stored the same `r` and does not re-seed. | [I] | rng/seeds n12 |
-| Q131 | Two seeds per combat event: the attacker's draws to-hit, build, stat events, leech and stun; the defender's draws the defence rolls (the block) and the cold, every time a chill is applied. One combat RNG desynchronises both units. | [C] | combat/README n1; [combat/to-hit](../../spec-combat/to-hit/#reimplementation-notes) n4; [combat/delivery](../../spec-combat/delivery/#reimplementation-notes) n5 |
-| Q132 | Draws whose results are discarded still happen: the player's build on a miss, the builder's `RangeB(1)` for players and monsters, the leech overlay `Range(2)` (only when both life and mana gains ran), the cold shatter roll on a monster that cannot shatter. | [C] | combat/README n2; [combat/damage](../../spec-combat/damage/#reimplementation-notes) n1 n2; [combat/delivery](../../spec-combat/delivery/#reimplementation-notes) n4 |
-| Q133 | Draws that do not happen: a chance of 0 (block, dodge, deadly strike, crushing blow, open wounds) and a degenerate damage range `hi ≤ lo` draw nothing, on the paths the run checked; the monster HP roll differs (it draws `RangeB(hi − lo + 1)`). | [C] | combat/README n3; [combat/damage](../../spec-combat/damage/#reimplementation-notes) n4 |
+| Q131 | Two seeds per combat event: the attacker's draws to-hit, build, stat events, leech and stun; the defender's draws the defence rolls (the block) and the cold, every time a chill is applied. One combat RNG desynchronises both units. | [C] | [combat/README](../../spec-combat/overview/#reimplementation-notes) n1; [combat/to-hit](../../spec-combat/to-hit/#reimplementation-notes) n4; [combat/delivery](../../spec-combat/delivery/#reimplementation-notes) n5 |
+| Q132 | Draws whose results are discarded still happen: the player's build on a miss, the builder's `RangeB(1)` for players and monsters, the leech overlay `Range(2)` (only when both life and mana gains ran), the cold shatter roll on a monster that cannot shatter. | [C] | [combat/README](../../spec-combat/overview/#reimplementation-notes) n2; [combat/damage](../../spec-combat/damage/#reimplementation-notes) n1 n2; [combat/delivery](../../spec-combat/delivery/#reimplementation-notes) n4 |
+| Q133 | Draws that do not happen: a chance of 0 (block, dodge, deadly strike, crushing blow, open wounds) and a degenerate damage range `hi ≤ lo` draw nothing, on the paths the run checked; the monster HP roll differs (it draws `RangeB(hi − lo + 1)`). | [C] | [combat/README](../../spec-combat/overview/#reimplementation-notes) n3; [combat/damage](../../spec-combat/damage/#reimplementation-notes) n4 |
 | Q134 | Elements are built in the order fire, lightning, cold, magic. | [C] | [combat/damage](../../spec-combat/damage/#reimplementation-notes) n3 |
-| Q135 | `COMBAT_PrgFinisher` peeks: it saves the attacker's seed words, steps the seed and writes the words back, so advancing the real seed there shifts every later attacker draw. | [C] | [combat/delivery](../../spec-combat/delivery/#reimplementation-notes) n8; combat/README n4 |
-| Q136 | The finisher's entries 37, 39, 41 and 143 step the attacker's seed once at entry, before their record test, even when they create nothing. | [C] | [combat/delivery](../../spec-combat/delivery/#reimplementation-notes) n9; [skills/dispatch](../../spec-skills/dispatch/#reimplementation-notes) n4; combat/README n4; skills/catalogue n1 |
-| Q137 | Entry 38 draws two or three times on the attacker's seed after delivering the queued hit. | [I] | [combat/delivery](../../spec-combat/delivery/#reimplementation-notes) n9; combat/README n4 |
-| Q138 | A weapon-share missile steps its owner's seed at least once for stat 337, whatever its value. | [C] | [skills/missiles](../../spec-skills/missiles/#reimplementation-notes) n3; combat/README n5; [skills/README](../../spec-skills/overview/#reimplementation-notes) n2 |
-| Q139 | The missile's deadly-strike step needs a non-zero stat 141, a negative one stepping the seed with no chance of success; its mastery step, with no used skill, needs a value above 0. | [C] | combat/README n5 |
+| Q135 | `COMBAT_PrgFinisher` peeks: it saves the attacker's seed words, steps the seed and writes the words back, so advancing the real seed there shifts every later attacker draw. | [C] | [combat/delivery](../../spec-combat/delivery/#reimplementation-notes) n8; [combat/README](../../spec-combat/overview/#reimplementation-notes) n4 |
+| Q136 | The finisher's entries 37, 39, 41 and 143 step the attacker's seed once at entry, before their record test, even when they create nothing. | [C] | [combat/delivery](../../spec-combat/delivery/#reimplementation-notes) n9; [skills/dispatch](../../spec-skills/dispatch/#reimplementation-notes) n4; [combat/README](../../spec-combat/overview/#reimplementation-notes) n4; [skills/catalogue](../../spec-skills/catalogue/#reimplementation-notes) n1 |
+| Q137 | Entry 38 draws two or three times on the attacker's seed after delivering the queued hit. | [I] | [combat/delivery](../../spec-combat/delivery/#reimplementation-notes) n9; [combat/README](../../spec-combat/overview/#reimplementation-notes) n4 |
+| Q138 | A weapon-share missile steps its owner's seed at least once for stat 337, whatever its value. | [C] | [skills/missiles](../../spec-skills/missiles/#reimplementation-notes) n3; [combat/README](../../spec-combat/overview/#reimplementation-notes) n5; [skills/README](../../spec-skills/overview/#reimplementation-notes) n2 |
+| Q139 | The missile's deadly-strike step needs a non-zero stat 141, a negative one stepping the seed with no chance of success; its mastery step, with no used skill, needs a value above 0. | [C] | [combat/README](../../spec-combat/overview/#reimplementation-notes) n5 |
 | Q140 | Do not merge the two critical chains: the missile's (stat 337 first, Q138) is not the melee build's. | [C] | [skills/README](../../spec-skills/overview/#reimplementation-notes) n2 |
 | Q141 | A stat-event handler draws on its own unit's seed: shiver armour (3) and skill on get-hit (21) on the defender's, skill on death (30) on the dying unit's, knockback, howl, stupidity, skill on attack or hit and reanimate on the attacker's. | [I] | [combat/delivery](../../spec-combat/delivery/#reimplementation-notes) n12 |
 | Q142 | Defence comes before the block: a miss draws no block; a running defender skips the to-hit draw but still draws the block. | [C] | [combat/to-hit](../../spec-combat/to-hit/#reimplementation-notes) n6 |
@@ -281,7 +281,7 @@ flowchart LR
 | Q181 | `O`, the object-region stream, is one seed for the whole game, starting at game-seed draw 2; every theme roll, handler, `InitFn`, `PreOperate`, operate and timer event advances it. | [C] | [chain](../../spec-chain/overview/#reimplementation-notes) n2; objects n1 |
 | Q182 | A room's seed outlives its pass: a later request on its tile, from another room's pass, draws from where the earlier pass left it. | [C] | [chain](../../spec-chain/overview/#reimplementation-notes) n3 |
 | Q183 | The region append is chain state: a class appended outside the model rolls its sets then, and later creations of that class read them. | [C] | [chain](../../spec-chain/overview/#reimplementation-notes) n6 |
-| Q184 | Vendors and hirelings share the store seed: the hire build draws on it, and it must run at a seller's first interaction start, before any menu action. | [C] | [hirelings](../../spec-hirelings/overview/#reimplementation-notes) n1; items/vendors n5 |
+| Q184 | Vendors and hirelings share the store seed: the hire build draws on it, and it must run at a seller's first interaction start, before any menu action. | [C] | [hirelings](../../spec-hirelings/overview/#reimplementation-notes) n1; [items/vendors](../../spec-items/vendors/#reimplementation-notes) n5 |
 | Q185 | A hire build draws a seed for every name before any pick: always `n + 10` draws. | [C] | [hirelings](../../spec-hirelings/overview/#reimplementation-notes) n2 |
 | Q186 | Draw 1 of every affix pick is spent, even when `mustRoll` makes its bit irrelevant and even when no candidate exists. | [C] | [items/affixes](../../spec-items/affixes/#reimplementation-notes) n1 |
 | Q187 | A failed rare pick does not use up the slot: close that side and retry on the other, with no side step once a side is closed. | [C] | [items/affixes](../../spec-items/affixes/#reimplementation-notes) n6 |
@@ -315,10 +315,10 @@ flowchart LR
 | Q215 | The imbue is a fresh creation on two game-seed steps; only the base, the ethereal state and a personal name carry over. | [C] | [items/quest-drops](../../spec-items/quest-drops/#reimplementation-notes) n8 |
 | Q216 | A runeword rolls on the seed of the child whose insert filled the last socket; a loaded rune's seed is `{startSeed, 666}`. | [C] | [items/sockets-runewords](../../spec-items/sockets-runewords/#reimplementation-notes) n2 |
 | Q217 | Runeword charges: the func 19 draw is consumed, then the charges are refilled. | [C] | [items/sockets-runewords](../../spec-items/sockets-runewords/#reimplementation-notes) n3 |
-| Q218 | A one-value vendor range still draws: `RandLoHi(S, 1, 2)` is `1 + R(S, 1)`; only `hi ≤ lo` skips the draw. | [C] | items/vendors n1 |
-| Q219 | An expansion stock entry in a classic game still makes its count draw before it is skipped. | [C] | items/vendors n2 |
-| Q220 | Ring and amulet slots 0 and 1 draw `lvl` and a pick, then replace the pick; their `lvl` is kept. | [C] | items/vendors n3 |
-| Q221 | The upgrade draw comes before each stock item's creation, after its quality draw (normal copies) or the magic count (magic copies); permanent items make it too in Nightmare and Hell. | [C] | items/vendors n6 |
+| Q218 | A one-value vendor range still draws: `RandLoHi(S, 1, 2)` is `1 + R(S, 1)`; only `hi ≤ lo` skips the draw. | [C] | [items/vendors](../../spec-items/vendors/#reimplementation-notes) n1 |
+| Q219 | An expansion stock entry in a classic game still makes its count draw before it is skipped. | [C] | [items/vendors](../../spec-items/vendors/#reimplementation-notes) n2 |
+| Q220 | Ring and amulet slots 0 and 1 draw `lvl` and a pick, then replace the pick; their `lvl` is kept. | [C] | [items/vendors](../../spec-items/vendors/#reimplementation-notes) n3 |
+| Q221 | The upgrade draw comes before each stock item's creation, after its quality draw (normal copies) or the magic count (magic copies); permanent items make it too in Nightmare and Hell. | [C] | [items/vendors](../../spec-items/vendors/#reimplementation-notes) n6 |
 | Q222 | One region draw `R` runs through all levels in id order, appearance sets included: leaving out any drawing level shifts every later pool. | [C] | [monsters/pool](../../spec-monsters/pool/#reimplementation-notes) n1 |
 | Q223 | The region init's single draw is one step of the game seed, which the object regions, the store, quests and every later server unit step after it. | [C] | [monsters/pool](../../spec-monsters/pool/#reimplementation-notes) n3 |
 | Q224 | A dropped class still costs a pick: `isSpawn` is tested after the pick and the slot removal. | [C] | [monsters/pool](../../spec-monsters/pool/#reimplementation-notes) n4 |
@@ -347,15 +347,15 @@ flowchart LR
 | Q247 | A town portal open draws three times: game seed, the town's level seed (type 11), game seed. | [C] | [quests/travel § Draws](../../spec-quests/travel/#draws-by-event-kind); [quests/travel](../../spec-quests/travel/#reimplementation-notes) n3 |
 | Q248 | The Harrogath portal's type-5 lookup takes its one type-0 point with no draw. | [C] | [quests/travel § Draws](../../spec-quests/travel/#draws-by-event-kind); [quests/travel](../../spec-quests/travel/#reimplementation-notes) n6 |
 | Q249 | An object's opened mode is set without an animation start: no start draw at the operate end. | [C] | [anim/timing](../../spec-anim/timing/#reimplementation-notes) n6 |
-| Q250 | A damaging aura's run consumes one draw on the caster's seed in each run that draws, even when the state code itself draws nothing. | [C] | stats/states n7 |
-| Q251 | Draw once per aura run, not once per unit hit: the one roll's packet is copied to every unit the run hits. | [I] | stats/states n7 |
-| Q438 | do 112 (`MonCurseCast`) steps the caster's seed once before any test, so a refused cast still moves the seed by one (the finisher entries' form is Q136). | [C] | skills/catalogue n1 |
-| Q439 | Not the caster's seed: mdo 30 draws on the target unit's seed, the shrine entries on the shrine object's, st 55 on a local seed no unit keeps. | [C] | skills/catalogue n2 |
-| Q440 | do 55 and do 58 (after their boundaries) draw on the target's seed, and do 81's per-unit roll on each unit's. | [I] | skills/catalogue n2 |
-| Q459 | A player's Smite runs its hit test and its draws, then forces the hit bit (`or ax, 1`): the result is ignored, the draws are not, and the defence bits stay in the word. | [I] | skills/catalogue § J |
-| Q483 | A potion's draws come before the amount test and run for a zero amount too; they depend on the user's vitality or energy being above 0. | [C] | items/use n2 |
-| Q484 | A refused AI move can queue nothing: a helper reaching `MonAiMove` with flag 2 clear returns 0 on refusal with no idle and no draw; only flag 2 adds the draw and the ring or the idle. | [I] | monsters/ai/catalogue n1 |
-| Q485 | An AI slot may be read twice: row 7's second `aip(3)` draw is a new draw on the same slot, and each `chance` is one step. | [I] | monsters/ai/catalogue n2 |
+| Q250 | A damaging aura's run consumes one draw on the caster's seed in each run that draws, even when the state code itself draws nothing. | [C] | [stats/states](../../spec-stats/states/#reimplementation-notes) n7 |
+| Q251 | Draw once per aura run, not once per unit hit: the one roll's packet is copied to every unit the run hits. | [I] | [stats/states](../../spec-stats/states/#reimplementation-notes) n7 |
+| Q438 | do 112 (`MonCurseCast`) steps the caster's seed once before any test, so a refused cast still moves the seed by one (the finisher entries' form is Q136). | [C] | [skills/catalogue](../../spec-skills/catalogue/#reimplementation-notes) n1 |
+| Q439 | Not the caster's seed: mdo 30 draws on the target unit's seed, the shrine entries on the shrine object's, st 55 on a local seed no unit keeps. | [C] | [skills/catalogue](../../spec-skills/catalogue/#reimplementation-notes) n2 |
+| Q440 | do 55 and do 58 (after their boundaries) draw on the target's seed, and do 81's per-unit roll on each unit's. | [I] | [skills/catalogue](../../spec-skills/catalogue/#reimplementation-notes) n2 |
+| Q459 | A player's Smite runs its hit test and its draws, then forces the hit bit (`or ax, 1`): the result is ignored, the draws are not, and the defence bits stay in the word. | [I] | [skills/catalogue § J](../../spec-skills/catalogue/#j-paladin-st-29-31-3537-do-6467-73-7982-150) |
+| Q483 | A potion's draws come before the amount test and run for a zero amount too; they depend on the user's vitality or energy being above 0. | [C] | [items/use](../../spec-items/use/#reimplementation-notes) n2 |
+| Q484 | A refused AI move can queue nothing: a helper reaching `MonAiMove` with flag 2 clear returns 0 on refusal with no idle and no draw; only flag 2 adds the draw and the ring or the idle. | [I] | [monsters/ai/catalogue](../../spec-monster-ai/catalogue/#reimplementation-notes) n1 |
+| Q485 | An AI slot may be read twice: row 7's second `aip(3)` draw is a new draw on the same slot, and each `chance` is one step. | [I] | [monsters/ai/catalogue](../../spec-monster-ai/catalogue/#reimplementation-notes) n2 |
 | Q486 | `chance(K)` short-circuits as written: row 13's second `chance(1)` is drawn only with a corpse, row 22's `aip3` only with `Skill2 ≥ 0` and a wounded unit. Keep the order of the tests. | [I] | [monsters/ai/machinery](../../spec-monster-ai/machinery/#reimplementation-notes) n1 |
 | Q487 | The wanderer tick runs on every room of a walked act, not only on new ones: a frame that creates one room steps every room seed of its act once. | [C] | [sim/frame](../../spec-sim/frame/#reimplementation-notes) n7 |
 | Q529 | Act I's `OneOrTwo` makes its second draw on the else branch only: the `(r & 3) = 0` branch places twice and returns, so a call with `s` = 1 makes one `Step` there and two on the other branch. | [C] | [drlg/outdoor](../../spec-drlg/outdoor/#reimplementation-notes) n14 |
@@ -438,8 +438,8 @@ flowchart LR
 | Q323 | Classic item rejection and the ratio raises differ too; the expansion-only skip, the scan off the end and the `version` reject have no stock case. | [I] | — | [items/tc](../../spec-items/tc/#reimplementation-notes) n11 |
 | Q324 | Set items take their version from their set and have no `enabled`, ladder or once-per-game test. | [C] | `Sets.txt:version` | [items/uniques-sets](../../spec-items/uniques-sets/#reimplementation-notes) n8 |
 | Q325 | Item version 0 builds by other rules (first match, no draw, ×5 durability for uniques; a set membership walk for sets); drops never reach them. | [I] | — | [items/uniques-sets](../../spec-items/uniques-sets/#reimplementation-notes) n12 |
-| Q326 | Equal-level gamble order is data: use the game's table, not a stable sort of Gamble.txt. | [C] | `g_GambleList` | items/vendors n4 |
-| Q327 | `MagicLvl` is a gate, not a cap: the affix level is not clamped to it. | [C] | — | items/vendors n9 |
+| Q326 | Equal-level gamble order is data: use the game's table, not a stable sort of Gamble.txt. | [C] | `g_GambleList` | [items/vendors](../../spec-items/vendors/#reimplementation-notes) n4 |
+| Q327 | `MagicLvl` is a gate, not a cap: the affix level is not clamped to it. | [C] | — | [items/vendors](../../spec-items/vendors/#reimplementation-notes) n9 |
 | Q328 | The monster pool is fixed per game at creation, from the game seed and the difficulty only; map seed and level entry order do not affect it. | [C] | — | [monsters/pool](../../spec-monsters/pool/#reimplementation-notes) n2 |
 | Q329 | The no-record fallback of the monster level (1) has no stock case. | [I] | — | [monsters/pool](../../spec-monsters/pool/#reimplementation-notes) n10 |
 | Q330 | Hirelings are created at normal's MonStats `Level` (`d` forced to 0), then levelled by `MERC_SetLevel`; class 560 has no `Hireling` row. | [C] | `Hireling.txt:Class` | [monsters/pool](../../spec-monsters/pool/#reimplementation-notes) n11 |
@@ -463,34 +463,34 @@ flowchart LR
 | Q348 | Within one event the quests run from object 40 down to row 0's object (later acts first). | [I] | `QUESTS_InitGame` | [quests/progression § B](../../spec-quests/progression/#b-events-and-dispatch); [quests/progression](../../spec-quests/progression/#reimplementation-notes) n1 |
 | Q349 | "Switched off" is not inert: the forced events still reach a switched-off quest, and handlers that test only the NPC, the message or the word's own bits still write (for the handlers and branches the runs reached). | [C] | — | [quests/progression § C](../../spec-quests/progression/#c-the-join-and-the-game-creators-history); [quests/progression](../../spec-quests/progression/#reimplementation-notes) n2 |
 | Q350 | The loader sets quest bit 15 from a saved bit 1 (and clears 13 and 14). | [C] | `QUESTRECORD_LoadBytes` | [quests/progression § A](../../spec-quests/progression/#a-the-quest-record); [quests/progression](../../spec-quests/progression/#reimplementation-notes) n4 |
-| Q351 | Checksum before size: a save with both wrong fails with 6, not 5. | [C] | `D2S_ReadHeader` | save/d2s n2 |
-| Q352 | The save checksum sums the whole file with `0x00C`–`0x00F` as 0, after `file_size` is filled; the reader zeroes the stored copy before summing. | [C] | `D2S_Checksum` | save/d2s n1 |
-| Q353 | The header `level` is output only: write it from stat 12, ignore it on load. | [C] | — | save/d2s n3 |
-| Q354 | Max life and mana come from the file (stats 7 and 9 are not recomputed at load); current life and mana are restored as read. | [C] | `D2S_LoadFinish` | save/d2s n5 |
-| Q355 | Item flags change on the way: the writer clears bit 19 and sets 23; the reader strips 25, sets 19 and clears 13. | [C] | `ITEMS_SerializeBits` | save/d2s n6 |
-| Q356 | The saved item seed is the unit seed's initial value: the loaded unit seed is `RNG_SeedInit`'s `{seed, 666}`, whatever state it had reached. | [C] | `RNG_SeedInit` | save/d2s n7 |
-| Q357 | Fixed item fields apply `Save Add`. | [C] | — | save/d2s § I; save/d2s n9 |
-| Q358 | Neither fixed fields nor followers apply `ValShift`. | [I] | — | save/d2s n9 |
+| Q351 | Checksum before size: a save with both wrong fails with 6, not 5. | [C] | `D2S_ReadHeader` | [save/d2s](../../spec-save/d2s/#reimplementation-notes) n2 |
+| Q352 | The save checksum sums the whole file with `0x00C`–`0x00F` as 0, after `file_size` is filled; the reader zeroes the stored copy before summing. | [C] | `D2S_Checksum` | [save/d2s](../../spec-save/d2s/#reimplementation-notes) n1 |
+| Q353 | The header `level` is output only: write it from stat 12, ignore it on load. | [C] | — | [save/d2s](../../spec-save/d2s/#reimplementation-notes) n3 |
+| Q354 | Max life and mana come from the file (stats 7 and 9 are not recomputed at load); current life and mana are restored as read. | [C] | `D2S_LoadFinish` | [save/d2s](../../spec-save/d2s/#reimplementation-notes) n5 |
+| Q355 | Item flags change on the way: the writer clears bit 19 and sets 23; the reader strips 25, sets 19 and clears 13. | [C] | `ITEMS_SerializeBits` | [save/d2s](../../spec-save/d2s/#reimplementation-notes) n6 |
+| Q356 | The saved item seed is the unit seed's initial value: the loaded unit seed is `RNG_SeedInit`'s `{seed, 666}`, whatever state it had reached. | [C] | `RNG_SeedInit` | [save/d2s](../../spec-save/d2s/#reimplementation-notes) n7 |
+| Q357 | Fixed item fields apply `Save Add`. | [C] | — | [save/d2s § I](../../spec-save/d2s/#i-one-item); [save/d2s](../../spec-save/d2s/#reimplementation-notes) n9 |
+| Q358 | Neither fixed fields nor followers apply `ValShift`. | [I] | — | [save/d2s](../../spec-save/d2s/#reimplementation-notes) n9 |
 | Q359 | One delay state blocks all delayed skills, not only the one cast. | [I] | `SKILLS_DelayOk` | [skills/dispatch](../../spec-skills/dispatch/#reimplementation-notes) n5 |
 | Q360 | A monster's bit 6 is set by its AI; in modes 4, 5, 7, 8, 9 and 16–20 its start leaves it set, so its do runs only through the attack-frame handler, while mode 14's start clears it, so its do runs on a code 1 or 2 like a player's and on the `Unit+0x4E = 4` case. | [C] | — | [skills/dispatch](../../spec-skills/dispatch/#reimplementation-notes) n6 |
 | Q361 | A missed piercing missile has spent a pierce. | [C] | — | [skills/missiles](../../spec-skills/missiles/#reimplementation-notes) n6 |
 | Q362 | A used pierce keeps the missile: stat 328 falls by 1 and it flies on. | [C] | — | [skills/missiles](../../spec-skills/missiles/#reimplementation-notes) n7 |
 | Q363 | A freed missile at a bit-0 or bit-2 own cell does not explode. | [I] | — | [skills/missiles](../../spec-skills/missiles/#reimplementation-notes) n9 |
-| Q364 | Do not sum stat lists at read time: model the cache and its propagation order, which is stale by design in places. | [C] | — | stats/aggregate n1 |
-| Q365 | op 11 is a percentage of the flat sum, and op 8/9 count only the non-base part of energy and vitality. | [C] | — | stats/aggregate n3 |
-| Q366 | A target is written twice when its source recomputes it; the second write changes nothing and fires no callback unless the target is itself a source whose own target took (no stock case). | [C] | — | stats/aggregate n4 |
-| Q367 | A state refresh does not rewrite the stats; only the end frame moves. | [C] | `STATE_ApplyTimed` | stats/states n1 |
-| Q368 | A lower level of a held state is refused, not queued. | [C] | `STATE_ApplyTimed` | stats/states n3 |
-| Q369 | The group test is not in the apply: only callers that run `STATE_GroupClear` exclude a group. | [C] | `STATE_GroupClear`, `STATE_ApplyTimed` (its nine call sites and the closure by a second tool, S4d) | stats/states n4 |
-| Q370 | Shrines share the curse slot: a shrine removes the player's curse, and the next curse removes the shrine's state. | [I] | `States.txt:curse`, `STATE_ApplyTimed` | stats/states n5 |
+| Q364 | Do not sum stat lists at read time: model the cache and its propagation order, which is stale by design in places. | [C] | — | [stats/aggregate](../../spec-stats/aggregate/#reimplementation-notes) n1 |
+| Q365 | op 11 is a percentage of the flat sum, and op 8/9 count only the non-base part of energy and vitality. | [C] | — | [stats/aggregate](../../spec-stats/aggregate/#reimplementation-notes) n3 |
+| Q366 | A target is written twice when its source recomputes it; the second write changes nothing and fires no callback unless the target is itself a source whose own target took (no stock case). | [C] | — | [stats/aggregate](../../spec-stats/aggregate/#reimplementation-notes) n4 |
+| Q367 | A state refresh does not rewrite the stats; only the end frame moves. | [C] | `STATE_ApplyTimed` | [stats/states](../../spec-stats/states/#reimplementation-notes) n1 |
+| Q368 | A lower level of a held state is refused, not queued. | [C] | `STATE_ApplyTimed` | [stats/states](../../spec-stats/states/#reimplementation-notes) n3 |
+| Q369 | The group test is not in the apply: only callers that run `STATE_GroupClear` exclude a group. | [C] | `STATE_GroupClear`, `STATE_ApplyTimed` (its nine call sites and the closure by a second tool, S4d) | [stats/states](../../spec-stats/states/#reimplementation-notes) n4 |
+| Q370 | Shrines share the curse slot: a shrine removes the player's curse, and the next curse removes the shrine's state. | [I] | `States.txt:curse`, `STATE_ApplyTimed` | [stats/states](../../spec-stats/states/#reimplementation-notes) n5 |
 | Q371 | A player's run speed is the walk base plus a +50 stat-67 list that lives while the run lasts; a monster runs at its walk path speed unless its AI command carries a velocity. | [I] | — | [anim/movement](../../spec-anim/movement/#reimplementation-notes) n1 |
 | Q372 | Two bases: the path speed moves the unit, the animation base only paces the animation; both take the same factor `X`. | [C] | `UNIT_AnimSetRate` | [anim/movement](../../spec-anim/movement/#reimplementation-notes) n2 |
 | Q373 | A shapeshifted player takes the form's record, start frame and rate, with the mode mapped through `g_PlrToMonMode` and the MonStats2 fallback. | [C] | `UNIT_AnimTransform` | [anim/timing](../../spec-anim/timing/#reimplementation-notes) n4 |
 | Q460 | Champions and uniques pick from `umon` in Normal only; in Nightmare and Hell they come from the region pool. | [C] | `Levels.txt:umon1` | [monsters/pool](../../spec-monsters/pool/#consumers-named-only) |
 | Q461 | Prevent Monster Heal's hook tests for a player attacker, so stat 117 on a mercenary's items applies no state. | [I] | — | [combat/to-hit § A](../../spec-combat/to-hit/#a-the-chance-to-hit-combat_tohitroll) |
-| Q488 | The drop's base room moves between lookups: a fixed-room search agrees with all 118 live searches, on open ground, and still fails on declared rooms. | [C] | — | items/inventory n1 |
-| Q489 | A player's inventory search and any other owner's differ, in score against first fit and in the one-cell-high order. | [C] | — | items/inventory n4 |
-| Q490 | `DropGoldAmount` passes `fallback` 0; every other direct drop passes 1. | [C] | the 20 search sites and the four pair-form drop bodies by a second tool (S4c) | items/inventory n6 |
+| Q488 | The drop's base room moves between lookups: a fixed-room search agrees with all 118 live searches, on open ground, and still fails on declared rooms. | [C] | — | [items/inventory](../../spec-items/inventory/#reimplementation-notes) n1 |
+| Q489 | A player's inventory search and any other owner's differ, in score against first fit and in the one-cell-high order. | [C] | — | [items/inventory](../../spec-items/inventory/#reimplementation-notes) n4 |
+| Q490 | `DropGoldAmount` passes `fallback` 0; every other direct drop passes 1. | [C] | the 20 search sites and the four pair-form drop bodies by a second tool (S4c) | [items/inventory](../../spec-items/inventory/#reimplementation-notes) n6 |
 | Q491 | The AI row kind follows the stored state, not the class: a unit in state 12 (kind 0) skips the search, when the gate allows it, even when its class's row has kind 1. | [C] | — | monsters/ai/README n4 |
 | Q492 | A planner's grid is the live one after `PathPlan`'s unmarks: a unit does not block itself, nor a target under flag `0x800`. An unmark there can take a neighbour's `0x1000`, and the tail's re-mark gives back only the marked unit's footprint. | [I] | — | [path/README](../../spec-path/overview/#reimplementation-notes) n1 |
 | Q493 | `PathPlan`'s refusals differ: step 5 clears nothing, the others clear `+0x24`, `+0x28` and flag `0x20`. | [C] | — | [path/README](../../spec-path/overview/#reimplementation-notes) n3 |
@@ -509,7 +509,7 @@ flowchart LR
 | Q376 | Two rate calls per server start: the first, before `+0x48` is written, sees the previous mode's length; the schedule uses the second. | [C] | `UNIT_AnimInit`, `SUNIT_AnimInit` | [anim/timing](../../spec-anim/timing/#reimplementation-notes) n2 |
 | Q377 | A monster's frame-function result is ignored: an every-frame attack or skill mode with no end call of its own lasts until another command. | [I] | — | [anim/timing](../../spec-anim/timing/#reimplementation-notes) n5 |
 | Q378 | A frozen monster loses its scheduled events (dropped and freed), its mode end among them. | [I] | — | [anim/timing](../../spec-anim/timing/#reimplementation-notes) n7 |
-| Q379 | A monster attack and its `MonAttackStats` are two moments: the `El` draws at the attack mode start, to-hit and build at the hit frame, with the monster's AI drawing in between. | [C] | — | combat/README n6 |
+| Q379 | A monster attack and its `MonAttackStats` are two moments: the `El` draws at the attack mode start, to-hit and build at the hit frame, with the monster's AI drawing in between. | [C] | — | [combat/README](../../spec-combat/overview/#reimplementation-notes) n6 |
 | Q380 | A start-built hit (Bash and the other start-32 rows) rolls to-hit, defence and damage when the mode starts and delivers on the action frame; Jab (do 7) does everything at the action frame. | [I] | `SKILL_MeleeDeliverDo` | [skills/dispatch](../../spec-skills/dispatch/#reimplementation-notes) n3 |
 | Q381 | A missile steps first on the frame after its creation. | [C] | — | [skills/missiles](../../spec-skills/missiles/#reimplementation-notes) n5 |
 | Q382 | The frame pass runs missiles, players, monsters, objects, then the fifth list, so a missile steps before any unit acts in its frame. | [I] | — | [skills/README](../../spec-skills/overview/#reimplementation-notes) n1; [skills/missiles](../../spec-skills/missiles/#reimplementation-notes) n5 |
@@ -517,14 +517,14 @@ flowchart LR
 | Q384 | Rooms are released one by one as their own idle counts run out, per room, not per level. | [C] | — | [drlg/lifecycle § E](../../spec-drlg/lifecycle/#e-release); [drlg/lifecycle](../../spec-drlg/lifecycle/#reimplementation-notes) n1 |
 | Q385 | Count release passes, not frames: a visit between two passes leaves the idle count running. | [C] | — | [drlg/lifecycle § E](../../spec-drlg/lifecycle/#e-release); [drlg/lifecycle](../../spec-drlg/lifecycle/#reimplementation-notes) n2 |
 | Q386 | The first kill always gets the quest TC: the drop runs inside the death mode change, before the quest scripts receive the death. | [C] | — | [items/quest-drops](../../spec-items/quest-drops/#reimplementation-notes) n1 |
-| Q387 | An act change by waypoint does not reset the old act's stores in single player; it marks stale those built more than 240 000 ms before, a `GetTickCount` test (wall-clock: the act branch is the trap, the clock is kept as the spec gives it). A waypoint within the act resets them at once. | [C] | `NPCSTORE_ActStale` | items/vendors n10 |
+| Q387 | An act change by waypoint does not reset the old act's stores in single player; it marks stale those built more than 240 000 ms before, a `GetTickCount` test (wall-clock: the act branch is the trap, the clock is kept as the spec gives it). A waypoint within the act resets them at once. | [C] | `NPCSTORE_ActStale` | [items/vendors](../../spec-items/vendors/#reimplementation-notes) n10 |
 | Q388 | A trap fires later: `OBJ_TrapFire` only queues event 4, and the effect comes 35 frames later among the timer events. | [C] | `OBJ_TrapFire`, `OBJ_TrapEvent` | objects n14 |
 | Q389 | An NPC act change moves the player before it writes the travel word. | [C] | `NPC_MenuAction` | [quests/travel § E](../../spec-quests/travel/#e-act-change-through-an-npc); [quests/travel](../../spec-quests/travel/#reimplementation-notes) n4 |
 | Q390 | While `+0x4C` = 1 the player can operate nothing and open no waypoint menu until packet 0x48. | [I] | `OBJ_OperateDispatch` | [quests/travel § E](../../spec-quests/travel/#e-act-change-through-an-npc); [quests/travel](../../spec-quests/travel/#reimplementation-notes) n5 |
-| Q391 | Equipment requirements are checked once per refresh, and the refresh also runs on its own from the act clock pass (idle gap 136 frames in 22 of 28 kept logs). | [C] | — | stats/aggregate n6 |
-| Q392 | Queue one end event per state apply and per refresh, and let a stale one fire: it frees only lists whose end frame has passed. | [C] | `EVENT_TimedListExpire` | stats/states n2 |
-| Q498 | A monster's drop has `+0x24` 0 and a player's does not, so "items last 10 minutes" holds for one of them only, on the path run. | [C] | — | items/inventory n2 |
-| Q499 | The save recomputes a ground item's expiry, so leaving a room can lengthen any item's life, a player's drop too. | [C] | — | items/inventory n3 |
+| Q391 | Equipment requirements are checked once per refresh, and the refresh also runs on its own from the act clock pass (idle gap 136 frames in 22 of 28 kept logs). | [C] | — | [stats/aggregate](../../spec-stats/aggregate/#reimplementation-notes) n6 |
+| Q392 | Queue one end event per state apply and per refresh, and let a stale one fire: it frees only lists whose end frame has passed. | [C] | `EVENT_TimedListExpire` | [stats/states](../../spec-stats/states/#reimplementation-notes) n2 |
+| Q498 | A monster's drop has `+0x24` 0 and a player's does not, so "items last 10 minutes" holds for one of them only, on the path run. | [C] | — | [items/inventory](../../spec-items/inventory/#reimplementation-notes) n2 |
+| Q499 | The save recomputes a ground item's expiry, so leaving a room can lengthen any item's life, a player's drop too. | [C] | — | [items/inventory](../../spec-items/inventory/#reimplementation-notes) n3 |
 | Q500 | The AI has two entries, the queue and a mode end; at a mode end it runs inside that mode-end event, so its draws come at that event's place in the frame, not at the kind-2 record's. | [C] | — | [sim/frame](../../spec-sim/frame/#reimplementation-notes) n8; monsters/ai/README n1 |
 | Q501 | `Idle` queues; a think that queues nothing leaves no kind-2 record, so such a unit next thinks at a mode's end. AI row 6 cancels its pending event on every decision. | [I] | `UNIT_CancelEvents` | monsters/ai/README n2 |
 | Q502 | The frame stamp a packet reads is the frame before the one it acts in: handlers run with `Game+0xA8 = N` after tick N, and their effect is seen by tick N + 1's passes. | [C] | — | [sim/frame](../../spec-sim/frame/#reimplementation-notes) n1 |
@@ -537,7 +537,7 @@ flowchart LR
 
 | Id | Quirk | Tag | Source |
 | --- | --- | --- | --- |
-| Q393 | The player count raises the crushing-blow divisor through the monster's stat 100 (its creation count). | [C] | [combat/delivery](../../spec-combat/delivery/#reimplementation-notes) n2; combat/README n7 |
+| Q393 | The player count raises the crushing-blow divisor through the monster's stat 100 (its creation count). | [C] | [combat/delivery](../../spec-combat/delivery/#reimplementation-notes) n2; [combat/README](../../spec-combat/overview/#reimplementation-notes) n7 |
 | Q394 | The player count is frozen at a monster's creation: `/players` changes nothing on live monsters, and stat 100 keeps the creation count. | [C] | [monsters/stats](../../spec-monsters/stats/#reimplementation-notes) n3 |
 | Q395 | Single player reads the `L-` MonLvl columns (3 954 creations). | [C] | [monsters/stats](../../spec-monsters/stats/#reimplementation-notes) n2 |
 | Q396 | The TC party rule is "same level", not "two screens". | [C] | [items/tc](../../spec-items/tc/#reimplementation-notes) n5 |
@@ -547,7 +547,7 @@ flowchart LR
 | Q400 | The forge makes `n` gems per wave, per credited player. | [I] | [items/quest-drops](../../spec-items/quest-drops/#reimplementation-notes) n9 |
 | Q401 | Server units do not use the room seed: the room-seed rule is the client's, and a server-side reimplementation seeds monsters, objects, NPCs and items from the game seed. | [C] | rng/seeds n7 |
 | Q402 | The client copy of a preset room has more units: the river objects are added only with the client flag (`flags` bit 0). | [C] | [drlg/preset](../../spec-drlg/preset/#reimplementation-notes) n8 |
-| Q403 | The saved map seed survives only in single player, without `-seed`, and only for the difficulty saved in. | [C] | save/d2s n4 |
+| Q403 | The saved map seed survives only in single player, without `-seed`, and only for the difficulty saved in. | [C] | [save/d2s](../../spec-save/d2s/#reimplementation-notes) n4 |
 | Q450 | The party distance is measured from the killed monster, not from the killer or the credited player, and the credited player is tested like every member (the code's map; no logged kill separates it). | [C] | [player/party](../../spec-player/party/#reimplementation-notes) n1; [player/creation § J](../../spec-player/creation/#j-other-level-and-experience-changes) |
 | Q451 | With one member collected, the award goes to the credited player at its own level, whoever that member was; with none, nobody gets anything (the code's map; no logged kill separates it). | [C] | [player/party](../../spec-player/party/#reimplementation-notes) n2; [player/creation § J](../../spec-player/creation/#j-other-level-and-experience-changes) |
 | Q452 | What Q450 and Q451 lead to in play: a far hireling's or summon's kill can pay its far owner alone or nobody, and a dead killer can be paid while the living member is not. | [I] | [player/party](../../spec-player/party/#reimplementation-notes) n3; [player/creation § J](../../spec-player/creation/#j-other-level-and-experience-changes) |
@@ -568,8 +568,8 @@ These are faithful 1.14d behaviour that reads as a mistake, or that contradicts 
 | Id | Quirk | Tag | Anchors | Source |
 |---|---|---|---|---|
 | Q404 | No bias correction: the RNG takes `low mod n` directly, with no rejection of the top partial range. | [C] | — | rng/README n5 |
-| Q405 | `ToHitFactor` is a class constant added to the base attack rating before the percent; the chance to hit's level term `2·alvl/(alvl + dlvl)` has no class term (contradicts the community description). `BlockFactor` is added to stat 20 in the block chance. | [C] | `CharStatsRec+0x3C` | [combat/to-hit](../../spec-combat/to-hit/#reimplementation-notes) n1; [player/creation](../../spec-player/creation/#reimplementation-notes) n8; combat/README n7 |
-| Q406 | Crushing blow is a share of the defender's current life before this hit's damage, 1/4 on uniques and champions, not the community's 1/8 (52 crushing blows on champions took 1/4). | [C] | `STATEVENT_CrushingBlow` | [combat/delivery](../../spec-combat/delivery/#reimplementation-notes) n1; combat/README n7 |
+| Q405 | `ToHitFactor` is a class constant added to the base attack rating before the percent; the chance to hit's level term `2·alvl/(alvl + dlvl)` has no class term (contradicts the community description). `BlockFactor` is added to stat 20 in the block chance. | [C] | `CharStatsRec+0x3C` | [combat/to-hit](../../spec-combat/to-hit/#reimplementation-notes) n1; [player/creation](../../spec-player/creation/#reimplementation-notes) n8; [combat/README](../../spec-combat/overview/#reimplementation-notes) n7 |
+| Q406 | Crushing blow is a share of the defender's current life before this hit's damage, 1/4 on uniques and champions, not the community's 1/8 (52 crushing blows on champions took 1/4). | [C] | `STATEVENT_CrushingBlow` | [combat/delivery](../../spec-combat/delivery/#reimplementation-notes) n1; [combat/README](../../spec-combat/overview/#reimplementation-notes) n7 |
 | Q407 | Burning never applies from a plain attack: the builder leaves `burn = 2` with `burnLen = 0`. | [C] | — | [combat/delivery](../../spec-combat/delivery/#reimplementation-notes) n15 |
 | Q408 | The fire length is overwritten by the burn length in stat 315. | [C] | — | [skills/missiles](../../spec-skills/missiles/#reimplementation-notes) n4 |
 | Q409 | `dm78` lacks the `lvl < 1` guard of the other `dm` codes: at level 0 it gives `min(Par7, Par8)` rather than 0. | [C] | — | [data/calc](../../spec-data/calc/#reimplementation-notes) n8 |
@@ -598,33 +598,33 @@ These are faithful 1.14d behaviour that reads as a mistake, or that contradicts 
 | Q432 | The guide's numbers 1.14d does not follow: urns drop at 21 %, not 20 %; gold piles are 1–9, not 1–10; a sparkle chest uses the act chest TC. | [C] | — | objects n16 |
 | Q433 | Quest bit 15 survives: only word 9's first-join check clears it, so a character that saved with a reward pending carries it on. | [I] | — | [quests/progression § A](../../spec-quests/progression/#a-the-quest-record) |
 | Q434 | The ally test of `StartUsedSkill` is dead: do not add a refusal there. | [C] | — | [skills/dispatch](../../spec-skills/dispatch/#reimplementation-notes) n8 |
-| Q435 | The stat take test for ops 2–5 reads the source row's `+0x0DE + 6k` word, `strength` (0) on every stock source; do not "fix" it to `op base`. | [C] | — | stats/aggregate n2 |
-| Q441 | Words read before anything writes them: do 57's block word `+0x24` is the frame slot `ebp−0x10`, do 140's class out word is `EBP − 0x1C`, and mhit 52's class word `+0x10` is never written; keep the stale values, which only a logged case gives. | [C] | — | skills/catalogue n3 |
-| Q442 | What follows from mhit 52's unwritten class word: its missiles are row 0 by the callee's reading. | [I] | — | skills/catalogue n3 |
-| Q443 | Return values that look wrong: mdo 14 with a skill or level ≤ 0 returns 2 without running mdo 1, and do 63 returns 1 for a bad missile class. | [C] | — | skills/catalogue n6 |
-| Q444 | do 13 returns 0 on every path. | [C] | — | skills/catalogue n6 |
+| Q435 | The stat take test for ops 2–5 reads the source row's `+0x0DE + 6k` word, `strength` (0) on every stock source; do not "fix" it to `op base`. | [C] | — | [stats/aggregate](../../spec-stats/aggregate/#reimplementation-notes) n2 |
+| Q441 | Words read before anything writes them: do 57's block word `+0x24` is the frame slot `ebp−0x10`, do 140's class out word is `EBP − 0x1C`, and mhit 52's class word `+0x10` is never written; keep the stale values, which only a logged case gives. | [C] | — | [skills/catalogue](../../spec-skills/catalogue/#reimplementation-notes) n3 |
+| Q442 | What follows from mhit 52's unwritten class word: its missiles are row 0 by the callee's reading. | [I] | — | [skills/catalogue](../../spec-skills/catalogue/#reimplementation-notes) n3 |
+| Q443 | Return values that look wrong: mdo 14 with a skill or level ≤ 0 returns 2 without running mdo 1, and do 63 returns 1 for a bad missile class. | [C] | — | [skills/catalogue](../../spec-skills/catalogue/#reimplementation-notes) n6 |
+| Q444 | do 13 returns 0 on every path. | [C] | — | [skills/catalogue](../../spec-skills/catalogue/#reimplementation-notes) n6 |
 | Q445 | No Uber event was found in this image to port: classes 704, 705 and 709 have no creator and no Uber-specific driver found, within the limits the source states; keep their class-gated code. | [I] | — | [monsters/special](../../spec-monsters/special/#reimplementation-notes) n12 |
-| Q462 | Dragon Talon's knockback chance reads the target's level twice, `level(target) + slvl − level(target)`, so the level difference is `slvl`. | [C] | — | skills/catalogue § M |
-| Q463 | Psychic Hammer's knockback chance has the same form: both level reads are the target's. | [C] | — | skills/catalogue § M |
+| Q462 | Dragon Talon's knockback chance reads the target's level twice, `level(target) + slvl − level(target)`, so the level difference is `slvl`. | [C] | — | [skills/catalogue § M](../../spec-skills/catalogue/#m-assassin-st-2228-do-3335-4252-54-progressive-3641-143) |
+| Q463 | Psychic Hammer's knockback chance has the same form: both level reads are the target's. | [C] | — | [skills/catalogue § M](../../spec-skills/catalogue/#m-assassin-st-2228-do-3335-4252-54-progressive-3641-143) |
 | Q464 | Stat 137 counts twice with boots worn, on the kicks `SkillKickPhysDamage` builds: once alone, once with the boots' values. | [I] | — | [skills/dispatch § I](../../spec-skills/dispatch/#i-the-skill-packet) |
-| Q465 | The `ToHit` columns of Power Strike, MonPowerStrike and MonIceSpear do not reach st 6's hit test, which passes an attack-rating percent of 0. | [I] | `SKILLS_GetToHit` | skills/catalogue § H |
-| Q466 | Do 150 (Smite) has no access to `Unit+0xC4`, so it does not set the flag `0x40` do 2 sets there; the callees past `COMBAT_ResolveAndQueue` and `COMBAT_DeliverQueued` are unfollowed. | [I] | — | skills/catalogue § J |
-| Q467 | A monster's Smite passes mode 5 to `MonAttackStats` whatever mode it used, so it takes its `A2` stats. | [C] | — | skills/catalogue § J; [monsters/stats § H](../../spec-monsters/stats/#h-to-hit-and-damage-at-attack-time-reference-only) |
+| Q465 | The `ToHit` columns of Power Strike, MonPowerStrike and MonIceSpear do not reach st 6's hit test, which passes an attack-rating percent of 0. | [I] | `SKILLS_GetToHit` | [skills/catalogue § H](../../spec-skills/catalogue/#h-amazon-st-410-do-68-1016) |
+| Q466 | Do 150 (Smite) has no access to `Unit+0xC4`, so it does not set the flag `0x40` do 2 sets there; the callees past `COMBAT_ResolveAndQueue` and `COMBAT_DeliverQueued` are unfollowed. | [I] | — | [skills/catalogue § J](../../spec-skills/catalogue/#j-paladin-st-29-31-3537-do-6467-73-7982-150) |
+| Q467 | A monster's Smite passes mode 5 to `MonAttackStats` whatever mode it used, so it takes its `A2` stats. | [C] | — | [skills/catalogue § J](../../spec-skills/catalogue/#j-paladin-st-29-31-3537-do-6467-73-7982-150); [monsters/stats § H](../../spec-monsters/stats/#h-to-hit-and-damage-at-attack-time-reference-only) |
 | Q468 | `El2` and `El3` take `El1`'s minimum, maximum and length, through `MonLvlStats`' mask `0x40 + e`. | [I] | — | [monsters/stats § H](../../spec-monsters/stats/#h-to-hit-and-damage-at-attack-time-reference-only) |
 | Q469 | A `manahit` boss takes `256·v` mana where the same value through an `El` column takes `v`, capped by the mana held; `v << 22` wraps i32 at 512. | [I] | `COMBAT_RollElemStat` | [combat/delivery § B](../../spec-combat/delivery/#b-delivery-combat_applydamage); [monsters/stats § G](../../spec-monsters/stats/#g-the-mod-handlers-stat-effects) |
 | Q470 | A summon gets its MonLvl defence and to-hit added whole, with no `noRatio` test. | [C] | — | [skills/dispatch § L](../../spec-skills/dispatch/#l-summons) |
 | Q471 | A monster's line missile counts stat 19 twice, as the missile's `arPct` from the creation and as the stat at the hit, when the record byte `+0x18B` is set; the dexterity term is not doubled, and the lob form sets no flag. | [I] | `MISSILE_HitUnit`, `COMBAT_ToHitRoll` | [combat/to-hit § A](../../spec-combat/to-hit/#a-the-chance-to-hit-combat_tohitroll); [skills/missiles § E](../../spec-skills/missiles/#e-the-hit) |
-| Q472 | Neither skill creator adds a skill's to-hit bonus to a player's missile; do 74 (Double Throw) is the one exception read, and other creators are unfollowed. | [I] | `SKILLS_GetToHit` | [skills/missiles § B](../../spec-skills/missiles/#b-creation); skills/catalogue § K |
-| Q473 | Blessed Aim and Penetrate both name `penetrate` in `passivestate`, so a running Blessed Aim removes Penetrate's list from its caster. | [I] | `AURA_ApplyToTarget`, `Skills.txt:passivestate` | skills/catalogue § J |
+| Q472 | Neither skill creator adds a skill's to-hit bonus to a player's missile; do 74 (Double Throw) is the one exception read, and other creators are unfollowed. | [I] | `SKILLS_GetToHit` | [skills/missiles § B](../../spec-skills/missiles/#b-creation); [skills/catalogue § K](../../spec-skills/catalogue/#k-barbarian-st-3234-3841-do-2-9-6872-7478) |
+| Q473 | Blessed Aim and Penetrate both name `penetrate` in `passivestate`, so a running Blessed Aim removes Penetrate's list from its caster. | [I] | `AURA_ApplyToTarget`, `Skills.txt:passivestate` | [skills/catalogue § J](../../spec-skills/catalogue/#j-paladin-st-29-31-3537-do-6467-73-7982-150) |
 | Q474 | A monster's drain roll takes the packet's field as its base, and the result is added to that field: `field + max(field + roll, 0) × srcdam ÷ 128`, so a drain already in the packet counts again. | [I] | `COMBAT_RollElemStat` | [combat/damage § A](../../spec-combat/damage/#a-combat_builddamage-in-order) |
 | Q508 | `MonItemPercent` loads but no code reads it: a monster's death drop chooses no row, makes no draw and steps no seed for it. Do not gate a drop on `TreasureClassPercent`. | [I] | `TC_ResolveDrops` | [items/tc](../../spec-items/tc/#reimplementation-notes) n1 |
-| Q509 | The inventory packet `0x18` sets the page before the placement, so a refused item carries the new page byte. | [I] | — | items/inventory n5 |
-| Q510 | `elx` does not read its row's `stat1` and `calc1`. | [C] | — | items/use n3 |
-| Q511 | A first identify request consumes nothing; the second, on an unidentified item in the user's inventory, does. `0x27` does not clear the marks first. | [I] | — | items/use n4 |
-| Q512 | A belt scroll used on an item does not shift its column, every other belt use does, and a used belt scroll on a target not in a grid is removed unused. | [I] | — | items/use n5 |
-| Q513 | Packet `0x61` consumes the cursor item whatever `ItemUse` returned. | [I] | — | items/use n6 |
-| Q514 | Do not refuse on a use handler's "3" at the drain: the return is discarded. | [C] | the return read by neither frame (S4b) | items/use n7 |
-| Q515 | One life reader: `AiLifePct` is `push ecx; call UnitLifePct; ret`, one map with two calling conventions; AI rows 4, 8, 15 and 122 call it as `AiLifePct`, row 11 as `UnitLifePct`. | [C] | — | monsters/ai/catalogue n3 |
+| Q509 | The inventory packet `0x18` sets the page before the placement, so a refused item carries the new page byte. | [I] | — | [items/inventory](../../spec-items/inventory/#reimplementation-notes) n5 |
+| Q510 | `elx` does not read its row's `stat1` and `calc1`. | [C] | — | [items/use](../../spec-items/use/#reimplementation-notes) n3 |
+| Q511 | A first identify request consumes nothing; the second, on an unidentified item in the user's inventory, does. `0x27` does not clear the marks first. | [I] | — | [items/use](../../spec-items/use/#reimplementation-notes) n4 |
+| Q512 | A belt scroll used on an item does not shift its column, every other belt use does, and a used belt scroll on a target not in a grid is removed unused. | [I] | — | [items/use](../../spec-items/use/#reimplementation-notes) n5 |
+| Q513 | Packet `0x61` consumes the cursor item whatever `ItemUse` returned. | [I] | — | [items/use](../../spec-items/use/#reimplementation-notes) n6 |
+| Q514 | Do not refuse on a use handler's "3" at the drain: the return is discarded. | [C] | the return read by neither frame (S4b) | [items/use](../../spec-items/use/#reimplementation-notes) n7 |
+| Q515 | One life reader: `AiLifePct` is `push ecx; call UnitLifePct; ret`, one map with two calling conventions; AI rows 4, 8, 15 and 122 call it as `AiLifePct`, row 11 as `UnitLifePct`. | [C] | — | [monsters/ai/catalogue](../../spec-monster-ai/catalogue/#reimplementation-notes) n3 |
 | Q516 | AI row 21's `Idle` does not return: the walk runs in the same event. | [I] | — | [monsters/ai/machinery](../../spec-monster-ai/machinery/#reimplementation-notes) n2 |
 | Q517 | A leader's stack block carries four words the code does not write, and row 30 reads `+0x0C/+0x10` of a kind-1 head record for its `GameFindUnit`. | [I] | — | [monsters/ai/machinery](../../spec-monster-ai/machinery/#reimplementation-notes) n5 |
 | Q518 | AI row 34's override type 1 plans type 7, so `Ovr(1, …)` is no type-1 request. | [C] | — | [monsters/ai/machinery](../../spec-monster-ai/machinery/#reimplementation-notes) n6 |
@@ -646,7 +646,7 @@ Six from the specs' code readings and three reached in kept runs: Q89, a fault l
 
 ## Community claims
 
-Agreement with a page raises no tag: each entry states what the code does, in the owning spec's words. Every verdict lands here once; holds this table to the finding's.
+Agreement with a page raises no tag: each entry states what the code does, in the owning spec's words. Every verdict lands here once, and a check holds this table to the compared verdicts.
 
 ### Community claims that do not hold
 
@@ -656,9 +656,9 @@ A reimplementer must not "restore" these. No reviewed statement changes because 
 | --- | --- | --- | --- | --- |
 | 12 | Melee monsters with life, mana or stamina steal do twice the damage | No field counts twice on the `El` path. A non-hireling monster's life drain is one term of `total`, added to the physical damage, which it does not repeat. | [C] | [combat/reductions § A](../../spec-combat/reductions/) |
 | 12 | (the same) | `El` type `life` writes only stats 60 and 61; mana and stamina leave stats 8 and 10 and are not in `total`. What can double is a drain already in the packet (Q474). | [I] | [combat/delivery B4](../../spec-combat/delivery/#b-delivery-combat_applydamage), [combat/damage step 5](../../spec-combat/damage/#a-combat_builddamage-in-order) |
-| 20 | Curse resistance cuts every timed list, Fade's among them | The cut on a player target is as stated. | [C] | stats/states B1 |
-| 20 | (the same) | The cut runs only `if curse`, the state's `curse` flag, and `fade` has that cell blank. | [I] | stats/states B1 |
-| 26 | Hratli's magic level is 1, by a misspelled header | The header is right about the cause, and the value is 0, the absent-column default. | [C] | items/vendors D3 |
+| 20 | Curse resistance cuts every timed list, Fade's among them | The cut on a player target is as stated. | [C] | [stats/states B1](../../spec-stats/states/) |
+| 20 | (the same) | The cut runs only `if curse`, the state's `curse` flag, and `fade` has that cell blank. | [I] | [stats/states B1](../../spec-stats/states/) |
+| 26 | Hratli's magic level is 1, by a misspelled header | The header is right about the cause, and the value is 0, the absent-column default. | [C] | [items/vendors D3](../../spec-items/vendors/) |
 | 28 | Eth's target defence reduction goes negative, so it works as "ignores target defence", on bosses too | The percent is clamped to 0..100 and halved on a boss, player, superunique or hireling. | [I] | [combat/to-hit A7](../../spec-combat/to-hit/#a-the-chance-to-hit-combat_tohitroll) |
 | 3 | Kick skills receive elemental damage from weapons | Not in 1.14d on the four `Kick` rows: Kick's start 2 skips the build, and `SkillKickPhysDamage` unlinks the damage stats of a `weap` item in either hand before it builds. Elemental stats from other items still reach that build. | [I] | [skills/dispatch I4](../../spec-skills/dispatch/#i-the-skill-packet) |
 | 25 | Some runeword property codes are misspelled | Not in 1.14d: 0 unknown codes in 508 `T1Code` cells of 169 rows. | [C] | [items/sockets-runewords E2](../../spec-items/sockets-runewords/) |
@@ -668,9 +668,9 @@ A reimplementer must not "restore" these. No reviewed statement changes because 
 
 One row per spec with a *Reimplementation notes* section: its note count, the notes taken (cited by at least one entry),
 and the skipped ones by reason. "Weaker duplicate" is a note that restates, at a weaker tag, a statement another spec
-holds raised; the entry takes the raised statement and the disagreement is routed to the spec-writer's backlog
-(entry; the three overviews it
-named now state the raised clause). Skipped: 32 notes, presentation 5, table rule 12, not a trap 12, wall-clock 3.
+holds raised; the entry takes the raised statement, and the disagreement goes to the spec with the weaker tag (the
+three overviews named in the backlog entry
+now state the raised clause). Skipped: 32 notes, presentation 5, table rule 12, not a trap 12, wall-clock 3.
 
 Q454–Q473 take the step notes the community verdicts name, and Q474 combat/damage § A's step 5 note: it answers no verdict of its own, and row 12's "does not hold" text points at it.
 

@@ -750,7 +750,7 @@ Step notes:
 
 - K3. **The copy is a save round trip.** `ItemCopy` serialises the item (`ITEMS_Serialize`, whose walk reaches
   `ITEMS_WriteFull`) and rebuilds it with `ItemCreateFromSave`, which calls `ITEMS_ReadFull`: the save writer and
-  reader of save/d2s. The 18 logged copies came back with the source's class, quality, affixes and
+  reader of [save/d2s](../../spec-save/d2s/). The 18 logged copies came back with the source's class, quality, affixes and
   lists. [C] (`ITEMS_Serialize`, `ITEMS_WriteFull`,
   `ITEMS_ReadFull`, cube 52)
 - K3. **A runeword's name id comes back in prefix slot 0.** The *Steel* copy held 20639 (`0x509F`) in prefix slot 0,
@@ -1000,5 +1000,5 @@ cube 49; the fault logged on row 83 only)
 - Upstream specs: rng, rng/seeds, [items/quality](../quality/),
   [items/uniques-sets](../uniques-sets/), [items/affixes](../affixes/), [items/properties](../properties/),
   [items/sockets-runewords](../sockets-runewords/). Downstream: [drlg/outdoor](../../spec-drlg/outdoor/) (level 39 needs the
-  cow portal; level 134 cannot be reached), save/d2s (the cube page).
+  cow portal; level 134 cannot be reached), [save/d2s](../../spec-save/d2s/) (the cube page).
 - Plan: 0030, with the Phase 2 review rulings.

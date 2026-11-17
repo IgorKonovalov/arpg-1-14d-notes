@@ -32,14 +32,14 @@ each special room carries, and the level links, are in [warps.md](../warps/).
 
 ### Tables
 
-| Used for |
-| --- |
-| row key (`+0x00`), first match |
-| `Rooms`, `Rooms(N)`, `Rooms(H)` at `+0x04 + 4·difficulty`: the target of random growth (§ C) |
-| `+0x10`/`+0x14`: the size of every maze room of the level |
-| `+0x18`: per-mille chance of an extra link to an edge-sharing room (§ B6) |
-| the level type (level `+0x1C0`): selects the chain (§ F), the `Def` base (Constants) and the theme pass |
-| the record blocks the `Def`s name; see LvlPrest § Maze presets |
+| Anchor | Used for |
+|---|---|
+| `LvlMaze.txt:Level` | row key (`+0x00`), first match |
+| `LvlMaze.txt:Rooms` | `Rooms`, `Rooms(N)`, `Rooms(H)` at `+0x04 + 4·difficulty`: the target of random growth (§ C) |
+| `LvlMaze.txt:SizeX`, `LvlMaze.txt:SizeY` | `+0x10`/`+0x14`: the size of every maze room of the level |
+| `LvlMaze.txt:Merge` | `+0x18`: per-mille chance of an extra link to an edge-sharing room (§ B6) |
+| `Levels.txt:LevelType` | the level type (level `+0x1C0`): selects the chain (§ F), the `Def` base (Constants) and the theme pass |
+| `LvlPrest.txt:Def` | the record blocks the `Def`s name; see LvlPrest § Maze presets |
 
 ### Runtime state
 
@@ -340,10 +340,6 @@ D2. Attach(entry):                                                   [C] but the
 | Baal (34) [1058] | Next: 1078–1081, Waypoint: 1082–1085 (exceptions) |
 | Ice (33) [1002] | Prev: 1018–1021, Next: 1022–1025, Down: 1026–1029, Theme: 1030–1033, Waypoint: 1034–1037 (exception) |
 
-- [C] **Temple tables** (as `matchDef → def, dir`; `idx` −1). Down has **three** entries: 1042 → 1046 (1),
-  1043 → 1047 (0), 1045 → 1048 (3). Waypoint has four: 1042 → 1049 (1), 1043 → 1050 (0), 1045 → 1052 (3),
-  1044 → 1051 (2). Down is placed from ` + 16r` unless the level is 124, and Waypoint on level 123 from
-  ` + 16r`. (data: 122, 123)
 - [C] Down reads `r` 0..2 only (the draw is `mod 3`), so the word after its third entry, which
   is Waypoint's entry 0, is never read as Down's entry 3. `MazeSpecialPlace` reads one entry and then sets
   `r ← (r + 1) mod 4`, so Waypoint is read at `r` 1..3, and its entry 0 is never read either.
@@ -489,9 +485,6 @@ and against the act's true tomb (`+0x094`) and Kaa's tomb
 - [C] **Lair 64's entries**, as read from the data: Tight Spot is the single entry, `{485 → 509, idx −1,
   dir 1}`; the fixed Treasure address is entry 3 of the Treasure table, `{482 → 505, −1, dir 2}` (a W dead
   end); the Prev entry 0 that follows is `{489 → 500, −1, dir 3}`. (data)
-- [C] **Lair 64's sequence**: after the draw `r`, Tight Spot with `&r`, then `r ← 3` and Treasure from the fixed address
-  (so `r` becomes 0), then Prev from ` + 16r`. Both windows of level 64 match room for room with their draws;
-  levels 62 and 63 reproduce the other branch (Next from ` + 16r`, then Prev).
 
 ### G. Placement
 
@@ -501,7 +494,7 @@ G1. MazeLevelPlace(L):                                               [C]
       if L.w < x1 − x0 or L.h < y1 − y0: fatal                       ; [I] no stock case found, G1 note
       every room: (x, y) ← (x + L.x − x0, y + L.y − y0)
 
-G2. MazeBarracksPlace(L)  (level 28):                                [C] (8 windows, k 1: k 0 4 windows, k 2 2 windows)
+G2. MazeBarracksPlace(L)  (level 28):                                [C] (8 windows, k 1; k 0 4 windows, k 2 2 windows)
       ensure level 27; k: i32 ← level 27's preset file index           ; left by the act link builder: drawn on Black Marsh sides 1 and 3, else the create-time index (warps.md)
       P ← Find({0: 2, 1: 3, 2: 0}[k])                                 ; East, South or West: g_BarracksFinders[k]
       C ← AddFixed(P, {0: 2, 1: 3, 2: 0}[k], 167, idx k, recalcParent: true)   ; Barracks Court Connect
@@ -536,9 +529,6 @@ G3. MazeRiverOfFlame(L)  (level 107):                                [C] (8 wind
 
 - G2. [C] The finder is taken from `g_BarracksFinders`, three function pointers: `k` 0 `MazeFindEast`, 1 `MazeFindSouth`,
   2 `MazeFindWest` (read).
-- G3. [C] The forge entry is `g_RiverForgeSpecials` ` + 16·r`, two entries, the W and E dead ends of base 836:
-  `{837 → 853 Forge W, idx −1, dir 2}` and `{838 → 854 Forge E, idx −1, dir 0}`. No rotation pointer is passed.
-
 - G1. [C] No test against the level rectangle is made during growth. The rooms grow freely around R0, and this shift puts
   the bounding box at the level origin.
 - G1. [I] No sampled stock seed reaches the fatal error. An offline sweep of the maze model over every `DrlgType` 1 level
@@ -627,7 +617,7 @@ level's warp points, are [warps.md](../warps/). [C]
 
 Seeds are `low:high`, hex. Directions: 0 W, 1 N, 2 E, 3 S.
 
-**1. Den of Evil (level 8), map seed 12345, normal**. `LvlMaze`: `Rooms` 1/1/1, 24 × 24, `Merge` 500. Level rect `(1500, 1000, 200, 200)`. The window starts at `E18C3A55:` (after R0's draw, [drlg/overview](../overview/#worked-example)).
+**1. Den of Evil (level 8), map seed 12345, normal**. `LvlMaze`: `Rooms` 1/1/1, 24 × 24, `Merge` 500. Level rect `(1500, 1000, 200, 200)`.
 
 | # | Draw | Seed after | Value | Effect |
 |---|---|---|---|---|

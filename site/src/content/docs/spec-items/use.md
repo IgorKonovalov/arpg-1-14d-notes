@@ -1,0 +1,422 @@
+---
+title: "Item use: the requests, the dispatch by use kind, potions and their draws"
+sidebar:
+  order: 12
+---
+
+## Purpose
+
+What the server does when a player uses an item. A client request (packet `0x20`, `0x26`, `0x27` or `0x61`) reaches the
+item's use entry, chosen by a `Books` row or `Misc.pSpell`; the entry changes stats or lists, opens a menu or ends in an
+identification; the request's handler then uses the item up or does not. This page also holds the gate every client
+request passes and the order of requests in one drain. The scope is the server's outcomes, in game frames. Slots, moves, pickup, drops and a ground item's life are
+[items/inventory](../inventory/); the town portal's own body is [quests/travel § G](../../spec-quests/travel/#g-town-portals).
+
+```mermaid
+flowchart LR
+  req["request 0x20, 0x26, 0x27, 0x61"] --> gate["SrvPacketDispatch: the gate"]
+  gate --> h["the handler's item tests"]
+  h --> caller["PlayerUseInvItem, PlayerUseBeltItem,<br/>PlayerUseItemOnItem, MercGiveCursorItem"]
+  caller --> iu["ItemUse: the kind"]
+  iu --> entry["g_ItemUseFns entry 1..11"]
+  entry --> caller2["the caller: use up, or not"]
+```
+
+## Entry points
+
+| When | Function | Tag |
+|---|---|---|
+| Client packet `0x20`, use an inventory item (13 bytes: guid, x, y) | — | [C] |
+| Client packet `0x26`, use a belt item (13 bytes: guid, the mercenary flag) | — | [C] |
+| Client packet `0x27`, an item on an item (9 bytes: target guid, used guid) | — | [I] |
+| Client packet `0x61`, the mercenary button (3 bytes) | — | [I] |
+| Skill do 113 reaches the first two as well | — | [C] |
+
+## Inputs
+
+### Tables
+
+| Anchor | Used for |
+|---|---|
+| `Misc.txt:pSpell` | the use kind when no `Books` row gives one |
+| `Misc.txt:useable` | required by packets `0x20` and `0x26` (§ I) |
+| `Misc.txt:len`, `Misc.txt:state`, `Misc.txt:stat1`, `Misc.txt:calc1` | the amount rules (§ F, § G) |
+| `Misc.txt:cstate1`, `Misc.txt:cstate2` | kind 6 |
+| `Misc.txt:spellicon`, `Books.txt:SpellIcon` | the identify prompt's icon |
+| `Books.txt:pSpell`, `Books.txt:BookSkill`, `Books.txt:ScrollSkill` | the kind and the skill argument of a tome or scroll |
+| `ItemStatCost.txt:ValShift`, `ItemStatCost.txt:maxstat` | the amount's shift, the instant cap |
+
+The rows per kind are Misc § Item-use columns. The `calc`
+columns are bytecode; `eval` below is `ITEMS_EvalCalc`, and a blank offset evaluates to 0.
+
+### Runtime state
+
+| State | Type | Source |
+|---|---|---|
+| user's seed | `unit+0x20`, Seed64 | the unit that uses the item; the mercenary when `0x26`'s flag or `0x61` makes it the user |
+| game frame | i32, `Game+0xA8` | the current frame |
+| item flag 4 | bit of the item's flags | "use mark": set by `ItemUse`, cleared by `InvClearUseMarks` |
+| user's list of a state | the stat list `UNIT_FindStatListByState` returns | the running potion of that state |
+
+### Constants
+
+| Name | Value | Tag |
+| --- | --- | --- |
+| `g_ItemUseFns` | 31 `{test, use}` pairs; `use` in entries 1..11 only, `test` in entry 1 only | [C] |
+| exempt opcodes | `0x14`, `0x15`, `0x3C`, `0x43`, `0x66` | [C]: they reach the import's call |
+| refused state, modes | state 54; modes 0 and `0x11` | [C] |
+| request position reach | 50 per axis, as `u16`: refused when `abs(pos − u16(v)) > 50`, signed, with a 32-bit `neg`, so a difference of −2³¹ passes; `pos` is the static path's dwords for unit types 2, 4, 5, else the dynamic path's `u16`, 0 with no path; the 50 is the callers' `EBX` | [C] (family `pos`, 1 500 cases) |
+
+## Algorithm
+
+### How to read the tags
+
+The evidence for one statement can be of four kinds, and each is named at the statement.
+
+- **`[C]`**, the use emulation (7 320 cases, 11 families, 0 mismatches, 0 stops): the code's map from declared
+  scratch bytes up to a named callee's entry. **The callee and everything after it are not covered**, "after, `[I]`". Not a
+  run of the game, and not what the game stores at those offsets or when the code runs. A family's cases end at the
+  entry's first callee, so 0 mismatches holds that far. [C]
+- **`[C]` **, the lock scan: the gate's passes stop at the call instruction of an import,
+  and nothing after that call is covered. [C]
+- **`[C]` live**, the second inventory run: 17 stock potion uses by one Sorceress in one process, one seed chain, no forced
+  state. It rests on two different grounds: the **stored rate** of the 16 fresh-list uses
+  on the **a-priori table** committed before the kept sessions; the **two draws, their seeds and the doubled amount** on the
+  model evaluated **per case on the log's inputs**, so that check is of the code against its reading on inputs the log
+  gives, not blind to them, and it says nothing of which inputs occur. [C]
+- **`[I]`**: a code reading no case reaches, with the addresses read.
+
+### A. The drain and the gate
+
+```mermaid
+flowchart TD
+  op["opcode"] --> e0{"0, above 0x66,<br/>or empty row?"}
+  e0 -->|yes| r3["return 3"]
+  e0 -->|no| ex{"0x14, 0x15, 0x3C,<br/>0x43, 0x66?"}
+  ex -->|yes| pass["IsBadCodePtr call,<br/>the row pushed"]
+  ex -->|no| o41{"0x41?"}
+  o41 -->|yes| m11{"mode 0x11?"}
+  m11 -->|yes| pass
+  m11 -->|no| r0["return 0"]
+  o41 -->|no| st{"state 54, or<br/>mode 0 or 0x11?"}
+  st -->|yes| r0
+  st -->|no| pass
+  pass --> after["after the call:<br/>not covered"]
+```
+
+```
+A1. Drain (queue 1, FIFO, all clients and games):                    [C] queue 1 popped until −1, each message to SrvProcessClientMessage, its one call of SrvPacketDispatch, the return read by neither frame; [I] FIFO, all clients and games, the lock
+      while a packet pops:
+        lock the client's game
+        r: i32 ← SrvPacketDispatch(packet)
+        ; r is discarded: the next instructions are mov ecx, esi; call, with no test of eax
+
+A2. SrvPacketDispatch(op: u8, …) → i32:
+      if op = 0 or op > 0x66 or row(op) is empty: return 3           [C] (family dispatch)
+      if op ∈ {0x14, 0x15, 0x3C, 0x43, 0x66}: pass                   [C]
+      else if op = 0x41: pass if mode = 0x11, else return 0          [C] for the return; the pass as the line above, one case, state 0
+      else if the player has state 54 or mode ∈ {0, 0x11}: return 0  [C]
+      else: pass                                                     [C]
+      pass: call IsBadCodePtr(row(op).fn)                            ; the emulated pass stops at this call
+      if it returned non-zero: fatal                                 [I]
+      return row(op).fn(…)                                           [C] (178 `PKT` lines entered at their opcode's row of g_SrvPacketTable, return address)
+```
+
+- A1. [I] **Two item requests in one drain run in arrival order, to completion, and see each other's results**: `0x17` then
+  `0x16` on the same item finds it on the ground already; a second `0x19` finds a full cursor. Across clients it is arrival
+  too. No item request is reordered, batched or rate-limited. Scope: `SrvProcessClientMessage`, `SrvPacketDispatch` and
+  `PlayerModeAllowed`'s bodies, not each handler's whole closure.
+- A1. [C] **A "refusal" return (2, 3) has no effect beyond the handler's own**: neither `SrvProcessClientMessage` nor the drain loop reads the dispatch's return. So in this spec a handler "returns 3" with
+  nothing further, and whatever the handler already did stands.
+- A1. [I] **What leaves the drain** is a pickup out of reach: it starts a walk, and the pickup runs in a later frame's mode
+  pass. The other item handlers of §§ B and [items/inventory § D](../inventory/#d-the-requests),
+  as read, do their moves in the handler; their callees' queued events and marks reach clients later and were not
+  followed.
+- A2. [C] The refusals, 428 cases over each opcode 0..`0x68`, `0x80`, `0xFF` × mode 1, 0, `0x11` and state 54 at mode 6: control
+  `nogate` fails 258, `noexempt` 15.
+- A2. [C] **The passes reach the `IsBadCodePtr` call with the opcode's table row pushed**, 106 of 106; the next
+  row's word matches 0, and the 106 hold 91 distinct words. `0x41` in mode `0x11` is one case, at state 0. **After that call, all
+  `[I]`: the import's result, the fatal branch, the handler's call.** The import (slot, `KERNEL32!IsBadCodePtr`) is a
+  stop at its call instruction: no value is given and nothing after it runs. What it does is not evidenced.
+
+- A2. [I] Not reached: `Game+0x1DC4` above 1, where the gate first overwrites that word with a callee's return.
+
+- A2. [C] The gate draws nothing on this path: `PlayerModeAllowed(1, 0, 0)` returns before its RNG line because its second
+  argument is 0, and from there no draw is reachable; the
+  player's seed is the same at every `PKR` and the next `PKT`, 175 of 175, which agrees.
+
+### B. The use requests
+
+Each handler's tests, in order, before its caller function. All "returns" are discarded at the drain (A1).
+
+| Packet | Tests | Tag and anchor |
+|---|---|---|
+| `0x20` | Length 13, else 3. `PktInvItemBad` (the item exists, mode 0, and finds it with the player), then `PktPosFar` (each axis of the player's position within 50 of the packet's x and y, as `u16`); either's non-zero is returned. A refusal flagged by the use function returns 3 | [C] to `PlayerUseInvItem(guid, x, y, &flag)` (354 cases at the call); [I] the 3 on a flagged refusal, after the call |
+| `0x26` | Length 13. Fields: guid (`+1`), flag (`+5`). The position tested and passed is the player's own, so for a player (a dynamic path) the distance test holds with any input; a unit on a static path with a coordinate above `0xFFFF` can fail it. `PktBeltItemBad` wants mode 2 and an owned item | [C] to `PlayerUseBeltItem` (493 cases at the call; control `spec_anypos` separates 127); [I] a flagged refusal's 3 after the call |
+| `0x27` | Length 9. `+1` is the target, `+5` the used item; both must pass `PktOwnedItemBad`, `+1` first, which passes an owned item or else the player's cursor item | [C] to `PlayerUseItemOnItem` (577 cases at the call; control `owned_only` separates 26); [I] a flagged refusal's 3 after the call |
+| `0x61` | Length 3; expansion games only (`game+0x70`), else 3. Then `PlayerIsBusy` and `InteractIsPlayer` both non-zero return 3; no inventory returns 3. With a cursor item that is not a quest item (Items `+0x12A`; a quest item returns 0) the mercenary path runs; the player must have no used skill (the skill block at `player+0xA8` with a non-zero `+0x10` returns 0) and be alive (`UnitIsDead`, the `+0xC6` bit 0), and the pet alive: the unit of the first type-7 node whose bit 0 is clear, only when the pet-type count is above 7; its room must be in the player's room's near list; each failure returns 0. With no cursor item a non-zero `u16` at `+1` is passed with the player to a second handler, a zero returns 0 | [C] to `MercGiveCursorItem` (122 cases) and the second handler (30 cases), family `merc`, 3 000 cases; each test's control separates |
+
+### C. The dispatch: `ItemUse`
+
+```mermaid
+flowchart TD
+  a["user type 0 or 1,<br/>item type 4?"] -->|no| ref["return 0"]
+  a -->|yes| b{"book or scroll<br/>with a Books row?"}
+  b -->|"yes, +0x04 > 0"| k1["kind ← Books +0x04,<br/>skill ← Books +0x0C"]
+  b -->|"yes, +0x04 ≤ 0"| k2["kind ← pSpell,<br/>skill ← Books +0x0C"]
+  b -->|no| k3["kind ← pSpell,<br/>skill ← −1"]
+  k1 --> c{"kind in 1..30,<br/>slot not empty?"}
+  k2 --> c
+  k3 --> c
+  c -->|no| r0["return 0"]
+  c -->|yes| d{"a test, and<br/>flag 4 clear?"}
+  d -->|yes| t["test(item, 0, x, y, skill)"]
+  d -->|no| u["set flag 4;<br/>use(item, arg2, x, y, skill)"]
+```
+
+```
+C1. ItemUse(user, item, arg2, x: i32, y: i32) → i32:                 [C] (all of C1a–C1e)
+ C1a. if user is null, user.type ∉ {0, 1}, item is null or item.type ≠ 4: return 0
+ C1b. skill: i32 ← −1;  kind: i32 ← none
+      if ITEMS_UnitIsType(item, 18) or ITEMS_UnitIsType(item, 22):
+        row ← Books[item suffix word +0x3E]
+        if row exists:
+          skill ← row[+0x0C]
+          if row[+0x04] > 0: kind ← row[+0x04]                       ; a Books row wins over pSpell
+ C1c. if kind = none: kind ← Misc[item].pSpell                       ; skill keeps +0x0C or −1
+ C1d. if kind < 1 or kind ≥ 31 or the slot is empty: return 0
+ C1e. if the slot has a test and item flag 4 is clear:
+        ends at test(item, 0, x, y, skill)
+      else:
+        item flag 4 ← 1
+        ends at use(item, arg2, x, y, skill)
+C2. After either boundary:                                           [C] the marks and the returns, family `c2`, 2 500 cases with the stock entries run; [I] message 0x7C and a use return other than 0 or 1
+      a test returning 0, or a use returning 0: InvClearUseMark, message 0x7C
+      a test's non-zero leaves the marks
+      after any test ItemUse returns 0;  otherwise the use's own return
+      ; a test returning 0 is a branch no stock entry takes: kind 1's test returns 1 on both its paths
+```
+
+- C1. [C] Family `dispatch`, 600 cases: 44 at the `test`, 226 at the `use` of 10 kinds, 330 refusals or empty slots. Only kind 1 has
+  a test, and it returns 1 (§ H1). Kinds 4 and 12..30 hold no stock row; kind 4's `use` is an address in the table and the
+  empty ones return 0. Kinds 2, 6, 9, 10 and 11 are reached only at their entry, through this family.
+
+
+### D. Consumption, in the callers
+
+A use entry does not remove the item. The caller does, by `ItemUse`'s return. All of this section is a code reading:
+no emulated family enters these functions, and the runs logged the outcomes only for the cases named in § F.
+
+```mermaid
+flowchart TD
+  iu["ItemUse(item, item, x, y)"] --> nz{"non-zero?"}
+  nz -->|"yes, a book with a skill<br/>and stat 70 above 0"| bk["stat 70 − 1, messages,<br/>SkillQtyDec; no removal"]
+  nz -->|"yes, anything else"| sk["SkillFindByOwner: quantity − 1;<br/>then the removal"]
+  nz -->|no| q{"code ass, xyz,<br/>tr2 or toa?"}
+  q -->|yes| qq["its own branch"]
+  q -->|no| none["return 0,<br/>nothing used"]
+```
+
+```
+D1. PlayerUseInvItem (packet 0x20), in order:                        [I] (all of D1)
+      InvClearUseMarks(player)
+      find the item;  a cursor item refuses
+      mode 0 and useable, else the refuse flag
+      a book with stat 70 below 1: return 0
+      InteractIsPlayer non-zero: return 0
+      r ← ItemUse(item, item, x, y)
+      if r ≠ 0:
+        if a book with a skill and stat 70 above 0:
+          stat 70 ← stat 70 − 1; its messages; SkillQtyDec              ; no removal
+        else:                                                           ; a scroll, a potion
+          s ← SkillFindByOwner
+          if s: quantity − 1; at 0 or below, cleared from the right hand when it is there
+          InvItemConsume(item)
+      if r = 0: the quest codes (D2);  any other code returns 0 with nothing used
+
+D2. Quest codes, with r = 0 (not through pSpell):                    [I]
+      ass  state 9/5:                 +1 stat 5
+      xyz  state 20/5:                +0x1400 stat 7
+      tr2  state 37/8 and not 37/7:   the resistance bonus
+      toa  the stat reset
+      each removes the item when it applies
+
+D3. PlayerUseBeltItem (packet 0x26), in order:                       [I] (all of D3)
+      clear marks;  find;  a cursor item refuses
+      mode 2 and useable, else the flag
+      InteractIsPlayer non-zero: return 0
+      if the packet's flag, a player user and an expansion game:
+        the item must be of type 76, 81 or 80, else 0                ; hpot (rpot by Equiv1), wpot, apot; not mpot, 77
+        the pet of type 7, when there is one, becomes the user
+      r ← ItemUse
+      if r ≠ 0: the skill's quantity as in D1;  BeltItemConsume;  BeltColumnShift(x & 3)
+      ; the shift moves each remaining item of that column down; the column's items stay at rows in their order
+
+D4. PlayerUseItemOnItem (packet 0x27):                               [I] (all of D4)
+      the marks are not cleared before ItemUse                       ; flag 4 from the first request stands
+      a used item in the belt must be of type 22, else the flag
+      if the target's mode is neither 0 nor 1:                       ; does not reach ItemUse
+        a used item in the belt is removed anyway
+        a book in the inventory loses a charge, floored at 0
+        nothing is identified
+      a book of 0 charges refuses
+      r ← ItemUse(used, target, 0, 0)
+      if r ≠ 0: use one up:
+        a belt item: SkillQtyDec, BeltItemConsume                    ; the column is NOT shifted here
+        a book: stat 70 − 1
+        an inventory scroll: the removal
+      the marks are cleared after the consumption and on the refusals
+
+D5. MercGiveCursorItem (packet 0x61):                                [I]
+      with a cursor item identified, without flag 0x100, of type 76, 81 or 80:
+        ItemUse(item, item, 0, 0) with the mercenary as the user     ; EDX from the function's ECX
+        CursorItemConsume(item)                                      ; whatever ItemUse returned
+```
+
+- D. [C] **What clears the marks.** `InvClearUseMarks` has 36 direct calls, 35 of them in 24 other functions (the raw scan; no abs32 reference): `PlayerUseInvItem` and `PlayerUseBeltItem` before `ItemUse` (D1, D3), `PlayerUseItemOnItem` only after it (D4), and the moves: `PickupToInv`, `PickupToCursor`, `CursorDrop`, `InvPlaceItem`, `InvItemToCursor`, `ItemEquip`, `BodyToCursor`, both body swaps, `EquipCursorAtSlot`, `PageSwapCursor`, `StackRequest`, `ScrollIntoTome`, `ItemToBelt`, `BeltToCursor`, `BeltSwapCursor`, `BeltOverflow`, `CubeDropEmptied`, `KeyConsume`, `PlayerSwapWeapons`, `ITEMS_InsertSocket`. So a first identify's mark stands only until the next of these, and a `0x27` after one of them finds flag 4 clear and takes the test again (C1e). [I] Which side of `ItemUse` each use request clears on and which request reaches each move: the calls were listed by target, and which request reaches each was not traced past those functions.
+
+### E. The kinds
+
+| Kind | Stock rows | Effect | Draws before the first callee | Tag |
+|---|---|---|---|---|
+| 1 | `isc`, `ibk` | Identify, two requests (§ H1) | 0 | [C] to the first callee |
+| 2 | `tsc`, `tbk` | Town portal, player only; refused in town and on level 136 | 0 in the entry's own body, direct calls; the opened portal's three draws are [quests/travel G2](../../spec-quests/travel/#g-town-portals) | [C] |
+| 3 | `hp1`..`hp5`, `mp1`..`mp5` | A total spread over `len`, with a chance of double (§ F) | 2 per amount slot when vitality or energy is above 0 | [C] to the first callee, and live in the scope of § F |
+| 4 | none | The kind-3 loop without the class scale and the draws (§ F) | 0 | [C] to the first callee |
+| 5 | `rvs`, `rvl` | A percent of the maximum, at once (§ G) | 0 | [C] to the first callee |
+| 6 | `yps`, `wms` | Clear `cstate1`, `cstate2`, then as kind 9 (§ H3) | 0 in the entry's own body, direct calls | [C] as kind 2 |
+| 7 | `box` | Opens the cube; never used up (§ H2) | 0 | [C] to the first callee |
+| 8 | `elx` | Adds the item's stat 71 (§ H4) | 0 | [C] to the first callee |
+| 9 | `vps`, `hrb` | A timed state, with the group clear (§ H3) | 0 in the entry's own body, direct calls | [C] as kind 2 |
+| 10, 11 | none | Cast skill 47 at level 1 | not read | [I] |
+
+### F. Kinds 3 and 4: the amount and the two draws
+
+```mermaid
+sequenceDiagram
+  participant H as handler 0x20 or 0x26
+  participant P as ItemUsePotion
+  participant S as user's seed
+  H->>P: ItemUse, kind 3
+  P->>P: v ← eval(calc), << 8, class scale
+  P->>S: draw 1 RangeB(n)
+  S-->>P: r1
+  P->>S: draw 2 Range(100)
+  S-->>P: r2
+  P->>P: r2 < r1 >> 1 doubles v
+  P->>P: list: new or found, end
+  P->>P: event 12 at the end (slot 0)
+  P->>P: the rate on the list
+  P-->>H: non-zero
+  H->>H: the removal
+```
+
+Step notes:
+
+- F1. [C] The map up to the first of `UnitAddStat`, `STATLIST_Alloc`, `UnitQueueEvent`, `STATLIST_SetStat`
+, the golem's heal, or the return (families `stat3`, `stat4`, `stat5`; kind 4 at its own sites). What each case saw: the
+  arguments, the list's end and bit 2, the seed. **Controls:** `draw1` (one draw) and `nodraw` fail 905 cases each; `half` (`r2 < r1`) 51;
+  `floordiv` 120 (negative rates, from declared base rates); `sar` 20 in `classmul` (negative odd amounts, no stock input).
+- F1. [I] What the boundaries' callees do: every effect of `STATLIST_Alloc`, `UnitQueueEvent`, `STATLIST_SetStat`, `UnitAddStat`.
+
+- F1c. [C] **Live: the two draws and the doubling, 17 of 17 stock uses of kind 3**: 12 `hp1` and 5 `mp1`, a Sorceress at vitality 165 and energy 150. Each
+  use made exactly two draws on the user's seed, `RangeB(n)` then `Range(100)`, `n` the vitality for `hp1` and the energy for `mp1`. The seed before, `n`,
+  `r1`, `r2`, the seed after draw 2 and at the return all equal the replay, and the amount after the test is the scaled total, doubled when
+  `r2 < r1 >> 1`. The user's seed chains from each use's return to the next use's entry, so no other draw on it lies between the 17. Control `onedraw` fails the
+  check. Ground: per-case replay on the log's inputs (see *How to read the tags*). Uses at frames 111 to 5 034, no golem.
+- F1c. [C] **Doubling by rows, as run:** `hp1` shows both outcomes, 6 doubled and 6 not, and the replay's test agrees with the logged amount in all 12. `mp1` shows
+  the not-doubled outcome only, 5 of 5, all predicted not doubled by the same replay.
+- F1c. [I] **The `mp1` doubled branch is not observed in a game.** It is the code's map, `[C]` in F1, not a run. The draw's chance at `n` = 150 is about 37 %, and 0 in 5 has a chance of about 10 %, so this batch does not say the
+  mana potion never doubles.
+- F1c. [C] **The chance** for `n`: the amount is doubled exactly when `r2 < r1 >> 1`, at each chosen `(r1, r2)` over 146 `n`, for players and non-players (family `double`, 3 000 cases; controls `le`, `half`, `swap`, `nodraw_nonplayer` separate). Counted over the pairs, that is `Σ min(100, r >> 1) ÷ (100 n)` over `r < n`: 2.0 % at 10, 5.76 % at 25, 12.0 % at 50, 24.5 % at 100, 37.0 % at 150, 40.75 % at 165, 49.5 % at 200, 79.8 % at 500. Each pair weighs as the generator's `low mod n` and `low mod 100` make it, so the formula is the uniform-pair count.
+  A user whose stat (vitality for life, energy for mana) is 0 or below makes no draw and keeps its seed; on a non-player the stat is whatever its list holds. (`double_chance`)
+- F1f. [C] **Live: slot 0's stored rate, 16 fresh-list uses of 16**: `rate = total ÷ len`, truncated, with `total` 7 680 (`hp1`, not doubled) or 15 360 (doubled) and `len` 192: 40 or 80; `mp1`
+  10 240 ÷ 128 = 80. The rate at the `SetStat` call was in the a-priori pair in all 16. The list's end was `frame + len`, and event 12 was queued with it. Scope: `hp1` and `mp1` of a Sorceress.
+- F1f. [C] The division's truncation (`floordiv`) and `(old × rem + v) ÷ (len + rem)` are the map on a slot after the first, reached by a slot 0 whose amount is 0; the stock path's slot 0 reaches the same instructions past the queue call.
+- F1f. [I] **A second potion within the first's duration:** the reading is that it uses the same list, end `now + rem + len`, rate `(old × rem + v) ÷ (len + rem)`, so the undelivered part of the first is carried and spread over the longer window. In the game **the second use found the first list in 1 of 4 pairs**
+  (42, 43, 42 and 33 frames apart: `hp1` at 111/153 and 1272/1315, `mp1` at 2434/2476, `hp1` at 5001/5034). Only 111/153 reached `STATLIST_SetStat` on the same list, with event end 495 = 153 + 150 + 192, so `rem` = 150; the other three allocated a new list. **What decides it is the meter, on the reading:** [stats/states E2, E4](../../spec-stats/states/) free the `healthpot` list when `stat 6 + stat 74` passes the maximum and the `manapot` list when mana is at its maximum with an amount above 0. All four pairs fit: at 153 life was below its maximum and stat 74 read 48 at entry; the other three first uses came at the maximum, and at the second entry stat 74 read its base 8 or stat 26 read 0, so no potion list was contributing and two lists did not run together (after the new list, stat 74 is 88 at 1315 and 5034, not 128 or 168). The free itself was not logged. *Corrected 2026-11-04, review: this said "not known".* **The blend's arithmetic is not separated:** the one blended use has `old` = `total ÷ len` of the same potion, so the blend and `v ÷ len` both give 40.
+- F1. [C] **Live: a potion is used at full life**: the list is allocated and the rate set, return 1; the amount is not refused. Scope: `hp1`, 1 case, stat 6 equal to stat 7 at the call.
+- F1. [C] **Live: seeds across the request.** The 12 requests `0x20` and 5 of the 6 `0x26` that used a potion moved the player's seed; the game seed did not move across any request. The sixth `0x26` is the `rvs` of § G. Scope: the player's and the game's seeds around the handler, not other units' seeds.
+- F3, F4. [C] 800 cases: all 7 classes, other classes and types, odd and negative amounts, a null unit. In a game only the Sorceress's factors ran (`v` life, `2v` mana).
+- F. [I] **Stock totals**, in stored units (`calc1 << 8`, the class factor): `hp1` 30 gives 7 680 for a Sorceress, 11 520 for an Amazon, 15 360 for a Barbarian, i.e. 30, 45 or 60 life. The stored rate truncates: `hp3` (100, `len` 171) gives 25 600 ÷ 171 = 149 per frame, 25 479 over the 171 frames, 99 life and a remainder. Stock `ValShift` of stats 26 and 74 is blank, so 0.
+- F. [C] **Kind 4** (`ItemUseStatPlain`) is this loop without the class scale and the draws: 800 cases with the seed compared, no stock row. The controls that separate the draws are `stat3`'s, and `stat4` holds no golem case.
+- F. [C] **Healing and mana potions do not run the group clear**: kind 3 has no call of `STATE_GroupClear` in its body or anywhere under it (2 003 functions), and `GroupClear`'s 9 callers by the raw scan hold none in kind 3. How the stored rate reaches life is [stats/states E2](../../spec-stats/states/).
+
+### G. Kind 5: rejuvenation
+
+```
+G1. ItemUseRejuv(item, arg2, x, y, skill):                           [C] to the first callee (all of G1)
+      for k in 0 ..< 3:
+        s: i32 ← rec.stat[k];  calc: i32 ← eval(rec.calc[k])
+        skip the slot (continue) for a bad stat, a stat with no maxstat, or calc ≤ 0
+        max: i32 ← STATS_GetUnitStat(user, maxstat, 0)               ; raw, not UnitGetMaxHp
+        v: i32 ← max if calc = 100 else MulDiv(max, calc, 100)
+        if s ∈ {6, 74} and user is a player: v ← GolemHealShare(user, v)     ; § H5; before the cap, and no v > 0 test
+        if current + v > max: v ← max − current
+        UnitAddStat(user, s, v, 0)                                   ; boundary; no shift: stored stats and max are both << 8
+G2. After the loop, when stat 6 got an amount, on a player, always:  [I]
+      MsgLifePct;  stat 352 ← UnitLifePct
+G3. Returns 1 when any slot passed the tests, else 0:                [I]
+      ; a stat at its maximum still adds v = 0 and returns 1, so a rejuvenation at full life is used up on this reading
+```
+
+- G1. [C] Stock `rvs` 35 and `rvl` 100 percent of life and of mana. Controls: `pctflat` fails 252, `nocap` 207, `no100` 28. No draw before the boundary.
+- G1. [I] `MulDiv` is `MulDiv`, of three branches, so above `0x100000` it may be `(max ÷ 100) × calc`. A timed path exists with the same list code; no stock row has `len` here.
+- G1. [I] **A kind-5 use from the belt (`rvs`, `0x26`) did not move the player's seed**, 1 case; the entry hook is the kind-3 function, so no entry line exists for it.
+
+### H. The other kinds
+
+- H1. [I] A first identify through D1 has `r` = 0, so it falls to D2's codes and returns 0 with nothing used. The second request is `0x27`, which does not clear the marks, so flag 4 from the first request stands.
+- H5. [C] `v = 0` sets the golem to full: `GolemHealShare`'s own branch calls `UnitSetStat(golem, 6, UnitGetMaxHp(golem), 0)` (190 of 190), not `GolemHeal`, which returns 0 with no call for a share ≤ 0; for a share > 0 `GolemHeal` sets `min(i32(life + share), max)` by a signed compare, so a sum past `2³¹ − 1` is stored wrapped, not capped (no stock golem comes near it). Kind 3 tests `v > 0` first; kind 5 has no such test, and reaches the call with `v = 0` only at a maximum of 0, no stock case. The returns after the set are step H5's last line. (family `golem`, 1 200 cases)
+- H6. [C] `key` has `useable` 0 (the `.txt` and the `.bin` at `+0x11D`) and no `pSpell`. Its callers by the raw scan: `OBJOP_Chest` (after its class-6 test) and the case.
+
+### I. What the columns gate
+
+- [I] **`useable` (`+0x11D`) is a required test of both use requests, `0x20` and `0x26`**, and it does not select a kind. Its absence sets the refuse flag, so the handler returns 3. A `useable` row with no `pSpell` (`hpo`, `rps`, …) passes the test and does nothing: `ItemUse` returns 0, and D1 returns 0 with nothing used unless the code is one of D2's four.
+- [C] (data) The counts behind it: the getter has 5 calls, 2 of them those requests', and `useable` has 10 `u8` matches. The gate itself stays the `[I]` above: no family of the use emulation enters either handler. (`static.txt`, the a69 route)
+- [C] **`belt` (`+0x130`), `durwarning` and `qntwarning` gate no use**: the raw scan finds `ItemBeltByte` at 3 sites (the client name builder, `BeltOverflow`, `BeltFreeSlot`), `ItemDurWarning` at none, `ItemQntWarning` at 1 (client), and no abs32 pointer to any of them, so no table holds them. `autobelt` gates only placement.
+- [C] `BeltBoxQuery` has one caller, in the client's item name builder, and no abs32 reference. [I] It tests `useable` and `belt` both 1 with size 1 × 1, so a client rule on this reading: out of scope.
+
+### J. Draws per seed
+
+| Use | Draws | Seed | Tag |
+|---|---|---|---|
+| Kind 3 `hp1..5`, `mp1..5` | 2 per stat with an amount slot when vitality or energy > 0, else 0: one slot on all ten | the user's (`unit+0x20`) | [C] before the boundary; live for 17 uses of `hp1`, `mp1` |
+| Kinds 4, 5, 8, 1 (test and use), 7, a key | 0 | | [C] before the boundary, kind 4 no stock row |
+| Kinds 2, 6, 9 | 0 in the entry's own body |  | [C] |
+| The gate | 0 on this path | | [C] as A2 |
+
+- [I] **No bound past the boundaries.** The counts hold only up to each entry's first callee, except the 17 live uses of § F, whose seed chain shows no other draw on the user's seed. Under the five use functions and the entries 1, 2, 5, 6, 7, 9 lie 2 097..2 115 functions with 118 holding a seed step (119 under entry 3: its own), indirect calls unfollowed, the steps at depth 5 or more, among them the room population and level creation, which no reading here connects to a use. The narrow closures: test 559 functions and 0 with a step, entry 8 574 and 0, 636 and 0. (`rcg-summary.txt`)
+
+## Outputs
+
+The user's stats or a stat list of a state with its end and event 12; the user's seed stepped 2 per amount slot of kind 3; the item used up or kept (§ D); client messages named above. A request's return value goes nowhere (A1).
+
+## Worked example
+
+Two stock `hp1` uses of a Sorceress at vitality 165, frames 111 and 909 of the second inventory run (session `pot`). [C] (committed, first and fourth rows, and reproduced with `Unit.range`)
+
+| | frame 111 | frame 909 |
+|---|---|---|
+| User's seed before (`low:high`) | `f5e5440f:0000029a` | `155642d6:207a7ff9` |
+| `v` after `calc1 << 8` and the class factor | 30 << 8 = 7 680 | 7 680 |
+| `RangeB(165)` → `r1`, seed after | 125, `094fd225:668fa88f` | 122, `5ef84ea7:08e64475` |
+| `Range(100)` → `r2`, seed after | 88, `51cf2f08:03e24604` | 44, `c562baf8:279c7a52` |
+| `r2 < r1 >> 1` | 88 < 62: no | 44 < 61: yes |
+| `v` | 7 680 | 15 360 |
+| Fresh list: end, rate | 111 + 192 = 303, 7 680 ÷ 192 = 40 | 909 + 192 = 1 101, 15 360 ÷ 192 = 80 |
+
+## Reimplementation notes
+
+- **`calc1` of a healing or mana potion is a total**, not a per-frame amount. It is scaled, maybe doubled and divided by `len`; the division truncates, so a potion can deliver less than its total. [C]
+- **The draws come before the amount test and run for a zero amount too**, and they depend on the user's vitality or energy being above 0. Keep them. [C]
+- **`elx` does not read its row's `stat1`, `calc1`.** [C]
+- **A first identify request consumes nothing**; the second one, on an unidentified item in the user's inventory, does. `0x27` does not clear the marks first. [I]
+- **A belt scroll used on an item does not shift its column; every other belt use does**, and a used belt scroll on a target not in a grid is removed unused. [I]
+- **`0x61` consumes the cursor item whatever `ItemUse` returned.** [I]
+- **Don't refuse on a handler's "3" at the drain**: the return is discarded. [C]
+
+## Evidence
+
+- §§ Answer, 4: the gate and the drain; head: the imports.
+- Misc § Item-use columns, Books.

@@ -27,7 +27,7 @@ dialogue line the client reports) is an input; what the server does with it is s
 | a hooked monster dies (e8) | `UnitKilled` → `QUESTS_MonsterDeathEvent` | [C] its one caller, in `UnitKilled`, three tools agreeing |
 | a player leaves (e9 per quest item carried, then e10) | `QuestsInvItemEvent` | [C] each of the 3 logged leaves raised one e10, dispatched; [I] the e9 per quest item and its order before e10: no leave carried one |
 | a player joins (e13 first, e14 later) | `QuestsPlayerJoin` | [C] |
-| every 20th game frame | `QUESTS_TimersRun` from `GameTick` | — |
+| every 20th game frame | `QUESTS_TimersRun` from `GameTick` | [C] |
 | a quest object is operated, or its timed object event 7 fires | `g_ObjOperateFns[OperateFn]`, `QUESTS_ObjectEvent` | [C] |
 | an NPC menu service (imbue, socket, personalise, Hell respec, travel) | `NPC_MenuAction` | [C] `ImbueDone`, `RespecDone`, `SocketDone` and `PersonalizeDone` each have one call, inside `NPC_MenuAction`; `NpcTravelMove` has four there and one in the Harrogath portal's operate; three tools agreeing |
 | the client opens a quest-log entry (packet `0x58`) | `Pkt58QuestSeen` | [C] |
@@ -36,19 +36,19 @@ dialogue line the client reports) is an input; what the server does with it is s
 
 ### Tables
 
-| Used for |
-| --- |
-| the quest TC switch reads the killer's bits |
-| the Zoo's class draw (word 40) |
-| the portal quest gate |
-| the quest an item belongs to (e9) |
-| which quest handler an object runs |
+| Anchor | Used for |
+|---|---|
+| `MonStats.txt:TCQuestId`, `MonStats.txt:TCQuestCP` | the quest TC switch reads the killer's bits |
+| `MonStats.txt:zoo` | the Zoo's class draw (word 40) |
+| `Levels.txt:QuestFlag`, `Levels.txt:QuestFlagEx` | the portal quest gate |
+| `Misc.txt:quest` | the quest an item belongs to (e9) |
+| `Objects.txt:InitFn`, `Objects.txt:OperateFn` | which quest handler an object runs |
 
 ### Runtime state
 
 | State | Type | Source |
 |---|---|---|
-| player quest record | 48 × u16 bit field (bit `16q + s` = word *q* bit *s*), player data `+0x10 + 4·difficulty` | save/d2s; § A |
+| player quest record | 48 × u16 bit field (bit `16q + s` = word *q* bit *s*), player data `+0x10 + 4·difficulty` | [save/d2s](../../spec-save/d2s/); § A |
 | game record | 48 × u16, `QuestControl+0x0C` (`QuestControl+0x0C`) | `QUESTS_InitGame`; § A |
 | quest object | 0xF8 bytes (`QuestObject+0x00`): `+0x09` active, `+0x0A` gets events, `+0x0B`/`+0x0C` log state, `+0xA0 + 4·e` callbacks, `+0xE0` word, private data | `QUESTS_InitGame`; § B |
 | quest seed | Seed, `QuestControl+0x18`-area (`QuestControl+0x18`) | game-seed draw 4 |
@@ -123,7 +123,7 @@ A5. Packet 0x58 {u16 q}: if q < 42: SetState(rec, q, 12)            [C]
 
 | bit | meaning in the code | set by | cleared by | Tag |
 |---|---|---|---|---|
-| 0 | done (reward taken, or no reward) | the reward message or the completing event | only word 9's first-join check | — |
+| 0 | done (reward taken, or no reward) | the reward message or the completing event | only word 9's first-join check | [C] |
 | 1 | done in a game, reward not yet taken | the completing event (`QUESTS_ListSetPending` sets 13 and 1 together) | the reward | [C] `ListSetPending` wrote bit 13 then bit 1 back to back at the Den of Evil's logged completion, its only caller being; the reward clears bit 1 and sets bit 0 (the 65 logged service rewards, § F) |
 | 2–11 | log steps (quest-log progress) | each quest's StepBits by log state | `ClearSteps` at the rewards of words 1, 20, 25 and 35 among the logged rewards, not at those of words 2, 4, 6, 9, 27 and 37 | [C] for where `ClearSteps` runs; [I] for the setters by log state (§ D) |
 | 12 | the quest-log entry was seen | packet `0x58` | never | [C] |
@@ -204,11 +204,11 @@ Step notes:
 | e0 talk start | `+0xA0` | `NpcInteractStart`; re-dispatched by quest scripts (`QUESTS_RedispatchNpcTalk`, which then sends the game record) | all quests, forced, act filter | `+0x08` NPC, `+0x0C` player | [C] |
 | e2 talk end | `+0xA8` | `NpcInteractRemove` | all, forced, act filter | `+0x08` NPC | [C] |
 | e3 level change | `+0xAC` | room sync, for a level change within one act; the portal operate from a town; `NpcActTravel`'s Warriv branch calls quest object 6's slot directly (its word-6 bits 13 and 0 test read from the code, [quests/travel E3](../travel/#e-act-change-through-an-npc)) | all, forced, any act (the direct call: quest 6 only) | `+0x0C` player, `+0x14` level left, `+0x18` level entered | [C] (the direct call) |
-| e4 item placed | `+0xB0` | 7 sites | the item's hooks, unforced | `+0x08` item, `+0x0C` player | — |
-| e5 item dropped | `+0xB4` | — | the item's hooks, unforced | `+0x08` item | — |
+| e4 item placed | `+0xB0` | 7 sites | the item's hooks, unforced | `+0x08` item, `+0x0C` player | [C] |
+| e5 item dropped | `+0xB4` | — | the item's hooks, unforced | `+0x08` item | [C] |
 | e8 hooked death | `+0xC0` | `QUESTS_MonsterDeathEvent` after the drop | the monster's hooks; forced for a fixed list | `+0x08` monster, `+0x0C` killer player | [C] |
 | e9 quest item of a leaving player | `+0xC4` | client removal | that item's quest (`Misc.quest` − 1), direct call | `+0x08` item, `+0x0C` player | [C] `QuestsInvItemEvent` calls the item's quest's `+0xC4` slot itself (`call eax`); its one caller is `ClientRemove` |
-| e10 player leaves | `+0xC8` | the same, after the item loop | all, forced, any act | `+0x0C` player | — |
+| e10 player leaves | `+0xC8` | the same, after the item loop | all, forced, any act | `+0x0C` player | [C] |
 | e11 NPC message | `+0xCC` | packet `0x31` `{u32 npc id, u16 message}` | all, forced, act filter | `+0x08` NPC, `+0x0C` player, `+0x14` NPC class, `+0x18` u16 message | [C] |
 | e13 first join / e14 later join | `+0xD4` / `+0xD8` | `QuestsPlayerJoin`, direct | every quest | the player | [C] |
 
@@ -458,7 +458,7 @@ stateDiagram-v2
 | --- | --- | --- | --- |
 | b13, b1 | set | the same kill: party members in Act I | [C] for a partied member in the Rogue Encampment (den-a2); [I] for the act test and an unpartied player |
 | b14 | set | the same kill: fail others | [I] |
-| G b13 | set | the same kill | — |
+| G b13 | set | the same kill | [C] |
 | b0; b1 clear; steps clear | set / clear | e11 NPC 148 (`akara`) message 0x4C with b1 set | [C] (x-talk1, h-talk1, c-talk1) |
 | w41 b13, w41 b1 | set | the same message (word `+0xE4` = 41): the respec offer | [C] (in the saved words) |
 | b2, b3, b4 | set | StepBits by log state (2; 3; 4 when `+0x0B` ≠ 1) | [C] for b4: 8 writes in the four den host logs, old b0, b1 clear; [I] for b2, b3 and the `+0x0B` choice |
@@ -651,16 +651,6 @@ stateDiagram-v2
 
 No record bit is written: the two objects are dialogue selectors whose one handler draws on the player's unit seed.
 
-```
-W29. NpcTalk266(event) — the e0 handler, run once for each of quest objects 25 and 30:   [C] for the draws; [I] for the branch test
-       if event.npc class ≠ 266: return
-       if G w1 b13 clear and this quest object is active and the player's w1 b0, b13 and b1 are clear:
-         msg ← Range(player.unitSeed, 2)                              ; draw: 1 Step
-       else:
-         Step(player.unitSeed);  msg ← player.unitSeed.low mod 3 + 2   ; draw: 1 Step (inline)
-       QUESTS_SetNpcMessage(266, msg)                                 ; presentation
-```
-
 - W29. [C] **Two draws per talk.** The dispatch runs the handler once for each object, and each run steps the player's
   unit seed once: 23 talks, 22 chained pairs (each talk's exit seed the next one's entry).
 - W29. [I] Which branch a run takes (the conditions above) does not change the draw count.
@@ -735,7 +725,7 @@ stateDiagram-v2
 | b10; b1 clear | set / clear | e11 message 0x153 | [I] |
 | b4 / b5 / b6 | clear | e5: `vip ` / `msf ` / `box ` dropped on the ground; e13: the part not held (b0 clear, quest active, no `hst `) | [I] |
 | b11 | set | the cube makes `hst ` | [I] |
-| b0, b13 | set | the staff placed in the orifice: the placer | — |
+| b0, b13 | set | the staff placed in the orifice: the placer | [C] |
 | b0, b13 | set | `NpcActTravel`, NPC 210, the first crossing (w15 b0 clear) with w10 b0 clear; removes `msf `, `vip ` (not `hst `) | [I] |
 | b9 | clear | word 14's e13 and e14 (every join); no constant setter found | [C] for the clears: every logged first join cleared w10 b9 once, 53 at the e13 site, x-newchar's second join at the e14 site; its first join, the record not ready, logged none; [I] for "no constant setter" |
 
@@ -975,7 +965,7 @@ stateDiagram-v2
 
 ```
 W18. CompellingOrbOperate(object, operator):                        [C] for the counted half
-       if the operator's primary weapon is not qf2: return            , before the counter
+       if the operator's primary weapon is not qf2: return            ; before the counter
        private +0x38 ← +0x38 + 1
        if +0x38 = 2:
          SetState(rec, 18, 0);  SetState(rec, 18, 13);  remove qf2
@@ -1406,15 +1396,6 @@ stateDiagram-v2
 - [I] Baal's death also calls `MissileCreateAt(0, 1, 625, x, y)` (missile `baalfx control`, W4c); its do-function is
   not read.
 
-```
-W40. ZooInit — InitFn 79 (object 567), once per game (private +0xA0):   [I]
-       cls: i32 ← 0
-       for t in 0 ..< 10:
-         c ← RandLoHi(questSeed, 1, nMonStats)                        ; one draw each
-         if MonStats[c].zoo: cls ← c;  break
-       private +0xA4 ← cls;  message to every player
-```
-
 - [I] Every Baal credit, and the first join of a player with b0 or b15, raises the client's status progression to at least
   `5d + 5`. Baal's gold draws on the quest seed. The consumer of the Zoo's
   class beyond its message is not traced.
@@ -1471,10 +1452,10 @@ The quest state that the reviewed creation specs take as an input, and the code 
 | objects | `InitFn` 49/50 (Hratli), 52 (NPC 297), 43 (Dark Wanderer), 55 (Diablo's start point), 69 (Nihlathak), 79 (the Zoo), 44 (hellgate 342), the cairn stones' init (Tristram portal) | G w16 b13, G w22 b13, quest private state | [C] |
 | monsters/spawn | the Chaos Sanctuary gate | quest 23's private `+0x13` (word 26) | [I] |
 | [monsters/special](../../spec-monsters/special/) | superunique quest hooks, the forced death list | the hook lists (§ B) | [C] (`QUESTS_HookMonster` has 32 calls in 11 functions, three tools agreeing; the forced list as B4; `QUESTS_HookMonster`) |
-| rng/seeds | act `+0x094` | the true tomb: word 14's level-change step, the join's tomb index, `OBJINIT_Portal`'s lair pair; act `+0x484` (maze only), `+0x474` (Kurast gates only) and the level-27 bit are read by no quest code | — |
+| rng/seeds | act `+0x094` | the true tomb: word 14's level-change step, the join's tomb index, `OBJINIT_Portal`'s lair pair; act `+0x484` (maze only), `+0x474` (Kurast gates only) and the level-27 bit are read by no quest code | [C] |
 | [items/cube](../../spec-items/cube/) | the cow portal | w26 b0 (classic) or w40 b0 (expansion), G w4 b11 | [C] for the expansion side: G w4 b11 with the opener's w40 b0 set in both logged openings; [I] for w26 b0 in a classic game and the refusal |
 | drlg/collision | the Arcane Sanctuary waypoint | no quest bit gates level 74 or portal 298 | [C] (no record reader in `A2Q4_ArcanePortalInit` or `OBJINIT_Waypoint` and their callees to depth 2) |
-| save/d2s | the quest record of difficulty *d* | `+0x10 + 4·d`; the loader rule A3 | [C] |
+| [save/d2s](../../spec-save/d2s/) | the quest record of difficulty *d* | `+0x10 + 4·d`; the loader rule A3 | [C] |
 
 ## Outputs
 
