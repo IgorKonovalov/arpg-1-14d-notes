@@ -460,6 +460,19 @@ Every monster gets its stats once, when it is created. In order:
 6. In classic nightmare and hell, the classic factors (below). Then skills, [MonProp](../../reference/glossary/) and monster
    equipment.
 
+The invented scaled monster at monster level 7 on difficulty 1, computed by our model: MulDiv(row value, cell, 100).
+
+| Stat | Level row value | Monster cell | Result |
+|---|---|---|---|
+| Minimum hit points | 101 | 90 | 90 |
+| Maximum hit points | 101 | 130 | 131 |
+| Defence | 62 | 100 | 62 |
+| Experience | 848 | 90 | 763 |
+
+Pick an invented monster, a monster level and a difficulty, and see its minimum and maximum hit points, defence and experience scaled by the level's row of an invented level table. A level selects the row min(level, last row), and no row below 0; the difficulty is 0 below 1 and at most 2; a scaled monster gets MulDiv(row value, cell, 100) for each stat, a monster flagged noRatio takes its cell as it is (stats § A2). MulDiv is a signed 32-bit product divided by 100, truncating toward zero (§ A1, the branch every creation takes on stock data). Not shown: the hit-point draw, the player bonus and every later step of the creation (stats § B). Computed by our model of the rule, not observed in the game; the starting values are illustrative.
+
+[Try it: change the inputs (needs JavaScript)](/widgets/monstat-scaler/widget.js)
+
 A surprise from the runs: **single-player games read the `MonLvl` columns prefixed `L-`**, which a community
 source reserves for ladder games. In 3 954 nightmare and hell creations where the two column sets differ, every one
 matched `L-`. The two sets differ only in nightmare and hell defence and in hell hit points.

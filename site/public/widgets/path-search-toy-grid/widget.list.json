@@ -1,0 +1,8 @@
+{
+  "marker": "widget-only/1",
+  "files": {
+    "widget.js": "e6601f498fb0249fd4eeead66d5ca7fcd2d810a460ff04d0059c0de49da5300f",
+    "widget.json": "aa9dc30247856609f6964f08d15490cfa4a08b8985e796fcb0fe8f1768a5632a",
+    "fallback.png": "6a3862c76b09a919829e28d7d2be93ab318a737c5ebfd4e2409e9cfd9c34bb5e"
+  }
+}

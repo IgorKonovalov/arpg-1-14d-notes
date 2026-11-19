@@ -736,8 +736,9 @@ flowchart LR
 
 ```
 K1. Length and event frame at rate r (F frames, start S, F > S):      [C] (derived from E1 and E2, SUNIT_ScheduleModeEvents, all of K1)
-      n(r) ← max(2, ⌈256 (F − S) / r⌉);  N(r) ← n(r) − 1
-      frame f ≥ S fires at T + max(1, ⌈256 (f − S) / r⌉) when that is ≤ N(r)
+      n(r) ← max(2, ⌈256 (F − S) / r⌉);  N(r) ← n(r) − 1           ; the end at T + n(r); the sources' count N(r)
+      steps(r) ← ⌈256 (F − S) / r⌉ − 1                               ; E2's N: the event steps, 0 when r ≥ 256 (F − S)
+      frame f ≥ S fires at T + max(1, ⌈256 (f − S) / r⌉) when that is ≤ steps(r)
 
 K2. The least factor for a length ≤ m (r = ⌊spd · X / 100⌋):          [C] (derived, UNIT_AnimSetRate, all of K2)
       R_m ← ⌈256 (F − S) / m⌉;  X_m ← ⌈100 · R_m / spd⌉
@@ -751,6 +752,10 @@ K3. The least item stat for a bonus ≥ y:                               [C] (de
               else y ← X_m − stat68 (− the dual and sequence terms), the IAS needed is s_min with k 120
 ```
 
+- K1. [C] **The event bound is E2's step count, not `N(r)`.** The two are equal whenever the action has a step
+  (`r < 256 (F − S)`); with no step (`r ≥ 256 (F − S)`) `n(r)` is 2 and `N(r)` 1, but `steps(r)` is 0 and no frame
+  event fires, not even frame `S`'s, as E2 states. The no-step case, which no logged schedule meets, holds at 104
+  emulated schedules with an event.
 - K1. [I] Block's `max(1, …)` and the moving and knockback branches (which do not divide `spd`) are outside K2; a
   sequence's `F` is its row count with `S` 0 (a player sequence is scheduled from its step, G5).
 
@@ -800,7 +805,8 @@ K3. The least item stat for a bonus ≥ y:                               [C] (de
   frames of the delay state's end start exactly at the `SKILLS_SetDelayState` frame (the do's) plus `d`, one 3 frames
   later; the frames from the mode start to the do are not part of the delay.
 - L4. [C] **The interval between two actions (P1b-1).** The schedule's last event step is at `T + N` and its end at
-  `T + n`, `N = n − 1` (E2). **The server starts the next action in the frame of its request**, whatever that frame:
+  `T + n`, `N = n − 1` (E2; an action with a step, as every logged one here). **The server starts the next action in
+  the frame of its request**, whatever that frame:
   of the first action requests after a cast's start, 1 816 of 2 084 are followed by the next scheduled mode in their
   own frame, 23 of them two or more frames before `T + N`; after A1 1 685 of 2 332, after a throw 90 of 149, after a
   kick 368 of 569 likewise (the rest start it from a later request).

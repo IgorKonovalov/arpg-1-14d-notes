@@ -431,6 +431,27 @@ Once hired, the mercenary's stats come from the `Hireling` row whose level band 
 The experience needed for level `L` is cubic: `(L + 1) × L² × Exp/Lvl`. This was checked on 72 level settings,
 covering every band.
 
+An invented three-band hire table at level 30 (band 1, d = 9), computed by our model.
+
+| Stat | Value |
+|---|---|
+| Level | 30 |
+| Experience for the next level | 4305280 |
+| Experience at this level | 3906000 |
+| Strength | 141 |
+| Dexterity | 104 |
+| Life (in 1/256) | 68864 |
+| Defence | 135 |
+| Attack rating | 338 |
+| Minimum damage | 36 |
+| Maximum damage | 49 |
+| Resistances (each of four) | 76 |
+| Life regeneration | 34 |
+
+Type a mercenary level and see its stats from an invented hire table of three level bands. The band is the row whose level band holds L, and d = L - the band's level (hirelings § G). Strength, dexterity and damage add their per-level column times d divided by 8, resistances divide by 4, and the divisions truncate toward zero, so a level below the first band, where d is negative, rounds toward 0; life is (HP + HP/Lvl x d) x 256 with a floor of 40 x 256, defence and attack rating add the column times d, each stat has its floor, and the experience figures follow ExpForLevel(L, e) = (L + 1) x L x L x e. Not shown: the skills and the other stats of the monster the mercenary is created as. Computed by our model of the rule, not observed in the game; the starting values are illustrative.
+
+[Try it: change the inputs (needs JavaScript)](/widgets/merc-stats/widget.js)
+
 Three things make these numbers differ from the hire list:
 
 - **Divisions truncate toward zero** here, while the list rounds down. Below the first band (for example a level-30

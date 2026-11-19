@@ -165,6 +165,12 @@ value marks the rooms of the client act copy. Both are confirmed in a run.
 
 The seed tree for an illustrative seed N given as an override. The map seed is then N and builds the world; the game seed starts from N too, a separate seed that seeds the units (seeds § step 1). Each act's seed starts from the map seed, steps once, and keeps that low word as the level seed base, the same for all five acts; Act II then draws pairs of numbers mod 7 until they differ to name its tombs, and Act III takes one more draw and keeps its lowest bit (§ step 3). A level's seed is the base plus the level id, a sum with no draw, so the order levels are built in does not matter (§ step 4). Each room takes one draw on its level's seed, starts its own seed from the result and steps once, so the order a level creates its rooms in does matter (§ step 5). Not shown: the act link builder's later draws on the act seed, room activation, and the units. Seed: illustrative, an input of our own. Every value shown is computed by our model, not observed in the game.
 
+![Widget fallback: seedtree-expander](/widgets/seedtree-expander/fallback.png)
+
+Type a seed N, as an override gives it, and see its seed tree: the map seed is N and the game seed is Init(N) with no draw (seeds § step 1). Each act's seed starts from the map seed, steps once and keeps that low word as the level seed base, the same for all five acts; Act II then draws pairs mod 7 until they differ, Act III takes one more draw and keeps its lowest bit (§ step 3). The level id you type is only a number added to the base: a level's seed is that sum, with no draw (§ step 4). Each room of the level takes one draw on the level's seed, starts its own seed from the result and steps once (§ step 5). Not shown: the act link builder's later draws on the act seed, room activation, and the units. Computed by our model of the rule, not observed in the game; the starting values are illustrative.
+
+[Try it: change the inputs (needs JavaScript)](/widgets/seedtree-expander/widget.js)
+
 ## Units: the game seed, in call order
 
 Every unit the server creates, except players, takes one draw from the game seed and is initialised with it. This holds for monsters too: **server monsters are seeded

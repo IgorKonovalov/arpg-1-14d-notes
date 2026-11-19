@@ -121,6 +121,16 @@ PathDirOctant(a, b) ← the first of them                            [C]
 
 - A2. [C] `g_DirOctant` holds 0..7 only (75 dwords, read with a second tool), so the assert 0x4C of a third direction 255 cannot fire from these callers.
 
+- A2. [C] **The octant by cases.** `PathDirOctant(a, b)` equals the following description on all 25 cells, compared
+  element by element with column 0 of `g_DirOctant` as the image holds it (25 of 25): with `dx'` and `dy'` the cell's
+  two terms after the cut and clamp of `PathDirCell` (each −2..2), a term whose double is at most the other term's size
+  is set to 0; the octant is then the index of the step of `g_PathSearchStep8` whose `(dx, dy)` has the signs of what
+  is left, in the steps' order under Inputs (0 for `(1,0)`, 1 for `(1,1)`, on to 7 for `(1,−1)`); the cell `(0, 0)`
+  gives 6. So `(±2, ±1)` and `(±1, ±2)` take the straight direction (at 2 : 1 the straight
+  step wins), and `(±1, ±1)` and `(±2, ±2)` the diagonal. The equality holds on the image's elements and says nothing
+  of how the table was made; the table stays listed, and columns 1 and 2 (the other two directions of `PathDirRow`)
+  are not described here.
+
 #### A3. Distances
 
 ```
@@ -704,6 +714,12 @@ The fan, as offsets from `d`, the parent's direction when the child was made (fo
 - L3. [C] Under type 0 the fan's order rests on 5 cases of `open` and 5 of `rect` that `row` and `tries` separate; under a tight bound the order doesn't show, and none of `real0`'s separates.
 - L3. [C] A node has one child slot, kept across a backtrack, so the allocated count is the deepest chain of the pass + 1. Reaching a node outside the rectangle returns a route one step outside it, short of the target. (family `corr`)
 - L3. [C] The first try keeps the parent's direction in rows 0, 1, 2, 6 and 7 (entry 0 is 0 in those rows): under the non-drawing types the walk runs straight until the bound or a wall turns it; under type 16 the turn adds a draw (step 18).
+
+![Widget fallback: path-search-toy-grid](/widgets/path-search-toy-grid/fallback.png)
+
+The search of type 0 on a toy room of 16 by 9 subtiles: click cells to put up or take down walls, and move the start, the target and the last bound. The first bound is the octile length h0 and the walk runs again at bounds 5 higher while they stay below the last bound given (§ L2). Each pass is a depth-first walk in which a node takes the first direction of the fan that passes the tests (the fan table above, over the eight steps of the Tables under Inputs), a straight step costs 2 and a diagonal 3, and a cell that already holds a lower cost is not entered again, the cell store being kept from one pass to the next (§ L3). The direction toward the target that picks the root's direction and each child's row of the fan is the octant, which § A2 states cell by cell: a term whose double is at most the other's size counts as 0, and a target on the node itself gives direction 6. The list returned keeps the corner points, with the start not among them, and a route of one segment returns nothing (§ L2). A cell with no room around it is blocked (§ A1). Not shown: type 16's draws, real rooms and their masks. Computed by our model of the rule, not observed in the game; the starting values are illustrative.
+
+[Try it: change the inputs (needs JavaScript)](/widgets/path-search-toy-grid/widget.js)
 
 #### L4. Type 16's draws
 

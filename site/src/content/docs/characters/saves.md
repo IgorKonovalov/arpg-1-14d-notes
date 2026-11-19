@@ -68,6 +68,33 @@ The checksum is simple: start from 0, and for each byte of the
 file, rotate the 32-bit sum left by one bit and add the byte. The four checksum bytes (offset `0x00C`) count as 0
 while summing, both when writing and when reading.
 
+Toy bytes typed by hand, all numbers in decimal; the bytes at offsets 12 to 15 count as 0. Computed by our model.
+
+| Offset | Byte typed | Byte counted | Sum rotated left by 1 | Sum after adding the byte |
+|---|---|---|---|---|
+| 0 | 1 | 1 | 0 | 1 |
+| 1 | 2 | 2 | 2 | 4 |
+| 2 | 3 | 3 | 8 | 11 |
+| 3 | 4 | 4 | 22 | 26 |
+| 4 | 5 | 5 | 52 | 57 |
+| 5 | 6 | 6 | 114 | 120 |
+| 6 | 7 | 7 | 240 | 247 |
+| 7 | 8 | 8 | 494 | 502 |
+| 8 | 9 | 9 | 1004 | 1013 |
+| 9 | 10 | 10 | 2026 | 2036 |
+| 10 | 11 | 11 | 4072 | 4083 |
+| 11 | 12 | 12 | 8166 | 8178 |
+| 12 | 13 | 0 | 16356 | 16356 |
+| 13 | 14 | 0 | 32712 | 32712 |
+| 14 | 15 | 0 | 65424 | 65424 |
+| 15 | 16 | 0 | 130848 | 130848 |
+| 16 | 17 | 17 | 261696 | 261713 |
+| 17 | 18 | 18 | 523426 | 523444 |
+
+Type up to 32 bytes in hex and see the checksum sum grow one byte at a time: the sum starts at 0, and for each byte the 32-bit sum is rotated left by one bit and the byte is added, modulo 2 to the power 32 (saves § B1). The four bytes at offsets 12 to 15, where a save holds its own checksum, count as 0 whatever is typed there. The bytes are toy bytes typed by hand, not a save. Computed by our model of the rule, not observed in the game; the starting values are illustrative.
+
+[Try it: change the inputs (needs JavaScript)](/widgets/checksum-stepper/widget.js)
+
 When a save is loaded:
 
 1. A file shorter than 8 bytes or with the wrong magic number fails with 9, which reaches the player as it is. A

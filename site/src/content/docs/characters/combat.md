@@ -126,6 +126,19 @@ read from the code.
 monster's attack rating, the hit passes that as the percent input when the missile's record asks for a to-hit roll, and the
 monster formula adds that input to the same stat. Dexterity is not doubled, and the lob form carries no rating.
 
+The first case of the illustrative inputs: attack rating 500, percent 0, defence 300, levels 30 and 30 (computed by our model).
+
+| Step | Value |
+|---|---|
+| Attack rating after the percent | 500 |
+| Chance before the levels | 62% |
+| Chance after the level factor | 62% |
+| Chance after the clamp | 62% |
+
+Type an attack rating, its percent, a defence and the two levels, and see the chance to hit worked out step by step. The attack rating takes its percent; a negative defence is added to the attack rating and a negative attack rating to the defence before the division; the chance is 100 x AR / (AR + DEF), truncated, then scaled by the attacker's level times 2 over the two levels' sum, truncated, and clamped to 5 to 95 (to-hit § A, A3 to A5). The swing hits when the one draw of 100 on the attacker's seed is below that chance (A6). Not shown: how a player's attack rating and percent are made up, the draw itself, the range test and the defender's block and avoidance rolls. Computed by our model of the rule, not observed in the game; the starting values are illustrative.
+
+[Try it: change the inputs (needs JavaScript)](/widgets/tohit-calculator/widget.js)
+
 ## Defence
 
 A unit's defence is its defence stat plus a quarter of its dexterity, then raised by its defence percents. Against a melee attack the "defence against melee"
@@ -427,6 +440,12 @@ order in which the attacker's handlers were registered; for the logged character
 [Step through combat-melee-hit-toy](../../illustrations/combat-melee-hit-toy/index.html)
 
 One melee swing of an invented player at an invented monster, every number a toy input, with its draws in order on the two seeds. The attacker's seed draws the to-hit first, a value below 100 against a chance worked out from attack rating, defence and the two levels (to-hit § A); on a hit the monster's seed draws its block, and an avoidance chance of 0 draws nothing (§ C). The damage is built whatever the to-hit gave: the physical roll, the deadly strike test (drawn because its chance is above 0) and a draw over a range of 1 that is made every time (damage § A, B). A hit that is not blocked is delivered: the stat events run newest registered first, here open wounds then crushing blow, each drawing only when its chance is above 0 (§ E), and the life falls by the packet's total after the crushing blow's share (delivery § B). Not shown: elemental damage, leech, stun, cold, the reductions and the boundary draws. Seed: illustrative, an input of our own. Every value shown is computed by our model, not observed in the game.
+
+![Widget fallback: damage-reduced-toy](/widgets/damage-reduced-toy/fallback.gif)
+
+Type a toy weapon and a defender and see the physical damage built, then reduced, in 256ths of a point. The weapon's minimum and maximum and the flat damage added are shifted left by 8; the enhanced-damage percent is the typed percent plus the strength and dexterity shares, each truncated on its own, never below -90; the roll is the lowest plus one draw below (highest - lowest) on the attacker's seed, so the highest is never reached, and no draw is made when the highest is not above the lowest (damage § B). The pair's percent P then scales the damage when it is not 100, the defender's flat reduction (times 256) is taken off, and a physical resistance, when the damage is still above 0, takes its share: a resistance of 100 or more leaves nothing, a negative one raises the damage, a player's is capped at 50 and a monster's is neither penalised nor capped; a reduction larger than the damage leaves a negative value (reductions § A, B1 and B2). Not shown: critical and deadly strikes, the other damage types, the monster-only fields, the mastery and the other damage percents, absorption (the physical row has none), the bypass flags, sanctuary and every other draw of the build. Computed by our model of the rule, not observed in the game; the starting values are illustrative.
+
+[Try it: change the inputs (needs JavaScript)](/widgets/damage-reduced-toy/widget.js)
 
 For a monster's attack on the player, the monster's seed draws its elemental groups when the attack mode starts, then
 at the hit frame the to-hit and, on a hit only, the build with `Crit` last; the player's seed draws its defence rolls

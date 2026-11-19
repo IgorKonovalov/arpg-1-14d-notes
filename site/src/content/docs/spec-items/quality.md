@@ -395,6 +395,21 @@ Step notes:
   `n = 128` (one draw, always a win) and `d ≥ 4` gives `n ≤ 0` (normal with no draw). With records 3 and 5
   (`Normal` 1, `NormalDivisor` 1), an uber base needs `d ≤ −1` for low quality. [I]
 
+Item level 28, quality level 10, magic find 100, record 2, ratio words 0, computed by our model.
+
+| Test | c | Chance to win when reached (percent) | Chance of this result (percent) |
+|---|---|---|---|
+| unique | 28594 | 0.45 | 0.45 |
+| set | 10561 | 1.21 | 1.21 |
+| rare | 6296 | 2.03 | 2.00 |
+| magic | 1792 | 7.14 | 6.88 |
+| superior | 1280 | 10.00 | 8.95 |
+| normal | -896 | 100.00 | 80.52 |
+
+Type an item level, a base item's quality level, a magic find, an item-ratio record (2 to 5, the records of the table under Inputs) and the four ratio words, and see each quality test's chance c and the chance to win it. d is the item level minus the quality level; each of the unique, set, rare and magic tests takes c = (row value - d divided by its divisor) x 128, divides it by the magic find factor (diminished for unique, set and rare with the constants 250, 500 and 600, plain magic find + 100 for magic, none at magic find 0), raises it to the row's minimum, then reduces it by its ratio word, c - ratio x c divided by 1024 (§ C, § D). The superior and normal tests use the row terms alone (§ E). A c below 1 wins with no draw; otherwise one draw from 0 to c - 1 wins below 128, so a test wins with a chance of about 128 in c, and a test that is not certain hands the rest on to the next one. A type that is always magic skips the magic test, a type that never rolls rare skips the rare test, a type that is always normal takes no test, and a magic find of -100 or below goes straight to the superior test. The first four ratio words are illustrative. Computed by our model of the rule, not observed in the game; the starting values are illustrative.
+
+[Try it: change the inputs (needs JavaScript)](/widgets/quality-chances/widget.js)
+
 ### F. Boundaries (named only)
 
 What item creation does with the code is owned by `items/uniques-sets`, and by `items/affixes`. The statements below fix only where this spec's output goes and what can still change it. They come.
