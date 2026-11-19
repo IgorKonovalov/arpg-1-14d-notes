@@ -32,6 +32,12 @@
   gap: 0.25rem;
   font-size: var(--sl-text-sm);
 }
+/* Starlight's content styles give every element after a sibling a 1rem top margin; inside a widget's form that
+   pushed later fields and every select below the row, so the form sets its own spacing. */
+.widget-host .widget-form > *,
+.widget-host .widget-field > * {
+  margin-top: 0;
+}
 .widget-host label {
   color: var(--sl-color-gray-2);
 }
