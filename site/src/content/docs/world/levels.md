@@ -490,6 +490,12 @@ level seed** once per call. That was seen in Tristram (20 lookups), the Canyon o
 had exactly one match, so the draw's range for two or more matches is read from the code. The order in which spawning
 calls its tests is fixed, and a test that fails skips the later ones.
 
+![Animation: levels-spawn-tests-toy-room](/illustrations/levels-spawn-tests-toy-room/collision.gif)
+
+[Step through levels-spawn-tests-toy-room](../../illustrations/levels-spawn-tests-toy-room/index.html)
+
+The four spawn tests on seven candidate points of a toy room of 40 by 30 subtiles with a long wall, a block, one warp point, one waypoint point, a WarpDist of 100 and two logic regions, region 1 being the box's. The tests run in the predicate order: the point pick makes NearWarpTest, against the warp points and then the level's waypoint point, then LogicRegionIdAt against the box's id; the probe at the point then tests the region again, then SpawnClassCellTest, here for a class that tests the cell two to the right and four below its point with the mask 0x3C01 (BaseId 528, § H), then CollisionTest, the plus of a size-2 footprint against the mask 0x3C01 (§ E). A test that fails skips the later ones, so the points show one refusal each: a warp point, the waypoint point, another region, the class's cell, the point itself a wall, a wall touching the plus; the seventh point passes all four. The waypoint lookup runs only when no warp point is near, and its side effects, the room activation and the level-seed step, are not drawn (§ I). The picture takes no seed. Every value shown is computed by our model, not observed in the game.
+
 ## Rooms that come and go: release and restore
 
 A level is built once, but its rooms are not kept active all the time. The server activates the rooms around each

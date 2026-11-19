@@ -1,0 +1,68 @@
+{
+ "schematic_only": "schematic-only/1",
+ "steps": [
+  {
+   "text": "The save holds word 1 with only bit 1 set, the reward not yet taken, and word 41 empty.",
+   "calc": [
+    "progression A4: each word is written as it stands at Save and Exit; the file holds word 1 = 0x0002 and word 41 = 0x0000.",
+    "progression A: bit 1 = done in a game, reward not yet taken."
+   ]
+  },
+  {
+   "text": "Loading clears bits 13 and 14 of each word of quests 0 to 41 and sets bit 15 when bit 1 is set, so word 1 gains bit 15.",
+   "calc": [
+    "progression A3: w = saved word; clear bits 13 and 14; if bit 1 of w: set bit 15 of w.",
+    "word 1: 0x0002 -> 0x8002; word 41: 0x0000 -> 0x0000."
+   ]
+  },
+  {
+   "text": "Akara's reward message, with bit 1 of word 1 set, sets bit 0 of word 1, done.",
+   "calc": [
+    "progression D7: the reward message with bit 1 set sets bit 0 and clears bit 1; word 1's reward also clears the log steps.",
+    "word 1: 0x8002 -> 0x8003."
+   ]
+  },
+  {
+   "text": "The same message clears bit 1 of word 1, the reward pending.",
+   "calc": [
+    "progression D7: the reward message with bit 1 set sets bit 0 and clears bit 1; word 1's reward also clears the log steps.",
+    "word 1: 0x8003 -> 0x8001."
+   ]
+  },
+  {
+   "text": "The same message sets bit 13 of word 41, with bit 1 the offer of a free skill reset in Hell.",
+   "calc": [
+    "progression word 41: the same message sets bits 13 and 1 of word 41.",
+    "word 41: 0x0000 -> 0x2000."
+   ]
+  },
+  {
+   "text": "The same message sets bit 1 of word 41, with bit 13 the offer of a free skill reset in Hell.",
+   "calc": [
+    "progression word 41: the same message sets bits 13 and 1 of word 41.",
+    "word 41: 0x2000 -> 0x2002."
+   ]
+  },
+  {
+   "text": "The same message ends with ClearSteps on word 1, which clears its bits 2 to 11, the log steps; no step bit was set here, so the word does not change.",
+   "calc": [
+    "progression A2: ClearSteps clears bits 2 to 11 of the word.",
+    "word 1: 0x8001 -> 0x8001."
+   ]
+  },
+  {
+   "text": "Save and Exit writes each word as it stands: word 1 = 0x8001 and word 41 = 0x2002.",
+   "calc": [
+    "progression A4: the written record is the loaded record after every server write, in order.",
+    "word 1 = 0x8001, word 41 = 0x2002."
+   ]
+  },
+  {
+   "text": "Loading again turns word 41's bit 13 off and sets its bit 15 from its bit 1, so the offer is pending from an earlier game; word 1 stays done.",
+   "calc": [
+    "progression A3: clear bits 13 and 14; if bit 1: set bit 15.",
+    "word 1: 0x8001 -> 0x8001; word 41: 0x2002 -> 0x8002."
+   ]
+  }
+ ]
+}

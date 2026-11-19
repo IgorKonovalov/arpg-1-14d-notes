@@ -1,0 +1,82 @@
+{
+ "schematic_only": "schematic-only/1",
+ "steps": [
+  {
+   "text": "A toy room and seven candidate points.",
+   "calc": [
+    "collision, predicate order: per try NearWarpTest (when avoidWarp), then LogicRegionIdAt (with a box), then the probe; per ring cell the rectangle test, LogicRegionIdAt, SpawnClassCellTest, CollisionTest.",
+    "toy: WarpDist 100, one warp point, one waypoint point, box id 1, class BaseId 528, plus footprint, mask 0x3C01."
+   ]
+  },
+  {
+   "text": "Point (16, 8): refused by NearWarpTest.",
+   "calc": [
+    "NearWarpTest: warp point: d2 13 < 100.",
+    "LogicRegionIdAt: not called.",
+    "SpawnClassCellTest: not called.",
+    "CollisionTest: not called."
+   ]
+  },
+  {
+   "text": "Point (32, 8): refused by NearWarpTest.",
+   "calc": [
+    "NearWarpTest: waypoint point: d2 13 < 100.",
+    "LogicRegionIdAt: not called.",
+    "SpawnClassCellTest: not called.",
+    "CollisionTest: not called."
+   ]
+  },
+  {
+   "text": "Point (33, 20): refused by LogicRegionIdAt.",
+   "calc": [
+    "NearWarpTest: d2 586 and 234, both >= 100.",
+    "LogicRegionIdAt: region 2, box 1.",
+    "SpawnClassCellTest: not called.",
+    "CollisionTest: not called."
+   ]
+  },
+  {
+   "text": "Point (7, 15): refused by SpawnClassCellTest.",
+   "calc": [
+    "NearWarpTest: d2 149 and 629, both >= 100.",
+    "LogicRegionIdAt: region 1, box 1.",
+    "SpawnClassCellTest: cell (+2,+4) plus & 0x3c01 = 0x0001.",
+    "CollisionTest: not called."
+   ]
+  },
+  {
+   "text": "Point (9, 19): refused by CollisionTest.",
+   "calc": [
+    "NearWarpTest: d2 221 and 637, both >= 100.",
+    "LogicRegionIdAt: region 1, box 1.",
+    "SpawnClassCellTest: cell (+2,+4) plus & 0x3c01 = 0x0000.",
+    "CollisionTest: plus & 0x3c01 = 0x0001."
+   ]
+  },
+  {
+   "text": "Point (23, 22): refused by CollisionTest.",
+   "calc": [
+    "NearWarpTest: d2 370 and 338, both >= 100.",
+    "LogicRegionIdAt: region 1, box 1.",
+    "SpawnClassCellTest: cell (+2,+4) plus & 0x3c01 = 0x0000.",
+    "CollisionTest: plus & 0x3c01 = 0x0001."
+   ]
+  },
+  {
+   "text": "Point (18, 24): all four tests pass.",
+   "calc": [
+    "NearWarpTest: d2 377 and 505, both >= 100.",
+    "LogicRegionIdAt: region 1, box 1.",
+    "SpawnClassCellTest: cell (+2,+4) plus & 0x3c01 = 0x0000.",
+    "CollisionTest: plus & 0x3c01 = 0x0000."
+   ]
+  },
+  {
+   "text": "One point stands; the others fail at one test each.",
+   "calc": [
+    "collision, predicate order: a test that fails skips the later ones, so a reimplementation must not call them.",
+    "(16, 8) fails at NearWarpTest; (32, 8) fails at NearWarpTest; (33, 20) fails at LogicRegionIdAt; (7, 15) fails at SpawnClassCellTest; (9, 19) fails at CollisionTest; (23, 22) fails at CollisionTest; (18, 24) stands"
+   ]
+  }
+ ]
+}

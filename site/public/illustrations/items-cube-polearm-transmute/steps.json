@@ -1,0 +1,96 @@
+{
+ "schematic_only": "schematic-only/1",
+ "steps": [
+  {
+   "text": "The cube holds 4 items.",
+   "calc": [
+    "cube A1: n = the number of cube items = 4; a stack counts 1.",
+    "cube list order: KRI (normal, ilvl 99), GPW (normal, ilvl 1), SST (normal, ilvl 99), LBL (normal, ilvl 99)."
+   ]
+  },
+  {
+   "text": "The scan passes over 15 rows, 4 fail an input, and row 19 is the recipe.",
+   "calc": [
+    "cube A3: for each row, the header tests (enabled, version, ladder, min diff, class, numinputs = n), then the seven inputs; first fit wins.",
+    "passed over by the header tests: 15 (15 by the item count). Reached the matcher: 1, 15, 16, 17, 19. Matched: 19."
+   ]
+  },
+  {
+   "text": "Row 19: every input claims its items.",
+   "calc": [
+    "cube B3: for each cube item in list order: the item test, then unclaimed; claim it; got = got + 1.",
+    "input 1 kri claims item(s) KRI (count 1, qty 1); input 2 type gemd claims item(s) GPW (count 1, qty 1); input 3 type staf claims item(s) SST (count 1, qty 1); input 4 type belt claims item(s) LBL (count 1, qty 1)"
+   ]
+  },
+  {
+   "text": "Output A of row 19, with its level v = 50.",
+   "calc": [
+    "cube D: a fixed lvl wins; otherwise v = player level x plvl / 100 + input 1's ilvl x ilvl / 100, truncated, at least 1.",
+    "row 19 output A: kind item type, quality 4, lvl 50, plvl 0, ilvl 60 -> v = 50."
+   ]
+  },
+  {
+   "text": "Draw 1, on the game seed: start in the item list, n 659, result 192.",
+   "calc": [
+    "the game seed after the step: low word 3438960060, high word 1116888926.",
+    "start in the item list: n 659 -> 192."
+   ]
+  },
+  {
+   "text": "Draw 2, on the game seed: one of the candidates, n 10, result 2.",
+   "calc": [
+    "the game seed after the step: low word 727597322, high word 1434363999.",
+    "one of the candidates: n 10 -> 2."
+   ]
+  },
+  {
+   "text": "Draw 3, on the game seed: unit seed (creation step), no range, result low word 727209233.",
+   "calc": [
+    "the game seed after the step: low word 727209233, high word 303475291.",
+    "unit seed (creation step): no range -> low word 727209233."
+   ]
+  },
+  {
+   "text": "Draw 4, on the game seed: item seed (seed-init step), no range, result low word 4061114480.",
+   "calc": [
+    "the game seed after the step: low word 4061114480, high word 303313421.",
+    "item seed (seed-init step): no range -> low word 4061114480."
+   ]
+  },
+  {
+   "text": "Draw 5, on the unit seed: base stats (unit seed), n 32, result 15.",
+   "calc": [
+    "the unit seed after the step: low word 3757639855, high word 303313421.",
+    "base stats (unit seed): n 32 -> 15."
+   ]
+  },
+  {
+   "text": "Draw 6, on the item seed: prefix pick: roll test, must roll, low & 1, result 0 -> roll.",
+   "calc": [
+    "the item seed after the step: low word 4025600202, high word 1693859859.",
+    "prefix pick: roll test, must roll: low & 1 -> 0 -> roll."
+   ]
+  },
+  {
+   "text": "Draw 7, on the item seed: property roll (prop 29), 66..80, result 66 + 9 = 75.",
+   "calc": [
+    "the item seed after the step: low word 4214449029, high word 1679047125.",
+    "property roll (prop 29): 66..80 -> 66 + 9 = 75."
+   ]
+  },
+  {
+   "text": "Draw 8, on the item seed: suffix pick: roll test, low & 1, result 0 -> no affix.",
+   "calc": [
+    "the item seed after the step: low word 2776145710, high word 1757814530.",
+    "suffix pick: roll test: low & 1 -> 0 -> no affix."
+   ]
+  },
+  {
+   "text": "The cube now holds the output.",
+   "calc": [
+    "cube G: the items are destroyed only when something was produced; each output is placed identified.",
+    "output: SCY q4 ilvl 50."
+   ]
+  }
+ ]
+}

@@ -1,0 +1,35 @@
+<!doctype html><!-- schematic-only/1: schematic-only page, our own graphics -->
+<title>quest word animation</title>
+<style>body{background:#111;color:#ddd;font:14px sans-serif;margin:0;padding:12px;text-align:center}
+img{max-width:100%;height:auto;image-rendering:pixelated;background:#000}button{font-size:16px;margin:4px;padding:4px 12px}
+#cap{max-width:900px;margin:8px auto;min-height:2em;font-weight:bold}#s{width:60%}
+#calc{max-width:900px;margin:0 auto;text-align:left;font:13px/1.5 monospace;background:#1b1b22;padding:8px 14px;
+border-radius:6px}#calc li{margin:2px 0}#help{max-width:900px;margin:8px auto;text-align:left;font-size:13px;color:#aaa}
+#help summary{cursor:pointer;color:#ddd}</style>
+<img id=f width=960 height=500 alt="frame"><div>
+<button id=p>prev</button><button id=pl>play</button><button id=n>next</button>
+<input id=s type=range min=0 value=0></div><div id=cap></div>
+<div id=calc><b>Calculations for this step</b><ol id=cl></ol></div>
+<details id=help><summary>How to read this</summary><ul>
+<li>Each row is one quest word, 16 bits, bit 15 at the left and bit 0 at the right. A lit cell is a set bit.</li>
+<li>The cell outlined in yellow is the bit the step just wrote or the loader just changed.</li>
+<li>Word 1 is the Den of Evil's quest. Word 41 is the second word of the same quest object: the offer of a free skill reset in Hell.</li>
+<li>Every value is computed by our model from the spec's rules, not observed in the game.</li></ul></details>
+<script>
+var caps=[{"text": "The save holds word 1 with only bit 1 set, the reward not yet taken, and word 41 empty.", "calc": ["progression A4: each word is written as it stands at Save and Exit; the file holds word 1 = 0x0002 and word 41 = 0x0000.", "progression A: bit 1 = done in a game, reward not yet taken."]}, {"text": "Loading clears bits 13 and 14 of each word of quests 0 to 41 and sets bit 15 when bit 1 is set, so word 1 gains bit 15.", "calc": ["progression A3: w = saved word; clear bits 13 and 14; if bit 1 of w: set bit 15 of w.", "word 1: 0x0002 -> 0x8002; word 41: 0x0000 -> 0x0000."]}, {"text": "Akara's reward message, with bit 1 of word 1 set, sets bit 0 of word 1, done.", "calc": ["progression D7: the reward message with bit 1 set sets bit 0 and clears bit 1; word 1's reward also clears the log steps.", "word 1: 0x8002 -> 0x8003."]}, {"text": "The same message clears bit 1 of word 1, the reward pending.", "calc": ["progression D7: the reward message with bit 1 set sets bit 0 and clears bit 1; word 1's reward also clears the log steps.", "word 1: 0x8003 -> 0x8001."]}, {"text": "The same message sets bit 13 of word 41, with bit 1 the offer of a free skill reset in Hell.", "calc": ["progression word 41: the same message sets bits 13 and 1 of word 41.", "word 41: 0x0000 -> 0x2000."]}, {"text": "The same message sets bit 1 of word 41, with bit 13 the offer of a free skill reset in Hell.", "calc": ["progression word 41: the same message sets bits 13 and 1 of word 41.", "word 41: 0x2000 -> 0x2002."]}, {"text": "The same message ends with ClearSteps on word 1, which clears its bits 2 to 11, the log steps; no step bit was set here, so the word does not change.", "calc": ["progression A2: ClearSteps clears bits 2 to 11 of the word.", "word 1: 0x8001 -> 0x8001."]}, {"text": "Save and Exit writes each word as it stands: word 1 = 0x8001 and word 41 = 0x2002.", "calc": ["progression A4: the written record is the loaded record after every server write, in order.", "word 1 = 0x8001, word 41 = 0x2002."]}, {"text": "Loading again turns word 41's bit 13 off and sets its bit 15 from its bit 1, so the offer is pending from an earlier game; word 1 stays done.", "calc": ["progression A3: clear bits 13 and 14; if bit 1: set bit 15.", "word 1: 0x8001 -> 0x8001; word 41: 0x2002 -> 0x8002."]}],i=0,t=null,f=document.getElementById('f'),s=document.getElementById('s');
+s.max=caps.length-1;
+function show(k){i=Math.max(0,Math.min(caps.length-1,k));f.setAttribute('src','frame-'+('000'+i).slice(-3)+'.png');
+s.value=i;document.getElementById('cap').textContent=(i+1)+'/'+caps.length+'  '+caps[i].text;
+var cl=document.getElementById('cl');cl.innerHTML='';caps[i].calc.forEach(function(c){var li=document.createElement('li');
+li.textContent=c;cl.appendChild(li);});}
+function stop(){if(t){clearInterval(t);t=null;document.getElementById('pl').textContent='play';}}
+document.getElementById('p').onclick=function(){stop();show(i-1)};
+document.getElementById('n').onclick=function(){stop();show(i+1)};
+document.getElementById('pl').onclick=function(){if(t){stop();return;}
+ if(i>=caps.length-1)show(0);document.getElementById('pl').textContent='pause';
+ t=setInterval(function(){if(i>=caps.length-1)stop();else show(i+1)},900)};
+s.oninput=function(){stop();show(+s.value)};
+document.onkeydown=function(e){if(e.key=='ArrowRight'){stop();show(i+1)}else if(e.key=='ArrowLeft'){stop();show(i-1)}
+ else if(e.key==' '){e.preventDefault();document.getElementById('pl').click()}};
+show(0);
+</script>

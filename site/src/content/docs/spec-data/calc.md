@@ -335,6 +335,26 @@ Step notes:
 - 4k. [C] `02` ends the evaluation with the top of the stack: Fire Wall's unclosed `(` returned at `02` in 100
   logged evaluations, the `00` after it never reached.
 
+The toy formula with lvl 3, par1 4 and par2 0, one row per step, computed by our model; the stack is shown after the step and the value returned is 3.
+
+| Step | Bytes (hex) | Stack after |
+|---|---|---|
+| 1 | 04 00 | 3 |
+| 2 | 07 05 | 3 5 |
+| 3 | 0A | 1 |
+| 4 | 04 00 | 1 3 |
+| 5 | 04 00 | 1 3 3 |
+| 6 | 07 03 | 1 3 3 3 |
+| 7 | 12 | 1 3 9 |
+| 8 | 04 01 | 1 3 9 4 |
+| 9 | 11 | 1 3 5 |
+| 10 | 16 | 3 |
+| 11 | 00 | - |
+
+Type a toy formula as bytes in hex, with three numbers it may read, and watch the evaluator run it one byte at a time. Each variable byte reads its number at that byte and each constant byte pushes one; an operator pops the right operand and then the left; the condition byte pops the else-value, the then-value and the condition and keeps the then-value when the condition is not 0, so both branches of a condition are read; a division truncates toward zero and gives 0 for a divisor of 0; a power gives 1 for an exponent of 0 or less; a function byte beyond the function table pushes 0 and leaves its arguments; the bytes 0, 2, 3 and those above 0x16 end the evaluation with the top of the stack, and running out of bytes returns 0; values are 32-bit and wrap (calc § B, § D, steps 3 to 5 and notes 4a, 4c, 4g, 4j). The smallest 32-bit value divided by -1 is not evaluated: by a reading of the code the processor faults there. Bytes whose last operand starts inside them and runs past the end are refused, as the page does not say what is read there. Not shown: the compiler from formula text, the contexts with their variables and function tables, and the stock formulas. Computed by our model of the rule, not observed in the game; the starting values are illustrative.
+
+[Try it: change the inputs (needs JavaScript)](/widgets/calc-toy-formula/widget.js)
+
 ### E. Contexts
 
 ```mermaid

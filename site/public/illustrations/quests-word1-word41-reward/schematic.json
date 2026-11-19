@@ -1,0 +1,18 @@
+{
+ "marker": "schematic-only/1",
+ "args": [],
+ "files": {
+  "frame-000.png": "c7a578e9c3d1141744271f7c6dce31790a5b794177ef7fea79abe9fbc25ef46b",
+  "frame-001.png": "bc872c8e34c665760acc76e27a5cca475f935718d42ecbee322a5790ec383f43",
+  "frame-002.png": "24ad0f46e79491063a13b0eda5dfaf0906588129e3b9a8a0af909ae233ad988a",
+  "frame-003.png": "37fd48ae96b819a6c05a820e27a1903c3618b4a68ee08df9e5e25b49a5dfc5ed",
+  "frame-004.png": "e2f26c6e40997f4086273a1581390cbcee97d9c5c160a782edc89900896eff82",
+  "frame-005.png": "8f83e425a921c416a122c97a37aab5140d067e6c64cc2035590e9e59d3fe1926",
+  "frame-006.png": "5b555c186ae3592128f2bd88a3ebaa8d72f136f9e280f355194ac06d68c61f76",
+  "frame-007.png": "efea75e61689f6efc1ed0732a1b0ca97b11e621c7562f3b61174c18125e339e1",
+  "frame-008.png": "6c1740fdc3a0560ce75903b8323787b83d0c4c64ee5bf4afdf6bb3ff1a64ad8f",
+  "index.html": "95ac0738155ae9db81aafa3204b42e31643de586eaf687e33c7067ca38fff7d7",
+  "quest.gif": "56a2c3791abf0f127d05cc23e4eaf08b58571e5d07d43a7988fda24bf5afefb9",
+  "steps.json": "ea54f11eebd73aa665c8b5cf5619b39cb092abea03a31422a06c7300876e3fd2"
+ }
+}

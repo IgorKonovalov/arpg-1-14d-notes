@@ -310,6 +310,21 @@ Every frame, while the player is alive, one tick changes life, then stamina, the
   by the mana recovery bonus percent, plus the flat mana recovery stat, never above the maximum. A "no mana
   regeneration" state stops the first part (6 286 ticks under it); reaching full mana removes a mana potion's state.
 
+The first frames of the toy numbers offered, in unit mode 1, computed by our model (raw stat values).
+
+| Frame | Life | Stamina | Mana |
+|---|---|---|---|
+| 0 | 10000 | 2000 | 3000 |
+| 1 | 10400 | 2100 | 3400 |
+| 2 | 10800 | 2200 | 3800 |
+| 3 | 11200 | 2300 | 4200 |
+| 4 | 11600 | 2400 | 4600 |
+| 5 | 12000 | 2500 | 5000 |
+
+Type toy stat values and a number of frames and see the regeneration tick applied once per frame, life, then stamina, then mana. Life adds stat 74 whatever its sign, is held at the maximum, and, by a reading of the code, is never taken below 256 (one life point); stamina gains the maximum shifted right by 8 in modes 1 and 5, by 9 in mode 6 and in mode 2 (and not while it is below 256 in mode 2), and in any other mode gains only with a recovery bonus of 1000 or more, scaled by the bonus percent and never past the maximum (confirmed in mode 3; modes 2 and 6, and the bonus in the other modes, by a reading of the code); mana gains the maximum divided by 25 times the class's regeneration (7500 when that is 0), at least 1, scaled by the recovery bonus percent, plus the flat recovery, kept between 0 and the maximum, and with state 85 on only the flat recovery applies (states § E, E2 to E4). Not shown: the check that the player is alive, the freeing of the potion lists at the maximum, and how the stats and the unit's mode come about. Computed by our model of the rule, not observed in the game; the starting values are illustrative.
+
+[Try it: change the inputs (needs JavaScript)](/widgets/regen-toy-ticks/widget.js)
+
 ## Auras
 
 From [states § F](../../spec-stats/states/#f-auras), confirmed except where noted:

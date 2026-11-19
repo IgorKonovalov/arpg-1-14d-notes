@@ -1,0 +1,27 @@
+{
+ "marker": "schematic-only/1",
+ "args": [
+  "--run",
+  "kinds2",
+  "--n",
+  "4"
+ ],
+ "files": {
+  "cube.gif": "39d822d11bb156792ac8941a5fe372ccdf819bc283b1571430a53c5405dbe11e",
+  "frame-000.png": "a89894e80cb7c477f09779b302621448da3bd739e3b0efe17c269fc9b3fda90f",
+  "frame-001.png": "c7ccd0d15bea065204860d9fde28403b25a521d5bbb6f844433f2fa15b999435",
+  "frame-002.png": "587fc026aceb4f78e3d8a59d1f4eb19292c1ca1c54b11d98e4188f00f6bd004d",
+  "frame-003.png": "cfc14170e2a15786cf80adb2dd612a1ca88126480688f0030b1e191fce1236d8",
+  "frame-004.png": "53e8a960430293f29848b9775871facd935aea73ae14fd4fceebb159e13bb6fe",
+  "frame-005.png": "63244e7d739ff74dd71c3214b56bde00c7856fa4f43999f73ea234a57d7edd38",
+  "frame-006.png": "5372d0893d50755dc748154d19b3046a54fd4ec6d67529ad56c9d347718046c6",
+  "frame-007.png": "41a31ff4b7fc4af1f8a092e3d56e0d100f28c67cb339383ed47266bf20bfcf0a",
+  "frame-008.png": "9be7047d7b10b4110519cb3dfafc4a128ca1151e84dcc0bf1ae3c0ef93f4a4cd",
+  "frame-009.png": "cbd9fd6c43ac73ed924aa260015bea2de47c91ee9382177211e1e1e4b41b2fcc",
+  "frame-010.png": "600f61909a94ba22d43997e723914726649fb5263024b71c4d4561fe5af3d15a",
+  "frame-011.png": "c27c4d7b99f4b26ffbfa7ebfaa4fe034de7c3e5b495ec7eb720838cad697384d",
+  "frame-012.png": "204a787a87dffb5813a92ad880a47c7d5dcd27ed1036971b09419e2ba7ab1fd0",
+  "index.html": "e03d7e5db541c0cc7a6e17a15768ce84f5611097348167c1afaee628c44a1fc9",
+  "steps.json": "dbdc7b7272077b1d3bb18ffd9f73673e1fec0bf7f5a9c0a091d4eea4d86f1955"
+ }
+}

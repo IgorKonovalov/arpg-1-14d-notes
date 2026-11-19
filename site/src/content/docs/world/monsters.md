@@ -245,7 +245,8 @@ cell. The walk tests cells against the room's [collision grid](../../reference/g
   class's `deadCol` column decides. For a monster
   re-created when its room comes back, the marks were compared in a run and agree.
 - The near-warp test can activate another room in the middle of the pass and, in some levels, step that level's
-  seed.
+  seed. The
+  [levels page](../levels/#the-collision-grid-and-logic-regions) steps a toy room through the four tests in their order.
 
 ![Animation: monsters-pack-toy-room](/illustrations/monsters-pack-toy-room/pack.gif)
 

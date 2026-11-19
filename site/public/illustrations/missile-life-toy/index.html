@@ -1,0 +1,36 @@
+<!doctype html><!-- schematic-only/1: schematic-only page, our own graphics -->
+<title>missile animation</title>
+<style>body{background:#111;color:#ddd;font:14px sans-serif;margin:0;padding:12px;text-align:center}
+img{max-width:100%;height:auto;image-rendering:pixelated;background:#000}button{font-size:16px;margin:4px;padding:4px 12px}
+#cap{max-width:900px;margin:8px auto;min-height:2em;font-weight:bold}#s{width:60%}
+#calc{max-width:900px;margin:0 auto;text-align:left;font:13px/1.5 monospace;background:#1b1b22;padding:8px 14px;
+border-radius:6px}#calc li{margin:2px 0}#help{max-width:900px;margin:8px auto;text-align:left;font-size:13px;color:#aaa}
+#help summary{cursor:pointer;color:#ddd}</style>
+<img id=f width=960 height=500 alt="frame"><div>
+<button id=p>prev</button><button id=pl>play</button><button id=n>next</button>
+<input id=s type=range min=0 value=0></div><div id=cap></div>
+<div id=calc><b>Calculations for this step</b><ol id=cl></ol></div>
+<details id=help><summary>How to read this</summary><ul>
+<li>The toy missile is made with the creation rules of B1: its velocity, range, frames left and activate mark come from the row and the level.</li>
+<li>Each frame the do function steps the velocity (every fifth step it adds the acceleration up to the cap), moves the position by the step and takes one off the frames left.</li>
+<li>Only once the frames left reach the activate mark does the missile test its cell for a unit; a unit found there is hit.</li>
+<li>The hit takes the owner's next draw as a to-hit roll; below the chance it is a hit, otherwise the missile is freed at that unit.</li>
+<li>Every number is an illustrative input or computed from one, not observed in the game.</li></ul></details>
+<script>
+var caps=[{"text": "A toy missile of level 10 is created, steps frame by frame and hits a toy monster; the owner's seed is {12648430:666} (illustrative).", "calc": ["Toy row (illustrative): Vel 24, VelLev 8, Range 8, LevRange 1, Activate 12, Accel 1024, MaxVel 32, CollideType 3, CollideKill 1, Explosion 0, ToHit 1.", "Toy direction vector (illustrative, 4096 is 1.0): (3547, 2048); start subtile (100, 100); to-hit chance 70 percent."]}, {"text": "The velocity is 6528, the row's formula for level 10, then 75 percent.", "calc": ["missiles.md B1: v = ((VelLev * lvl) / 8 + Vel) << 8 = ((8 * 10) / 8 + 24) << 8 = 8704.", "missiles.md B1: v is not 0, so v = v * 75 / 100 = 6528.", "missiles.md B1: the path's acceleration is Accel = 1024 and its maximum is MaxVel << 8 = 8192."]}, {"text": "The range is 18 frames, so 18 frames are left; collisions start at the mark 6.", "calc": ["missiles.md B1: range = LevRange * lvl + Range = 1 * 10 + 8 = 18 (no sub-loop, no override); left = range = 18.", "missiles.md B1: activate = range - Activate = 18 - 12 = 6."]}, {"text": "Frame 1: the velocity stays 6528, the position moves by (90448, 52224) and 17 frames are left.", "calc": ["missiles.md D2: n is the row's do function, 1; the toy missile is not in a town, so the do function runs.", "missiles.md D4: accel is 1024, so count = 1; count is not above 4, so v stays 6528.", "missiles.md D4: s = (v * 0x400) >> 6 = 104448; step.x = (dir.x * s) >> 12 = 90448, step.y = (dir.y * s) >> 12 = 52224.", "missiles.md D3: the position moves by the step on both 16.16 axes: (101.38, 100.79) subtiles; left = 18 - 1 = 17."]}, {"text": "Frame 5 adds the acceleration (velocity 7552); frame 10 goes past the cap and sets it to 8192.", "calc": ["missiles.md D4: count += 1; when count > 4, v += accel and count = 0 (frames 5: v = 7552).", "missiles.md D4: v = 7552 + 1024 = 8576 is above the cap 8192, so v = 8192 and accel = 0; later frames keep v and make no count."]}, {"text": "Frame 12 leaves 6 frames, at the activate mark 6, so a non-zero cell word would start the unit search; the word is 0 and the missile is kept.", "calc": ["missiles.md D3: left = 7 - 1 = 6; mode (CollideType) = 3 is not 0 and not 6; c = PathCellCollision = 0, so the call returns 1 (keep); left > activate is 6 > 6, false."]}, {"text": "Frame 14: the cell (122, 112) holds the monster, so the hit function is called with it.", "calc": ["missiles.md D3: c = PathCellCollision is not 0 and has neither bit 0 nor bit 2; left 4 is not above activate 6; the collide type's filter exists; for the step's cells, CollisionTest(room, x, y, size, 0x0184) is not 0 there, FindUnitAtCell returns the monster: HitUnit(m, unit, 0)."]}, {"text": "The hit records the monster, passes the filters and, the row having ToHit, rolls to hit on the owner's seed.", "calc": ["missiles.md E1: c = (Explosion ? 0 : 2) = 2, p = 3; m.data.lastHit = unit before the filters; NextHit and LastCollide are 0; the type filter and the hostility test pass for the toy monster (illustrative).", "missiles.md E1: Pierce is 0, so p stays 3; CollideKill is 1, so c |= 1: c = 3. The row has ToHit: COMBAT_ToHitRoll(owner, unit, stat 19, 1) runs."]}, {"text": "The owner's roll is 68 against 70: a hit.", "calc": ["missiles.md E1: the roll is the owner's next draw, low mod 100: 68 (seed after = {2727269568:5275563}).", "missiles.md E1: r < c = 70: a hit."]}, {"text": "The roll hits: the damage is built and applied, and the CollideKill missile is freed.", "calc": ["missiles.md E1: p & 2: JustHitState and the hit event run; no hit function, so c = 3 stays; c & 2: MISSILE_BuildDamage then MissileApplyAndAc (their draws are not shown).", "missiles.md E1: c & 1 and p & 1: the missile's 0x40 mark is removed (only a Collision row marks it) and the result is 2: the missile is freed."]}, {"text": "The toy missile lived 14 frames, tested its cell from frame 12 and met the monster at frame 14; the owner's seed drew once.", "calc": ["summary: v = 6528 at creation, the cap 8192 at frame 10; left = 4 at the hit (the range 18 less 14 frames).", "owner seed after = {2727269568:5275563}."]}],i=0,t=null,f=document.getElementById('f'),s=document.getElementById('s');
+s.max=caps.length-1;
+function show(k){i=Math.max(0,Math.min(caps.length-1,k));f.setAttribute('src','frame-'+('000'+i).slice(-3)+'.png');
+s.value=i;document.getElementById('cap').textContent=(i+1)+'/'+caps.length+'  '+caps[i].text;
+var cl=document.getElementById('cl');cl.innerHTML='';caps[i].calc.forEach(function(c){var li=document.createElement('li');
+li.textContent=c;cl.appendChild(li);});}
+function stop(){if(t){clearInterval(t);t=null;document.getElementById('pl').textContent='play';}}
+document.getElementById('p').onclick=function(){stop();show(i-1)};
+document.getElementById('n').onclick=function(){stop();show(i+1)};
+document.getElementById('pl').onclick=function(){if(t){stop();return;}
+ if(i>=caps.length-1)show(0);document.getElementById('pl').textContent='pause';
+ t=setInterval(function(){if(i>=caps.length-1)stop();else show(i+1)},900)};
+s.oninput=function(){stop();show(+s.value)};
+document.onkeydown=function(e){if(e.key=='ArrowRight'){stop();show(i+1)}else if(e.key=='ArrowLeft'){stop();show(i-1)}
+ else if(e.key==' '){e.preventDefault();document.getElementById('pl').click()}};
+show(0);
+</script>

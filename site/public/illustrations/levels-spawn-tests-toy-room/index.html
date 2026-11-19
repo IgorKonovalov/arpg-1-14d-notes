@@ -1,0 +1,35 @@
+<!doctype html><!-- schematic-only/1: schematic-only page, our own graphics -->
+<title>spawn tests animation</title>
+<style>body{background:#111;color:#ddd;font:14px sans-serif;margin:0;padding:12px;text-align:center}
+img{max-width:100%;height:auto;image-rendering:pixelated;background:#000}button{font-size:16px;margin:4px;padding:4px 12px}
+#cap{max-width:900px;margin:8px auto;min-height:2em;font-weight:bold}#s{width:60%}
+#calc{max-width:900px;margin:0 auto;text-align:left;font:13px/1.5 monospace;background:#1b1b22;padding:8px 14px;
+border-radius:6px}#calc li{margin:2px 0}#help{max-width:900px;margin:8px auto;text-align:left;font-size:13px;color:#aaa}
+#help summary{cursor:pointer;color:#ddd}</style>
+<img id=f width=960 height=500 alt="frame"><div>
+<button id=p>prev</button><button id=pl>play</button><button id=n>next</button>
+<input id=s type=range min=0 value=0></div><div id=cap></div>
+<div id=calc><b>Calculations for this step</b><ol id=cl></ol></div>
+<details id=help><summary>How to read this</summary><ul>
+<li>The room is 40 by 30 subtiles. Light cells are region 1 (the box's region), the tinted cells region 2; the bright cells are walls, the two marks are the warp point and the waypoint point.</li>
+<li>For each candidate point the four tests run in the game's order and the first one that fails refuses the point; the tests after it are not called.</li>
+<li>The yellow cell is the point, its four neighbours are the plus footprint of a size-2 monster, the blue outline is the cell the class's own test reads.</li>
+<li>Every value is computed by our model for the toy room, not observed in the game.</li></ul></details>
+<script>
+var caps=[{"text": "A toy room and seven candidate points.", "calc": ["collision, predicate order: per try NearWarpTest (when avoidWarp), then LogicRegionIdAt (with a box), then the probe; per ring cell the rectangle test, LogicRegionIdAt, SpawnClassCellTest, CollisionTest.", "toy: WarpDist 100, one warp point, one waypoint point, box id 1, class BaseId 528, plus footprint, mask 0x3C01."]}, {"text": "Point (16, 8): refused by NearWarpTest.", "calc": ["NearWarpTest: warp point: d2 13 < 100.", "LogicRegionIdAt: not called.", "SpawnClassCellTest: not called.", "CollisionTest: not called."]}, {"text": "Point (32, 8): refused by NearWarpTest.", "calc": ["NearWarpTest: waypoint point: d2 13 < 100.", "LogicRegionIdAt: not called.", "SpawnClassCellTest: not called.", "CollisionTest: not called."]}, {"text": "Point (33, 20): refused by LogicRegionIdAt.", "calc": ["NearWarpTest: d2 586 and 234, both >= 100.", "LogicRegionIdAt: region 2, box 1.", "SpawnClassCellTest: not called.", "CollisionTest: not called."]}, {"text": "Point (7, 15): refused by SpawnClassCellTest.", "calc": ["NearWarpTest: d2 149 and 629, both >= 100.", "LogicRegionIdAt: region 1, box 1.", "SpawnClassCellTest: cell (+2,+4) plus & 0x3c01 = 0x0001.", "CollisionTest: not called."]}, {"text": "Point (9, 19): refused by CollisionTest.", "calc": ["NearWarpTest: d2 221 and 637, both >= 100.", "LogicRegionIdAt: region 1, box 1.", "SpawnClassCellTest: cell (+2,+4) plus & 0x3c01 = 0x0000.", "CollisionTest: plus & 0x3c01 = 0x0001."]}, {"text": "Point (23, 22): refused by CollisionTest.", "calc": ["NearWarpTest: d2 370 and 338, both >= 100.", "LogicRegionIdAt: region 1, box 1.", "SpawnClassCellTest: cell (+2,+4) plus & 0x3c01 = 0x0000.", "CollisionTest: plus & 0x3c01 = 0x0001."]}, {"text": "Point (18, 24): all four tests pass.", "calc": ["NearWarpTest: d2 377 and 505, both >= 100.", "LogicRegionIdAt: region 1, box 1.", "SpawnClassCellTest: cell (+2,+4) plus & 0x3c01 = 0x0000.", "CollisionTest: plus & 0x3c01 = 0x0000."]}, {"text": "One point stands; the others fail at one test each.", "calc": ["collision, predicate order: a test that fails skips the later ones, so a reimplementation must not call them.", "(16, 8) fails at NearWarpTest; (32, 8) fails at NearWarpTest; (33, 20) fails at LogicRegionIdAt; (7, 15) fails at SpawnClassCellTest; (9, 19) fails at CollisionTest; (23, 22) fails at CollisionTest; (18, 24) stands"]}],i=0,t=null,f=document.getElementById('f'),s=document.getElementById('s');
+s.max=caps.length-1;
+function show(k){i=Math.max(0,Math.min(caps.length-1,k));f.setAttribute('src','frame-'+('000'+i).slice(-3)+'.png');
+s.value=i;document.getElementById('cap').textContent=(i+1)+'/'+caps.length+'  '+caps[i].text;
+var cl=document.getElementById('cl');cl.innerHTML='';caps[i].calc.forEach(function(c){var li=document.createElement('li');
+li.textContent=c;cl.appendChild(li);});}
+function stop(){if(t){clearInterval(t);t=null;document.getElementById('pl').textContent='play';}}
+document.getElementById('p').onclick=function(){stop();show(i-1)};
+document.getElementById('n').onclick=function(){stop();show(i+1)};
+document.getElementById('pl').onclick=function(){if(t){stop();return;}
+ if(i>=caps.length-1)show(0);document.getElementById('pl').textContent='pause';
+ t=setInterval(function(){if(i>=caps.length-1)stop();else show(i+1)},900)};
+s.oninput=function(){stop();show(+s.value)};
+document.onkeydown=function(e){if(e.key=='ArrowRight'){stop();show(i+1)}else if(e.key=='ArrowLeft'){stop();show(i-1)}
+ else if(e.key==' '){e.preventDefault();document.getElementById('pl').click()}};
+show(0);
+</script>
